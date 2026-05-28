@@ -1,89 +1,88 @@
+const asyncHandler = require("express-async-handler");
 const Income = require("../models/Income");
-const { calculateNewRegimeTax, calculateOldRegimeTax, getAdvanceTaxSchedule } = require("../utils/taxEngine");
+const Expense = require("../models/Expense");
+const User = require("../models/User");
 
-const getYtdIncome = async (userId) => {
-  const start = new Date(new Date().getFullYear(), 0, 1);
-  const income = await Income.find({
-    userId,
-    date: { $gte: start },
+const getTaxOverview = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const user = await User.findById(userId);
+
+  const currentYear = new Date().getFullYear();
+  const start = new Date(currentYear, 3, 1);
+  const end = new Date(currentYear + 1, 2, 31, 23, 59, 59, 999);
+
+  const incomes = await Income.find({ userId, date: { $gte: start, $lte: end } });
+  const expenses = await Expense.find({ userId, date: { $gte: start, $lte: end } });
+
+  const totalIncome = incomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalExpense = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const taxableIncome = Math.max(0, totalIncome - totalExpense);
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      user: user ? { name: user.name, email: user.email } : null,
+      totalIncome,
+      totalExpense,
+      taxableIncome,
+      regime: user?.taxRegime || "new",
+    },
   });
+});
 
-  return income.reduce((sum, item) => sum + item.amount, 0);
-};
+const compareTaxRegimes = asyncHandler(async (req, res) => {
+  const { income = 0, deductions80C = 0, deductions80D = 0, hra = 0 } = req.body;
 
-const getGSTStatus = async (req, res, next) => {
-  try {
-    const ytdIncome = await getYtdIncome(req.user._id);
-    const threshold = 2000000;
-    const percentage = Number(((ytdIncome / threshold) * 100).toFixed(2));
+  const grossIncome = Number(income);
+  const deductions = Number(deductions80C) + Number(deductions80D) + Number(hra);
 
-    res.json({
-      success: true,
-      ytdIncome,
-      threshold,
-      percentage,
-      warningTriggered: ytdIncome > 1800000,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  const oldTaxable = Math.max(0, grossIncome - deductions - 50000);
+  const newTaxable = Math.max(0, grossIncome - 75000);
 
-const compareRegime = async (req, res, next) => {
-  try {
-    const income = Number(req.body.income || 0);
-    const deductions = {
-      section80C: Number(req.body.section80C || 0),
-      section80D: Number(req.body.section80D || 0),
-      hra: Number(req.body.hra || 0),
-    };
+  const oldTax = oldTaxable <= 250000 ? 0 : oldTaxable * 0.1;
+  const newTax = newTaxable <= 300000 ? 0 : newTaxable * 0.07;
 
-    const oldRegime = calculateOldRegimeTax(income, deductions);
-    const newRegime = calculateNewRegimeTax(income);
-    const better = oldRegime.totalTax < newRegime.totalTax ? oldRegime : newRegime;
-    const savings = Math.abs(oldRegime.totalTax - newRegime.totalTax);
+  const better = oldTax < newTax ? "old" : "new";
 
-    res.json({
-      success: true,
-      comparison: {
-        oldRegime,
-        newRegime,
-        recommendation: {
-          regime: better.regime,
-          savings,
-          reason: better.regime === "old"
-            ? "Your declared deductions reduce taxable income more effectively."
-            : "The new regime results in lower tax with simpler compliance.",
-        },
+  return res.status(200).json({
+    success: true,
+    data: {
+      oldRegime: {
+        taxableIncome: oldTaxable,
+        estimatedTax: Math.round(oldTax),
       },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+      newRegime: {
+        taxableIncome: newTaxable,
+        estimatedTax: Math.round(newTax),
+      },
+      recommended: better,
+    },
+  });
+});
 
-const getAdvanceTax = async (req, res, next) => {
-  try {
-    const annualIncome = await getYtdIncome(req.user._id) * (12 / Math.max(new Date().getMonth() + 1, 1));
-    const annualTax = req.user.taxRegime === "old"
-      ? calculateOldRegimeTax(annualIncome, {}).totalTax
-      : calculateNewRegimeTax(annualIncome).totalTax;
+const getGSTProgress = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const startOfYear = new Date(new Date().getFullYear(), 3, 1);
+  const incomes = await Income.find({ userId, date: { $gte: startOfYear } });
 
-    const schedule = getAdvanceTaxSchedule(annualTax);
+  const totalIncome = incomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const threshold = 2000000;
+  const progress = Math.min(100, (totalIncome / threshold) * 100);
 
-    res.json({
-      success: true,
-      estimatedAnnualIncome: Number(annualIncome.toFixed(2)),
-      estimatedAnnualTax: annualTax,
-      schedule,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  return res.status(200).json({
+    success: true,
+    data: {
+      totalIncome,
+      threshold,
+      progress: Math.round(progress),
+      warning: totalIncome >= 1800000 ? "yellow" : "green",
+      danger: totalIncome >= 1900000 ? "red" : null,
+    },
+  });
+});
 
 module.exports = {
-  getGSTStatus,
-  compareRegime,
-  getAdvanceTax,
+  getTaxOverview,
+  compareTaxRegimes,
+  getGSTProgress,
 };

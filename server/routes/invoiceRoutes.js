@@ -1,23 +1,20 @@
 const express = require("express");
-
+const router = express.Router();
 const {
   getInvoices,
   createInvoice,
   updateInvoice,
   deleteInvoice,
-  updateStatus,
-  getInvoiceSummary,
-  createPaymentLink,
+  sendReminder,
+  createCheckoutSession,
 } = require("../controllers/invoiceController");
 const { protect } = require("../middleware/authMiddleware");
 
-const router = express.Router();
-
-router.use(protect);
-router.get("/summary", getInvoiceSummary);
-router.post("/:id/payment-link", createPaymentLink);
-router.patch("/:id/status", updateStatus);
-router.route("/").get(getInvoices).post(createInvoice);
-router.route("/:id").put(updateInvoice).delete(deleteInvoice);
+router.get("/", protect, getInvoices);
+router.post("/", protect, createInvoice);
+router.put("/:id", protect, updateInvoice);
+router.delete("/:id", protect, deleteInvoice);
+router.post("/:id/reminder", protect, sendReminder);
+router.post("/:id/checkout", protect, createCheckoutSession);
 
 module.exports = router;

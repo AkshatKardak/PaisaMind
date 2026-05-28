@@ -1,191 +1,103 @@
+const asyncHandler = require("express-async-handler");
 const Invoice = require("../models/Invoice");
-const { stripe, createInvoicePaymentLink } = require("../utils/stripeService");
+const { Resend } = require("resend");
+const Stripe = require("stripe");
 
-const buildInvoiceNumber = async (userId) => {
-  const count = await Invoice.countDocuments({ userId });
-  return `INV-${String(count + 1).padStart(3, "0")}`;
-};
+const resend = new Resend(process.env.RESEND_API_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-const enrichInvoice = (payload) => {
-  const amount = Number(payload.amount || 0);
-  const gstApplicable = Boolean(payload.gstApplicable);
-  const gstAmount = gstApplicable ? Number((amount * 0.18).toFixed(2)) : 0;
-  const totalAmount = Number((amount + gstAmount).toFixed(2));
+const getInvoices = asyncHandler(async (req, res) => {
+  const invoices = await Invoice.find({ userId: req.user._id }).sort({ createdAt: -1 });
+  res.status(200).json({ success: true, data: invoices });
+});
 
-  return {
-    ...payload,
+const createInvoice = asyncHandler(async (req, res) => {
+  const { clientName, clientEmail, amount, dueDate, items, notes } = req.body;
+
+  const count = await Invoice.countDocuments({ userId: req.user._id });
+  const invoiceNumber = `INV-${String(count + 1).padStart(3, "0")}`;
+
+  const invoice = await Invoice.create({
+    userId: req.user._id,
+    invoiceNumber,
+    clientName,
+    clientEmail,
     amount,
-    gstApplicable,
-    gstAmount,
-    totalAmount,
-  };
-};
+    dueDate,
+    items,
+    notes,
+    status: "Unpaid",
+  });
 
-const getInvoices = async (req, res, next) => {
-  try {
-    const invoices = await Invoice.find({ userId: req.user._id }).sort({ createdAt: -1 });
-    res.json({ success: true, invoices });
-  } catch (error) {
-    next(error);
+  res.status(201).json({ success: true, data: invoice });
+});
+
+const updateInvoice = asyncHandler(async (req, res) => {
+  const invoice = await Invoice.findOneAndUpdate(
+    { _id: req.params.id, userId: req.user._id },
+    req.body,
+    { new: true }
+  );
+
+  res.status(200).json({ success: true, data: invoice });
+});
+
+const deleteInvoice = asyncHandler(async (req, res) => {
+  await Invoice.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+  res.status(200).json({ success: true, message: "Invoice deleted" });
+});
+
+const sendReminder = asyncHandler(async (req, res) => {
+  const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.user._id });
+  if (!invoice) {
+    return res.status(404).json({ success: false, message: "Invoice not found" });
   }
-};
 
-const createInvoice = async (req, res, next) => {
-  try {
-    const invoice = await Invoice.create({
-      ...enrichInvoice(req.body),
-      userId: req.user._id,
-      invoiceNumber: await buildInvoiceNumber(req.user._id),
-    });
+  const response = await resend.emails.send({
+    from: process.env.EMAIL_FROM,
+    to: invoice.clientEmail,
+    subject: `Payment reminder for ${invoice.invoiceNumber}`,
+    html: `<p>Hi ${invoice.clientName},</p><p>This is a reminder that invoice ${invoice.invoiceNumber} for ₹${invoice.amount} is pending.</p>`,
+  });
 
-    res.status(201).json({ success: true, invoice });
-  } catch (error) {
-    next(error);
+  res.status(200).json({ success: true, data: response });
+});
+
+const createCheckoutSession = asyncHandler(async (req, res) => {
+  const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.user._id });
+  if (!invoice) {
+    return res.status(404).json({ success: false, message: "Invoice not found" });
   }
-};
 
-const updateInvoice = async (req, res, next) => {
-  try {
-    const invoice = await Invoice.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user._id },
-      enrichInvoice(req.body),
-      { new: true, runValidators: true }
-    );
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    success_url: process.env.CLIENT_URL,
+    cancel_url: process.env.CLIENT_URL,
+    line_items: [
+      {
+        price_data: {
+          currency: "inr",
+          product_data: {
+            name: `Invoice ${invoice.invoiceNumber}`,
+          },
+          unit_amount: Math.round(Number(invoice.amount) * 100),
+        },
+        quantity: 1,
+      },
+    ],
+    metadata: {
+      invoiceId: String(invoice._id),
+    },
+  });
 
-    if (!invoice) {
-      res.status(404);
-      throw new Error("Invoice not found");
-    }
-
-    res.json({ success: true, invoice });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const deleteInvoice = async (req, res, next) => {
-  try {
-    const invoice = await Invoice.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
-
-    if (!invoice) {
-      res.status(404);
-      throw new Error("Invoice not found");
-    }
-
-    res.json({ success: true, message: "Invoice deleted" });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const updateStatus = async (req, res, next) => {
-  try {
-    const { status } = req.body;
-    const payload = {
-      status,
-      ...(status === "paid" ? { paidDate: new Date() } : {}),
-    };
-
-    const invoice = await Invoice.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user._id },
-      payload,
-      { new: true, runValidators: true }
-    );
-
-    if (!invoice) {
-      res.status(404);
-      throw new Error("Invoice not found");
-    }
-
-    res.json({ success: true, invoice });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const getInvoiceSummary = async (req, res, next) => {
-  try {
-    const invoices = await Invoice.find({ userId: req.user._id });
-    const totalBilled = invoices.reduce((sum, invoice) => sum + invoice.totalAmount, 0);
-    const totalReceived = invoices
-      .filter((invoice) => invoice.status === "paid")
-      .reduce((sum, invoice) => sum + invoice.totalAmount, 0);
-    const totalPending = invoices
-      .filter((invoice) => invoice.status !== "paid")
-      .reduce((sum, invoice) => sum + invoice.totalAmount, 0);
-
-    res.json({
-      success: true,
-      summary: { totalBilled, totalReceived, totalPending },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const createPaymentLink = async (req, res, next) => {
-  try {
-    const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.user._id });
-    if (!invoice) {
-      res.status(404);
-      throw new Error("Invoice not found");
-    }
-
-    const session = await createInvoicePaymentLink(invoice);
-    invoice.stripePaymentUrl = session.url;
-    invoice.stripeSessionId = session.id;
-    await invoice.save();
-
-    res.json({ success: true, url: session.url });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const stripeWebhook = async (req, res) => {
-  try {
-    let event;
-
-    if (
-      process.env.STRIPE_WEBHOOK_SECRET &&
-      process.env.STRIPE_WEBHOOK_SECRET !== "whsec_your_webhook_secret" &&
-      process.env.STRIPE_SECRET_KEY &&
-      process.env.STRIPE_SECRET_KEY !== "sk_test_your_stripe_key"
-    ) {
-      const signature = req.headers["stripe-signature"];
-      event = stripe.webhooks.constructEvent(req.body, signature, process.env.STRIPE_WEBHOOK_SECRET);
-    } else {
-      event = JSON.parse(Buffer.isBuffer(req.body) ? req.body.toString() : JSON.stringify(req.body));
-    }
-
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-      const invoiceId = session.metadata?.invoiceId;
-
-      if (invoiceId) {
-        await Invoice.findByIdAndUpdate(invoiceId, {
-          status: "paid",
-          paidDate: new Date(),
-          paidViaStripe: true,
-          stripeSessionId: session.id,
-        });
-      }
-    }
-
-    return res.status(200).json({ received: true });
-  } catch (error) {
-    console.error("Stripe webhook error:", error.message);
-    return res.status(400).json({ success: false, message: error.message });
-  }
-};
+  res.status(200).json({ success: true, data: { url: session.url } });
+});
 
 module.exports = {
   getInvoices,
   createInvoice,
   updateInvoice,
   deleteInvoice,
-  updateStatus,
-  getInvoiceSummary,
-  createPaymentLink,
-  stripeWebhook,
+  sendReminder,
+  createCheckoutSession,
 };

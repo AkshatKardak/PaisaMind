@@ -1,13 +1,16 @@
 const express = require("express");
-
-const { getInsights, getMonthlyReport, getInvoiceReminder } = require("../controllers/aiController");
+const router = express.Router();
+const {
+  getAIInsights,
+  getHealthScoreExplanation,
+  getTaxSavingSuggestions,
+  getCashFlowForecast,
+} = require("../controllers/aiController");
 const { protect } = require("../middleware/authMiddleware");
 
-const router = express.Router();
-
-router.use(protect);
-router.post("/insights", getInsights);
-router.post("/monthly-report", getMonthlyReport);
-router.post("/invoice-reminder", getInvoiceReminder);
+router.get("/insights", protect, getAIInsights);
+router.get("/health-score", protect, getHealthScoreExplanation);
+router.get("/tax-suggestions", protect, getTaxSavingSuggestions);
+router.get("/cashflow-forecast", protect, getCashFlowForecast);
 
 module.exports = router;

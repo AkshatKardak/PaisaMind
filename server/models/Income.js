@@ -2,38 +2,14 @@ const mongoose = require("mongoose");
 
 const incomeSchema = new mongoose.Schema(
   {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-      index: true,
-    },
-    source: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    amount: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    category: {
-      type: String,
-      enum: ["Client Payment", "UPI", "Freelance Platform", "Other"],
-      default: "Other",
-    },
-    date: {
-      type: Date,
-      required: true,
-    },
-    notes: {
-      type: String,
-      default: "",
-      trim: true,
-    },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    source: { type: String, required: true },
+    category: { type: String, default: "Other" },
+    amount: { type: Number, required: true },
+    date: { type: Date, required: true },
+    notes: { type: String, default: "" },
   },
-  { timestamps: { createdAt: true, updatedAt: true } }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Income", incomeSchema);

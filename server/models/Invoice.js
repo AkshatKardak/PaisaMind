@@ -1,76 +1,28 @@
 const mongoose = require("mongoose");
 
+const invoiceItemSchema = new mongoose.Schema(
+  {
+    description: { type: String, required: true },
+    quantity: { type: Number, required: true, default: 1 },
+    rate: { type: Number, required: true },
+  },
+  { _id: false }
+);
+
 const invoiceSchema = new mongoose.Schema(
   {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-      index: true,
-    },
-    invoiceNumber: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    clientName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    serviceDescription: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    amount: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    gstApplicable: {
-      type: Boolean,
-      default: false,
-    },
-    gstAmount: {
-      type: Number,
-      default: 0,
-    },
-    totalAmount: {
-      type: Number,
-      required: true,
-    },
-    status: {
-      type: String,
-      enum: ["paid", "unpaid", "overdue"],
-      default: "unpaid",
-    },
-    issueDate: {
-      type: Date,
-      required: true,
-    },
-    dueDate: {
-      type: Date,
-      required: true,
-    },
-    paidDate: {
-      type: Date,
-      default: null,
-    },
-    stripePaymentUrl: {
-      type: String,
-      default: "",
-    },
-    stripeSessionId: {
-      type: String,
-      default: "",
-    },
-    paidViaStripe: {
-      type: Boolean,
-      default: false,
-    },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    invoiceNumber: { type: String, required: true, unique: true },
+    clientName: { type: String, required: true },
+    clientEmail: { type: String, required: true },
+    amount: { type: Number, required: true },
+    dueDate: { type: Date, required: true },
+    items: [invoiceItemSchema],
+    notes: { type: String, default: "" },
+    status: { type: String, enum: ["Paid", "Unpaid", "Overdue"], default: "Unpaid" },
+    paymentLink: { type: String, default: "" },
   },
-  { timestamps: { createdAt: true, updatedAt: true } }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Invoice", invoiceSchema);
