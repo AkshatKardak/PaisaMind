@@ -1,31 +1,27 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const admin = require("../config/firebaseAdmin");
+const User  = require("../models/User");
 
 const protect = async (req, res, next) => {
-  let token;
+  const authHeader = req.headers.authorization;
 
-  if (req.cookies?.token) {
-    token = req.cookies.token;
-  } else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-    token = req.headers.authorization.split(" ")[1];
-  }
-
-  if (!token) {
+  if (!authHeader?.startsWith("Bearer ")) {
     return res.status(401).json({ success: false, message: "Not authorized, no token" });
   }
 
+  const idToken = authHeader.split(" ")[1];
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select("-password");
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    const user    = await User.findOne({ firebaseUid: decoded.uid }).select("-password");
 
     if (!user) {
-      return res.status(401).json({ success: false, message: "User not found" });
+      return res.status(401).json({ success: false, message: "User not found in database" });
     }
 
     req.user = user;
     next();
   } catch (error) {
-    return res.status(401).json({ success: false, message: "Not authorized, token failed" });
+    return res.status(401).json({ success: false, message: "Token verification failed" });
   }
 };
 

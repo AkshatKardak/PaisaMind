@@ -22,9 +22,30 @@ export const getInvoiceReminder = async (payload) => {
   return {
     ...response,
     data: response.data || {
-      message: typeof response.message === "string" ? response.message : response.message?.message,
+      message:
+        typeof response.message === "string"
+          ? response.message
+          : response.message?.message,
     },
   };
 };
 
-export default { getInsights, getMonthlyReport, getInvoiceReminder };
+// NEW
+export const getTaxSavingSuggestions = async () => {
+  const response = (await api.get("/ai/tax-saving")).data;
+  return response;
+};
+
+// NEW
+export const getCashFlowForecast = async () => {
+  const response = (await api.get("/ai/cash-flow-forecast")).data;
+  return response;
+};
+
+export default {
+  getInsights,
+  getMonthlyReport,
+  getInvoiceReminder,
+  getTaxSavingSuggestions,
+  getCashFlowForecast,
+};

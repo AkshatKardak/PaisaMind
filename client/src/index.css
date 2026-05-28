@@ -535,3 +535,220 @@ td {
     overflow-y: auto;
   }
 }
+
+
+/* ═══════════════════════════════════════
+   LANDING PAGE PREMIUM STYLES
+═══════════════════════════════════════ */
+
+/* Navbar */
+.lp-navbar {
+  background: rgba(11, 15, 26, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: box-shadow 0.3s ease, background 0.3s ease;
+}
+html:not(.dark) .lp-navbar {
+  background: rgba(248, 250, 252, 0.85);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+.lp-nav-scrolled {
+  box-shadow: 0 1px 48px rgba(0, 0, 0, 0.45);
+}
+
+/* CTA buttons */
+.lp-cta-btn {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+  transition: all 0.2s ease;
+}
+.lp-cta-btn:hover {
+  background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+  box-shadow: 0 0 36px rgba(14, 165, 233, 0.55);
+  transform: translateY(-1px);
+}
+.lp-cta-btn-lg {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+  box-shadow: 0 0 30px rgba(14, 165, 233, 0.35);
+  transition: all 0.25s ease;
+}
+.lp-cta-btn-lg:hover {
+  background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+  box-shadow: 0 0 50px rgba(14, 165, 233, 0.6);
+  transform: translateY(-2px);
+}
+
+/* Grid overlay */
+.lp-grid-overlay {
+  background-image:
+    repeating-linear-gradient(
+      rgba(14, 165, 233, 0.04) 0px, transparent 1px,
+      transparent 72px, rgba(14, 165, 233, 0.04) 72px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(14, 165, 233, 0.04) 0px, transparent 1px,
+      transparent 72px, rgba(14, 165, 233, 0.04) 72px
+    );
+}
+html:not(.dark) .lp-grid-overlay {
+  background-image:
+    repeating-linear-gradient(
+      rgba(14, 165, 233, 0.06) 0px, transparent 1px,
+      transparent 72px, rgba(14, 165, 233, 0.06) 72px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(14, 165, 233, 0.06) 0px, transparent 1px,
+      transparent 72px, rgba(14, 165, 233, 0.06) 72px
+    );
+}
+
+/* Gradient headline text */
+.lp-gradient-text {
+  background: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 60%, #0ea5e9 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 4s ease infinite;
+}
+
+/* Underline highlight */
+.lp-highlight {
+  position: relative;
+  display: inline-block;
+}
+.lp-highlight::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #0ea5e9, #8b5cf6);
+  border-radius: 2px;
+  animation: widthGrow 0.8s ease 0.5s both;
+  transform-origin: left;
+}
+
+/* Section label */
+.lp-section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #0ea5e9;
+}
+.lp-section-label::before {
+  content: "";
+  display: inline-block;
+  width: 18px;
+  height: 2px;
+  background: #0ea5e9;
+  border-radius: 2px;
+}
+
+/* Feature badge */
+.lp-feature-badge {
+  display: inline-block;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 9999px;
+  padding: 4px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Feature cards */
+.lp-feature-card {
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  padding: 28px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+.lp-feature-card:hover {
+  border-color: rgba(14, 165, 233, 0.3);
+  box-shadow: 0 16px 60px rgba(14, 165, 233, 0.12), 0 4px 20px rgba(0, 0, 0, 0.2);
+  transform: translateY(-3px);
+}
+
+/* Step cards */
+.lp-step-card {
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  padding: 28px;
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+.lp-step-card:hover {
+  border-color: rgba(14, 165, 233, 0.25);
+  transform: translateY(-3px);
+}
+
+/* Testimonial cards */
+.lp-testimonial-card {
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  padding: 24px;
+  transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.lp-testimonial-card:hover {
+  border-color: rgba(14, 165, 233, 0.25);
+  box-shadow: 0 8px 32px rgba(14, 165, 233, 0.08);
+  transform: translateY(-3px);
+}
+
+/* Live indicator dot */
+.lp-live-dot {
+  display: inline-flex;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+  animation: pulse-live 1.8s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% center; }
+  50%       { background-position: 100% center; }
+}
+@keyframes widthGrow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes growBarLanding {
+  from { height: 0; opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes floatChip {
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-8px); }
+}
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* Light mode overrides for landing */
+html:not(.dark) .lp-navbar {
+  background: rgba(248, 250, 252, 0.92);
+}
+html:not(.dark) .lp-feature-card,
+html:not(.dark) .lp-step-card,
+html:not(.dark) .lp-testimonial-card {
+  box-shadow: 0 4px 24px rgba(14, 165, 233, 0.06), 0 1px 6px rgba(0, 0, 0, 0.06);
+}

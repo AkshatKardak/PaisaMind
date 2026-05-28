@@ -13,6 +13,8 @@ import Register from "./pages/Register";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import TaxPlanner from "./pages/TaxPlanner";
+import TaxAssistant from "./pages/TaxAssistant";
+import CashFlowForecaster from "./pages/CashFlowForecaster";
 
 function HomeRoute() {
   const { isAuthenticated, loading } = useAuth();
@@ -87,6 +89,8 @@ function App() {
             <Route path="/goals" element={<Goals />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/tax-assistant" element={<TaxAssistant />} />
+            <Route path="/cash-flow" element={<CashFlowForecaster />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

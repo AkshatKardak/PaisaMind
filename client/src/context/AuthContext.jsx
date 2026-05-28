@@ -1,84 +1,103 @@
 import { createContext, useEffect, useMemo, useState } from "react";
-import * as authService from "../services/authService";
+import {
+  auth,
+  googleProvider,
+  signInWithPopup,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile,
+} from "../config/firebase";
+import api from "../services/api";
 
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("paisamind_token"));
+  const [user, setUser]     = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const handleAuthSuccess = ({ token: nextToken, user: nextUser }) => {
-    localStorage.setItem("paisamind_token", nextToken);
-    localStorage.setItem("paisamind_user", JSON.stringify(nextUser));
-    setToken(nextToken);
-    setUser(nextUser);
+  /* ── sync Firebase user → our Express backend ── */
+  const syncWithBackend = async (firebaseUser) => {
+    const idToken = await firebaseUser.getIdToken();
+    const res = await api.post(
+      "/auth/firebase-sync",
+      {
+        uid:         firebaseUser.uid,
+        name:        firebaseUser.displayName || "PaisaMind User",
+        email:       firebaseUser.email,
+        photoURL:    firebaseUser.photoURL || "",
+      },
+      { headers: { Authorization: `Bearer ${idToken}` } }
+    );
+    return { ...res.data.data, idToken };
   };
 
-  const login = async (payload) => {
-    const response = await authService.login(payload);
-    handleAuthSuccess(response);
-    return response;
+  /* ── listen to Firebase auth state ── */
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const profile = await syncWithBackend(firebaseUser);
+          setUser(profile);
+        } catch {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  /* ── get fresh ID token for every API call ── */
+  const getToken = async () => {
+    if (!auth.currentUser) return null;
+    return auth.currentUser.getIdToken();
   };
 
-  const register = async (payload) => {
-    const response = await authService.register(payload);
-    handleAuthSuccess(response);
-    return response;
+  /* ── Email / Password Register ── */
+  const register = async ({ name, email, password }) => {
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(credential.user, { displayName: name });
+    // onAuthStateChanged fires automatically → syncWithBackend called
+    return credential.user;
   };
 
-  const logout = () => {
-    localStorage.removeItem("paisamind_token");
-    localStorage.removeItem("paisamind_user");
-    setToken(null);
+  /* ── Email / Password Login ── */
+  const login = async ({ email, password }) => {
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    return credential.user;
+  };
+
+  /* ── Google Sign-In ── */
+  const loginWithGoogle = async () => {
+    const credential = await signInWithPopup(auth, googleProvider);
+    return credential.user;
+  };
+
+  /* ── Logout ── */
+  const logout = async () => {
+    await signOut(auth);
     setUser(null);
   };
 
-  useEffect(() => {
-    const bootstrap = async () => {
-      const storedToken = localStorage.getItem("paisamind_token");
-      const storedUser = localStorage.getItem("paisamind_user");
+  const value = useMemo(() => ({
+    user,
+    loading,
+    isAuthenticated: Boolean(user),
+    register,
+    login,
+    loginWithGoogle,
+    logout,
+    getToken,
+    setUser,
+  }), [user, loading]);
 
-      if (!storedToken) {
-        setLoading(false);
-        return;
-      }
-
-      if (storedUser) {
-        try {
-          setUser(JSON.parse(storedUser));
-        } catch {
-          localStorage.removeItem("paisamind_user");
-        }
-      }
-
-      try {
-        const response = await authService.getMe();
-        setUser(response.user);
-        localStorage.setItem("paisamind_user", JSON.stringify(response.user));
-      } catch {
-        logout();
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    bootstrap();
-  }, []);
-
-  const value = useMemo(
-    () => ({
-      user,
-      token,
-      loading,
-      isAuthenticated: Boolean(token),
-      login,
-      register,
-      logout,
-      setUser,
-    }),
-    [user, token, loading]
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
   );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

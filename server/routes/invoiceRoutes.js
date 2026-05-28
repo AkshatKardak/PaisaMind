@@ -7,6 +7,7 @@ const {
   deleteInvoice,
   sendReminder,
   createCheckoutSession,
+  handleWebhook,
 } = require("../controllers/invoiceController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -16,5 +17,8 @@ router.put("/:id", protect, updateInvoice);
 router.delete("/:id", protect, deleteInvoice);
 router.post("/:id/reminder", protect, sendReminder);
 router.post("/:id/checkout", protect, createCheckoutSession);
+
+// Razorpay webhook — public, no JWT auth
+router.post("/webhook/razorpay", handleWebhook);
 
 module.exports = router;
