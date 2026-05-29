@@ -50,7 +50,7 @@ function Invoices() {
     onError: (error) => showToast({
       type: "error",
       title: "Could not create invoice",
-      message: error.response?.data?.message || "Please check all fields and try again.",
+      message: error.message || error.response?.data?.message || "Please check all fields and try again.",
     }),
   });
 
@@ -61,6 +61,11 @@ function Invoices() {
       queryClient.invalidateQueries({ queryKey: ["invoice-summary-page"] });
       showToast({ type: "success", title: "Invoice marked paid" });
     },
+    onError: (error) => showToast({
+      type: "error",
+      title: "Could not update invoice status",
+      message: error.message || "Please try again.",
+    }),
   });
 
   const paymentMutation = useMutation({
@@ -69,6 +74,11 @@ function Invoices() {
       queryClient.invalidateQueries({ queryKey: ["invoices-page"] });
       showToast({ type: "success", title: "Payment link created" });
     },
+    onError: (error) => showToast({
+      type: "error",
+      title: "Could not create payment link",
+      message: error.message || "Please try again.",
+    }),
   });
 
   const deleteMutation = useMutation({
@@ -79,6 +89,11 @@ function Invoices() {
       setDeleting(null);
       showToast({ type: "success", title: "Invoice deleted" });
     },
+    onError: (error) => showToast({
+      type: "error",
+      title: "Could not delete invoice",
+      message: error.message || "Please try again.",
+    }),
   });
 
   useEffect(() => {

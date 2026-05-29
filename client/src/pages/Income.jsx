@@ -22,17 +22,16 @@ const getInitialForm = () => ({
 /**
  * toLocalDateString — fix: dates stored as UTC midnight shift back 1 day
  * when rendered with toLocaleDateString() in IST (+05:30).
- * We compensate by adding the local timezone offset before formatting.
+ * We reconstruct from UTC year/month/day so the displayed date always
+ * matches what the user entered — same approach as Expenses.jsx.
  */
 const toLocalDateString = (rawDate) => {
   if (!rawDate) return "—";
   const d = new Date(rawDate);
-  const adjusted = new Date(d.getTime() + d.getTimezoneOffset() * 60000 * -1);
-  // Re-create as a local-midnight date so locale formatting is correct
   const local = new Date(
-    adjusted.getUTCFullYear(),
-    adjusted.getUTCMonth(),
-    adjusted.getUTCDate()
+    d.getUTCFullYear(),
+    d.getUTCMonth(),
+    d.getUTCDate()
   );
   return local.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 };
