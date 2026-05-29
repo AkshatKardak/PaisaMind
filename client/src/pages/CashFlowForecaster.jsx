@@ -28,7 +28,6 @@ function CashFlowForecaster() {
     queryKey: ["cash-flow-forecast"],
     queryFn: getCashFlowForecast,
     staleTime: 1000 * 60 * 5,
-    // Don't hammer the API on failure — one attempt is enough
     retry: 0,
   });
 
@@ -205,4 +204,29 @@ function CashFlowForecaster() {
                   </div>
                   <div className="mt-3 text-xs text-[var(--text-muted)]">
                     {item.confidence === "High"
-                      ? "Based o
+                      ? "Based on consistent historical patterns and confirmed invoice pipeline."
+                      : item.confidence === "Medium"
+                      ? "Moderate confidence — some variability detected in historical data."
+                      : "Low confidence — limited history or high income variability detected."}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {forecast.length === 0 && !query.isLoading && (
+            <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-10 text-center">
+              <Wallet size={36} className="mx-auto mb-4 text-[var(--text-muted)]" />
+              <p className="font-semibold text-[var(--text-primary)]">No forecast data yet</p>
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                Click <strong>Refresh Forecast</strong> to generate your 3-month prediction.
+              </p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+export default CashFlowForecaster;
