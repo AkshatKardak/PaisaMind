@@ -18,6 +18,23 @@ const getInitialForm = () => ({
   lastUsed: new Date().toISOString().slice(0, 10),
 });
 
+/**
+ * toLocalDateString — fix: dates stored as UTC midnight shift back 1 day
+ * when rendered with toLocaleDateString() in IST (+05:30).
+ * We compensate by reconstructing the date from its UTC components so the
+ * displayed date always matches what the user entered.
+ */
+const toLocalDateString = (rawDate) => {
+  if (!rawDate) return "—";
+  const d = new Date(rawDate);
+  const local = new Date(
+    d.getUTCFullYear(),
+    d.getUTCMonth(),
+    d.getUTCDate()
+  );
+  return local.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+
 function Expenses() {
   const queryClient = useQueryClient();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -38,6 +55,12 @@ function Expenses() {
       setForm(getInitialForm());
       showToast({ type: "success", title: editing ? "Expense updated" : "Expense added" });
     },
+    onError: (error) =>
+      showToast({
+        type: "error",
+        title: "Could not save expense",
+        message: error.message || error.response?.data?.message || "Please try again.",
+      }),
   });
 
   const deleteMutation = useMutation({
@@ -48,6 +71,12 @@ function Expenses() {
       setDeleting(null);
       showToast({ type: "success", title: "Expense deleted" });
     },
+    onError: (error) =>
+      showToast({
+        type: "error",
+        title: "Could not delete expense",
+        message: error.message || "Please try again.",
+      }),
   });
 
   const expenses = expensesQuery.data?.data ?? [];
@@ -62,7 +91,7 @@ function Expenses() {
 
   const startEdit = (item) => {
     setEditing(item);
-    // Fix UTC timezone offset so the date doesn't shift by one day
+    // Normalise UTC date → local YYYY-MM-DD string for the date input
     const d = new Date(item.date);
     const localDate = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
       .toISOString()
@@ -135,7 +164,8 @@ function Expenses() {
               <tbody>
                 {expenses.map((item) => (
                   <tr key={item._id}>
-                    <td>{new Date(item.date).toLocaleDateString("en-IN")}</td>
+                    {/* Use toLocalDateString helper — fixes UTC→IST -1 day shift */}
+                    <td>{toLocalDateString(item.date)}</td>
                     <td className="font-medium">{item.title}</td>
                     <td><span className="pm-badge border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text-secondary)]">{item.category}</span></td>
                     <td className="font-semibold text-red-400">{formatINR(item.amount)}</td>
@@ -210,9 +240,26 @@ function Expenses() {
                 });
               }}
             >
-              <input className="pm-input" placeholder="Title" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} required />
-              <input className="pm-input" placeholder="Amount" type="number" value={form.amount} onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))} required />
-              <select className="pm-select" value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}>
+              <input
+                className="pm-input"
+                placeholder="Title"
+                value={form.title}
+                onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+                required
+              />
+              <input
+                className="pm-input"
+                placeholder="Amount"
+                type="number"
+                value={form.amount}
+                onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
+                required
+              />
+              <select
+                className="pm-select"
+                value={form.category}
+                onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
+              >
                 <option>Food</option>
                 <option>Software</option>
                 <option>Travel</option>
@@ -220,12 +267,23 @@ function Expenses() {
                 <option>Marketing</option>
                 <option>Other</option>
               </select>
-              <input className="pm-input" type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} required />
+              {/* Date input — onChange correctly wired; value is always a local YYYY-MM-DD string */}
+              <input
+                className="pm-input"
+                type="date"
+                value={form.date}
+                onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
+                required
+              />
               <label className="flex items-center gap-3 rounded-xl border border-[var(--border)] p-3">
-                <input type="checkbox" checked={form.isRecurring} onChange={(event) => setForm((current) => ({ ...current, isRecurring: event.target.checked }))} />
+                <input
+                  type="checkbox"
+                  checked={form.isRecurring}
+                  onChange={(event) => setForm((current) => ({ ...current, isRecurring: event.target.checked }))}
+                />
                 <span>Recurring expense</span>
               </label>
-              {/* Always rendered but hidden — avoids flicker/remount when toggling recurring */}
+              {/* lastUsed date — always rendered but hidden; avoids flicker when toggling recurring */}
               <input
                 className="pm-input"
                 type="date"

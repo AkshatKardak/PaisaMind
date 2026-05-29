@@ -19,6 +19,24 @@ const getInitialForm = () => ({
   notes: "",
 });
 
+/**
+ * toLocalDateString — fix: dates stored as UTC midnight shift back 1 day
+ * when rendered with toLocaleDateString() in IST (+05:30).
+ * We compensate by adding the local timezone offset before formatting.
+ */
+const toLocalDateString = (rawDate) => {
+  if (!rawDate) return "—";
+  const d = new Date(rawDate);
+  const adjusted = new Date(d.getTime() + d.getTimezoneOffset() * 60000 * -1);
+  // Re-create as a local-midnight date so locale formatting is correct
+  const local = new Date(
+    adjusted.getUTCFullYear(),
+    adjusted.getUTCMonth(),
+    adjusted.getUTCDate()
+  );
+  return local.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+
 function Income() {
   const queryClient = useQueryClient();
   const { isDark } = useTheme();
@@ -40,7 +58,12 @@ function Income() {
       setForm(getInitialForm());
       showToast({ type: "success", title: editing ? "Income updated" : "Income added" });
     },
-    onError: (error) => showToast({ type: "error", title: "Could not save income", message: error.response?.data?.message }),
+    onError: (error) =>
+      showToast({
+        type: "error",
+        title: "Could not save income",
+        message: error.message || error.response?.data?.message || "Please try again.",
+      }),
   });
 
   const deleteMutation = useMutation({
@@ -51,6 +74,12 @@ function Income() {
       setDeleting(null);
       showToast({ type: "success", title: "Income deleted" });
     },
+    onError: (error) =>
+      showToast({
+        type: "error",
+        title: "Could not delete income",
+        message: error.message || "Please try again.",
+      }),
   });
 
   const incomeItems = incomeQuery.data?.data ?? [];
@@ -62,7 +91,7 @@ function Income() {
 
   const handleEdit = (item) => {
     setEditing(item);
-    // Fix UTC timezone offset so the date doesn't shift by one day
+    // Normalise UTC date → local YYYY-MM-DD string for the date input
     const d = new Date(item.date);
     const localDate = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
       .toISOString()
@@ -152,7 +181,8 @@ function Income() {
                 <tbody>
                   {incomeItems.map((item) => (
                     <tr key={item._id}>
-                      <td>{new Date(item.date).toLocaleDateString("en-IN")}</td>
+                      {/* Use toLocalDateString helper — fixes UTC→IST -1 day shift */}
+                      <td>{toLocalDateString(item.date)}</td>
                       <td className="font-medium">{item.source}</td>
                       <td><span className="pm-badge bg-sky-500/10 text-sky-300">{item.category}</span></td>
                       <td className="font-semibold text-sky-400">{formatINR(item.amount)}</td>
@@ -193,16 +223,46 @@ function Income() {
                 saveMutation.mutate({ ...form, amount: Number(form.amount) });
               }}
             >
-              <input className="pm-input" placeholder="Source" value={form.source} onChange={(event) => setForm((current) => ({ ...current, source: event.target.value }))} required />
-              <input className="pm-input" placeholder="Amount ₹" type="number" value={form.amount} onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))} required />
-              <select className="pm-select" value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}>
+              <input
+                className="pm-input"
+                placeholder="Source"
+                value={form.source}
+                onChange={(event) => setForm((current) => ({ ...current, source: event.target.value }))}
+                required
+              />
+              <input
+                className="pm-input"
+                placeholder="Amount ₹"
+                type="number"
+                value={form.amount}
+                onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
+                required
+              />
+              <select
+                className="pm-select"
+                value={form.category}
+                onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
+              >
                 <option>Client Payment</option>
                 <option>UPI</option>
                 <option>Freelance Platform</option>
                 <option>Other</option>
               </select>
-              <input className="pm-input" type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} required />
-              <textarea className="pm-textarea" rows="4" placeholder="Notes" value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} />
+              {/* Date input — onChange correctly wired; value is always a local YYYY-MM-DD string */}
+              <input
+                className="pm-input"
+                type="date"
+                value={form.date}
+                onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
+                required
+              />
+              <textarea
+                className="pm-textarea"
+                rows="4"
+                placeholder="Notes"
+                value={form.notes}
+                onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
+              />
               <button type="submit" className="pm-button pm-button-primary w-full" disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? "Saving..." : editing ? "Update Income" : "Save Income"}
               </button>
