@@ -1,4 +1,4 @@
-import { Plus, ReceiptIndianRupee } from "lucide-react";
+import { Plus, ReceiptIndianRupee, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import EmptyState from "../components/ui/EmptyState";
@@ -72,6 +72,12 @@ function Expenses() {
     setDrawerOpen(true);
   };
 
+  const handleCloseDrawer = () => {
+    setDrawerOpen(false);
+    setEditing(null);
+    setForm(initialForm);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -118,9 +124,9 @@ function Expenses() {
                   <tr key={item._id}>
                     <td>{new Date(item.date).toLocaleDateString("en-IN")}</td>
                     <td className="font-medium">{item.title}</td>
-                    <td><span className="pm-badge bg-slate-700/60 text-slate-200">{item.category}</span></td>
+                    <td><span className="pm-badge border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text-secondary)]">{item.category}</span></td>
                     <td className="font-semibold text-red-400">{formatINR(item.amount)}</td>
-                    <td>{item.isRecurring ? <span className="pm-badge bg-amber-500/15 text-amber-400">🔄 Recurring</span> : "-"}</td>
+                    <td>{item.isRecurring ? <span className="pm-badge bg-amber-500/15 text-amber-400">Recurring</span> : "-"}</td>
                     <td>
                       <div className="flex gap-2">
                         <button className="pm-button pm-button-ghost !px-3 !py-2 text-xs" onClick={() => startEdit(item)}>Edit</button>
@@ -167,11 +173,18 @@ function Expenses() {
       </div>
 
       {drawerOpen && (
-        <div className="pm-drawer-overlay">
+        <div className="pm-drawer-overlay" onClick={(event) => { if (event.target === event.currentTarget) handleCloseDrawer(); }}>
           <div className="pm-drawer">
-            <div className="mb-6 flex items-center justify-between">
+            <div className="pm-drawer-header flex items-center justify-between">
               <h3 className="text-2xl font-bold">{editing ? "Edit Expense" : "Add Expense"}</h3>
-              <button className="text-[var(--text-secondary)]" onClick={() => { setDrawerOpen(false); setEditing(null); setForm(initialForm); }}>Close</button>
+              <button
+                type="button"
+                className="pm-close-button shrink-0"
+                aria-label="Close drawer"
+                onClick={handleCloseDrawer}
+              >
+                <X size={18} />
+              </button>
             </div>
             <form
               className="space-y-4"

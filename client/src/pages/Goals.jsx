@@ -1,4 +1,4 @@
-import { Plus, Target } from "lucide-react";
+import { Plus, Target, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import GoalProgressRing from "../components/ui/GoalProgressRing";
@@ -96,11 +96,18 @@ function Goals() {
       </div>
 
       {modalOpen && (
-        <div className="pm-modal-overlay flex items-end justify-center md:items-center">
+        <div className="pm-modal-overlay flex items-end justify-center md:items-center" onClick={(event) => { if (event.target === event.currentTarget) setModalOpen(false); }}>
           <div className="pm-modal-card">
-            <div className="mb-6 flex items-center justify-between">
+            <div className="pm-modal-header flex items-center justify-between">
               <h3 className="text-2xl font-bold">Add Goal</h3>
-              <button className="text-[var(--text-secondary)]" onClick={() => setModalOpen(false)}>Close</button>
+              <button
+                type="button"
+                className="pm-close-button shrink-0"
+                aria-label="Close modal"
+                onClick={() => setModalOpen(false)}
+              >
+                <X size={18} />
+              </button>
             </div>
             <form
               className="space-y-4"
@@ -124,11 +131,18 @@ function Goals() {
       )}
 
       {progressTarget && (
-        <div className="pm-modal-overlay flex items-end justify-center md:items-center">
+        <div className="pm-modal-overlay flex items-end justify-center md:items-center" onClick={(event) => { if (event.target === event.currentTarget) setProgressTarget(null); }}>
           <div className="pm-modal-card">
-            <div className="mb-6 flex items-center justify-between">
+            <div className="pm-modal-header flex items-center justify-between">
               <h3 className="text-2xl font-bold">Add Funds</h3>
-              <button className="text-[var(--text-secondary)]" onClick={() => setProgressTarget(null)}>Close</button>
+              <button
+                type="button"
+                className="pm-close-button shrink-0"
+                aria-label="Close modal"
+                onClick={() => setProgressTarget(null)}
+              >
+                <X size={18} />
+              </button>
             </div>
             <form
               className="space-y-4"

@@ -9,7 +9,7 @@ function Layout() {
         <Sidebar />
         <div className="flex min-h-screen flex-1 flex-col px-4 py-4 md:px-6 md:py-5">
           <Navbar />
-          <main className="pm-page relative z-10 flex-1 pb-24 md:pb-8">
+          <main className="pm-page relative flex-1 pb-24 md:pb-8">
             <Outlet />
           </main>
         </div>

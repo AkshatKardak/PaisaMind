@@ -9,8 +9,10 @@ import * as incomeService from "../services/incomeService";
 import * as expenseService from "../services/expenseService";
 import * as invoiceService from "../services/invoiceService";
 import { showToast } from "../components/ui/Toast";
+import { useTheme } from "../context/ThemeContext";
 
 function Reports() {
+  const { isDark } = useTheme();
   const today = new Date();
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [year, setYear] = useState(today.getFullYear());
@@ -45,6 +47,12 @@ function Reports() {
   }, [expenseQuery.data, incomeQuery.data, incomeSummaryQuery.data, invoiceQuery.data]);
 
   const report = reportQuery.data?.data?.sections;
+  const tooltipStyle = {
+    background: isDark ? "#111827" : "#ffffff",
+    border: isDark ? "1px solid #374151" : "1px solid #cbd5e1",
+    borderRadius: "12px",
+    color: isDark ? "#f8fafc" : "#0f172a",
+  };
 
   return (
     <div className="space-y-6">
@@ -90,24 +98,24 @@ function Reports() {
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border border-[var(--border)] p-4">
-            <h4 className="mb-2 text-lg font-semibold">📊 Income</h4>
+            <h4 className="mb-2 text-lg font-semibold">Income</h4>
             <p className="text-sm leading-7 text-[var(--text-secondary)]">{report?.incomeSummary}</p>
           </div>
           <div className="rounded-2xl border border-[var(--border)] p-4">
-            <h4 className="mb-2 text-lg font-semibold">💸 Expenses</h4>
+            <h4 className="mb-2 text-lg font-semibold">Expenses</h4>
             <p className="text-sm leading-7 text-[var(--text-secondary)]">{report?.expenseAnalysis}</p>
           </div>
           <div className="rounded-2xl border border-[var(--border)] p-4">
-            <h4 className="mb-2 text-lg font-semibold">🧾 Tax</h4>
+            <h4 className="mb-2 text-lg font-semibold">Tax</h4>
             <p className="text-sm leading-7 text-[var(--text-secondary)]">{report?.taxStatus}</p>
           </div>
           <div className="rounded-2xl border border-[var(--border)] p-4">
-            <h4 className="mb-2 text-lg font-semibold">🎯 Savings</h4>
+            <h4 className="mb-2 text-lg font-semibold">Savings</h4>
             <p className="text-sm leading-7 text-[var(--text-secondary)]">{report?.savingsProgress}</p>
           </div>
         </div>
         <div className="mt-4 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4">
-          <h4 className="mb-2 text-lg font-semibold">✅ Key Actions</h4>
+          <h4 className="mb-2 text-lg font-semibold">Key Actions</h4>
           <ul className="space-y-2 text-sm text-[var(--text-secondary)]">
             {(report?.keyActionItems || []).map((item) => (
               <li key={item}>{item}</li>
@@ -125,7 +133,7 @@ function Reports() {
             <AreaChart data={history}>
               <XAxis dataKey="month" stroke="#9CA3AF" />
               <YAxis stroke="#9CA3AF" />
-              <Tooltip formatter={(value) => `${value} / 100`} contentStyle={{ background: "#111827", border: "1px solid #374151", borderRadius: "12px" }} />
+              <Tooltip formatter={(value) => `${value} / 100`} contentStyle={tooltipStyle} />
               <Area dataKey="score" stroke="#8B5CF6" fill="rgba(139,92,246,0.16)" />
             </AreaChart>
           </ResponsiveContainer>

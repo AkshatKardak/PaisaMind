@@ -24,9 +24,12 @@
   --primary: #22d3ee;
   --primary-hover: #67e8f9;
   --primary-soft: rgba(34, 211, 238, 0.14);
+  --primary-shadow: rgba(34, 211, 238, 0.24);
+  --primary-glow: rgba(34, 211, 238, 0.12);
 
   --secondary: #818cf8;
   --secondary-soft: rgba(129, 140, 248, 0.14);
+  --purple: #8b5cf6;
 
   --success: #34d399;
   --success-soft: rgba(52, 211, 153, 0.12);
@@ -45,6 +48,12 @@
   --input-bg: rgba(255, 255, 255, 0.03);
   --skeleton-base: rgba(255, 255, 255, 0.06);
   --skeleton-shine: rgba(255, 255, 255, 0.12);
+  --bg-table-head: rgba(255, 255, 255, 0.03);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --bg-row-hover: rgba(255, 255, 255, 0.03);
+  --bg-badge: rgba(255, 255, 255, 0.04);
+  --bg-empty: rgba(255, 255, 255, 0.03);
+  --bg-progress-track: rgba(255, 255, 255, 0.08);
 
   --option-bg: #0f1c2e;
   --option-color: #f8fafc;
@@ -74,9 +83,12 @@
   --primary: #0891b2;
   --primary-hover: #0e7490;
   --primary-soft: rgba(8, 145, 178, 0.12);
+  --primary-shadow: rgba(8, 145, 178, 0.22);
+  --primary-glow: rgba(8, 145, 178, 0.12);
 
   --secondary: #6366f1;
   --secondary-soft: rgba(99, 102, 241, 0.12);
+  --purple: #7c3aed;
 
   --success: #059669;
   --success-soft: rgba(5, 150, 105, 0.1);
@@ -95,6 +107,12 @@
   --input-bg: rgba(0, 0, 0, 0.03);
   --skeleton-base: rgba(0, 0, 0, 0.07);
   --skeleton-shine: rgba(0, 0, 0, 0.13);
+  --bg-table-head: rgba(15, 23, 42, 0.03);
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --bg-row-hover: rgba(14, 165, 233, 0.06);
+  --bg-badge: rgba(15, 23, 42, 0.03);
+  --bg-empty: rgba(15, 23, 42, 0.03);
+  --bg-progress-track: rgba(15, 23, 42, 0.11);
 
   --option-bg: #ffffff;
   --option-color: #0f172a;
@@ -155,6 +173,15 @@ textarea {
 
 .app-shell {
   min-height: 100vh;
+}
+
+[data-theme="light"] .app-shell,
+[data-theme="light"] .pm-auth-shell {
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-elevated: rgba(15, 23, 42, 0.035);
+  --border: rgba(15, 23, 42, 0.11);
+  --border-default: rgba(15, 23, 42, 0.11);
+  --text-secondary: #334155;
 }
 
 /* ─── AMBIENT BACKGROUND GLOWS ────────────────────────────────────────────── */
@@ -246,7 +273,7 @@ body::after {
 .pm-input,
 .pm-select,
 .pm-textarea,
-input,
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
 textarea,
 select {
   width: 100%;
@@ -263,7 +290,7 @@ select {
 
 .pm-input::placeholder,
 .pm-textarea::placeholder,
-input::placeholder,
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"])::placeholder,
 textarea::placeholder {
   color: var(--text-muted);
 }
@@ -271,54 +298,43 @@ textarea::placeholder {
 .pm-input:focus,
 .pm-select:focus,
 .pm-textarea:focus,
-input:focus,
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):focus,
 textarea:focus,
 select:focus {
   border-color: var(--primary) !important;
   box-shadow: 0 0 0 4px var(--primary-soft);
 }
 
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--primary);
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 /* ─── SELECT DROPDOWN OPTIONS ─────────────────────────────────────────────── */
 select,
 .pm-select {
-  color-scheme: dark;
-  background-color: #0f1c2e !important;
-  color: #f8fafc !important;
+  color-scheme: light dark;
+  background-color: var(--option-bg) !important;
+  color: var(--option-color) !important;
 }
 
 select option,
 .pm-select option {
-  background-color: #0f1c2e;
-  color: #f8fafc;
+  background-color: var(--option-bg);
+  color: var(--option-color);
 }
 
 select option:checked,
 select option:hover,
 .pm-select option:checked,
 .pm-select option:hover {
-  background-color: #22d3ee;
-  color: #07111f;
-}
-
-[data-theme="light"] select,
-[data-theme="light"] .pm-select {
-  color-scheme: light;
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-}
-
-[data-theme="light"] select option,
-[data-theme="light"] .pm-select option {
-  background-color: #ffffff;
-  color: #0f172a;
-}
-
-[data-theme="light"] select option:checked,
-[data-theme="light"] select option:hover,
-[data-theme="light"] .pm-select option:checked,
-[data-theme="light"] .pm-select option:hover {
-  background-color: #0891b2;
-  color: #ffffff;
+  background-color: var(--option-selected-bg);
+  color: var(--option-selected-color);
 }
 
 /* ─── BUTTONS ─────────────────────────────────────────────────────────────── */
@@ -338,13 +354,19 @@ select option:hover,
 
 .pm-button-primary {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
-  color: white;
-  box-shadow: 0 10px 28px rgba(34, 211, 238, 0.18);
+  color: #ffffff;
+  box-shadow: 0 10px 28px var(--primary-shadow);
 }
 
 .pm-button-primary:hover {
   transform: translateY(-1px);
   filter: brightness(1.06);
+}
+
+[data-theme="light"] .pm-button-primary {
+  background: linear-gradient(135deg, #0284c7, #4f46e5);
+  color: #f8fafc;
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.22);
 }
 
 .pm-button-danger {
@@ -381,6 +403,18 @@ select option:hover,
   background: var(--bg-hover);
   border-color: var(--border-strong);
   color: var(--text-primary);
+}
+
+[data-theme="light"] .pm-button-ghost {
+  background: rgba(15, 23, 42, 0.03);
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #334155;
+}
+
+[data-theme="light"] .pm-button-ghost:hover {
+  background: rgba(2, 132, 199, 0.09);
+  border-color: rgba(2, 132, 199, 0.22);
+  color: #0f172a;
 }
 
 /* ─── BADGE ───────────────────────────────────────────────────────────────── */
@@ -463,10 +497,10 @@ tr:hover {
 /* ─── MODALS & DRAWERS ────────────────────────────────────────────────────── */
 /*
   z-index stack:
-    navbar / sidebar  → z-index: 20  (sticky, backdrop-filter creates stacking ctx)
-    drawer/modal overlay → z-index: 50  (must be ABOVE navbar)
-    drawer/modal panel   → z-index: 51  (above the overlay)
-    toast notifications  → z-index: 60  (always on top)
+    navbar / sidebar     → z-index: 20
+    drawer/modal overlay → z-index: 80
+    drawer/modal panel   → z-index: 81
+    toast notifications  → z-index: 90
 */
 .pm-modal-overlay,
 .pm-drawer-overlay {
@@ -475,13 +509,14 @@ tr:hover {
   background: rgba(2, 6, 23, 0.72);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-  z-index: 50;
+  z-index: 80;
   /* Prevent background page from scrolling when overlay is open */
   overflow: hidden;
   /* Flex so the modal card can be centred */
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 12px;
 }
 
 [data-theme="light"] .pm-modal-overlay,
@@ -496,7 +531,7 @@ tr:hover {
   right: 0;
   height: 100dvh;
   width: min(420px, 100vw);
-  z-index: 51;
+  z-index: 81;
   border-left: 1px solid var(--border);
   padding: 24px;
   overflow-y: auto;
@@ -506,7 +541,7 @@ tr:hover {
 /* Modal card: just needs to sit above the overlay */
 .pm-modal-card {
   position: relative;
-  z-index: 51;
+  z-index: 81;
   border-radius: 24px;
   padding: 28px;
   width: min(520px, calc(100vw - 24px));
@@ -514,6 +549,44 @@ tr:hover {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+.pm-modal-header,
+.pm-drawer-header {
+  position: sticky;
+  top: -24px;
+  z-index: 2;
+  margin: -24px -24px 20px;
+  padding: 18px 24px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.pm-close-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.pm-close-button:hover {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger);
+  transform: scale(1.03);
 }
 
 /* ─── PAGE HEADER ─────────────────────────────────────────────────────────── */
@@ -580,7 +653,7 @@ tr:hover {
 /* ─── SIDEBAR & NAVBAR ────────────────────────────────────────────────────── */
 /*
   IMPORTANT: Keep navbar/sidebar at z-index 20 — lower than the
-  overlay's z-index 50. backdrop-filter on these elements creates an
+  overlay's z-index 80. backdrop-filter on these elements creates an
   independent compositing layer; without an explicit z-index below the
   overlay they can bleed through even when the overlay has a higher
   z-index in a different stacking context.
@@ -640,7 +713,54 @@ tr:hover {
 .dashboard-page,
 .content-page {
   position: relative;
+}
+
+.pm-auth-shell {
+  position: relative;
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 16px;
+}
+
+.pm-auth-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 16% 10%, rgba(34, 211, 238, 0.11), transparent 36%),
+    radial-gradient(circle at 84% 6%, rgba(129, 140, 248, 0.1), transparent 32%);
+}
+
+[data-theme="light"] .pm-auth-shell::before {
+  background:
+    radial-gradient(circle at 16% 10%, rgba(8, 145, 178, 0.1), transparent 36%),
+    radial-gradient(circle at 84% 6%, rgba(99, 102, 241, 0.08), transparent 32%);
+}
+
+.pm-auth-card {
+  position: relative;
   z-index: 1;
+  width: min(430px, 100%);
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  padding: 30px;
+  box-shadow: var(--card-shadow);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+[data-theme="light"] .pm-auth-card {
+  box-shadow:
+    0 24px 44px rgba(15, 23, 42, 0.12),
+    0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+.pm-auth-brand-subtitle {
+  color: var(--text-secondary);
 }
 
 /* ─── LANDING PAGE OVERRIDES (disabled) ──────────────────────────────────── */
@@ -675,6 +795,10 @@ tr:hover {
 
 /* ─── RESPONSIVE ──────────────────────────────────────────────────────────── */
 @media (max-width: 767px) {
+  .pm-modal-overlay,
+  .pm-drawer-overlay {
+    padding: 0;
+  }
   .pm-drawer {
     top: auto;
     bottom: 0;
@@ -690,6 +814,11 @@ tr:hover {
     width: 100vw;
     border-radius: 24px 24px 0 0;
     max-height: 90dvh;
+  }
+
+  .pm-modal-header,
+  .pm-drawer-header {
+    top: 0;
   }
 
   .pm-page-header {

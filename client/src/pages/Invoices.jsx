@@ -1,4 +1,4 @@
-import { Copy, Link as LinkIcon, MessageCircle, Plus, Receipt, Send } from "lucide-react";
+import { Copy, Link as LinkIcon, MessageCircle, Plus, Receipt, Send, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
@@ -155,11 +155,18 @@ function Invoices() {
       </div>
 
       {modalOpen && (
-        <div className="pm-modal-overlay flex items-end justify-center md:items-center">
+        <div className="pm-modal-overlay flex items-end justify-center md:items-center" onClick={(event) => { if (event.target === event.currentTarget) setModalOpen(false); }}>
           <div className="pm-modal-card">
-            <div className="mb-6 flex items-center justify-between">
+            <div className="pm-modal-header flex items-center justify-between">
               <h3 className="text-2xl font-bold">Create Invoice</h3>
-              <button className="text-[var(--text-secondary)]" onClick={() => setModalOpen(false)}>Close</button>
+              <button
+                type="button"
+                className="pm-close-button shrink-0"
+                aria-label="Close modal"
+                onClick={() => setModalOpen(false)}
+              >
+                <X size={18} />
+              </button>
             </div>
             <form
               className="space-y-4"
@@ -185,7 +192,7 @@ function Invoices() {
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] p-4 text-sm text-[var(--text-secondary)]">
                 <div className="flex justify-between"><span>Subtotal</span><span>{formatINR(form.amount || 0)}</span></div>
                 <div className="mt-2 flex justify-between"><span>GST 18%</span><span>{formatINR(gstAmount)}</span></div>
-                <div className="mt-3 flex justify-between font-semibold text-white"><span>Total</span><span>{formatINR(totalAmount)}</span></div>
+                <div className="mt-3 flex justify-between font-semibold text-[var(--text-primary)]"><span>Total</span><span>{formatINR(totalAmount)}</span></div>
               </div>
               <button className="pm-button pm-button-primary w-full" disabled={createMutation.isPending}>
                 {createMutation.isPending ? "Creating..." : "Save Invoice"}

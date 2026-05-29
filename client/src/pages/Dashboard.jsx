@@ -248,7 +248,7 @@ export default function Dashboard() {
               className="mt-2 text-2xl font-extrabold tracking-tight"
               style={{ color: "var(--text-primary)" }}
             >
-              Hey, <span style={{ color: "var(--primary)" }}>{user?.name?.split(" ")[0]}</span> 👋
+              Hey, <span style={{ color: "var(--primary)" }}>{user?.name?.split(" ")[0]}</span>
             </h1>
             <p
               className="mt-1.5 max-w-lg text-sm leading-relaxed"
@@ -260,8 +260,7 @@ export default function Dashboard() {
           <button
             onClick={() => reportMutation.mutate()}
             disabled={reportMutation.isPending}
-            className="group flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
-            style={{ background: "var(--primary)", boxShadow: "0 2px 12px var(--primary-shadow)" }}
+            className="pm-button pm-button-primary group flex shrink-0 items-center gap-2 px-5 py-2.5 text-sm transition-all active:scale-95 disabled:opacity-60"
           >
             {reportMutation.isPending
               ? <><RefreshCw size={14} className="animate-spin" /> Generating...</>
