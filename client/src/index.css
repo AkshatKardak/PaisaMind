@@ -495,13 +495,6 @@ tr:hover {
 }
 
 /* ─── MODALS & DRAWERS ────────────────────────────────────────────────────── */
-/*
-  z-index stack:
-    navbar / sidebar     → z-index: 20
-    drawer/modal overlay → z-index: 80
-    drawer/modal panel   → z-index: 81
-    toast notifications  → z-index: 90
-*/
 .pm-modal-overlay,
 .pm-drawer-overlay {
   position: fixed;
@@ -510,9 +503,7 @@ tr:hover {
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   z-index: 80;
-  /* Prevent background page from scrolling when overlay is open */
   overflow: hidden;
-  /* Flex so the modal card can be centred */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -524,7 +515,6 @@ tr:hover {
   background: rgba(15, 23, 42, 0.45);
 }
 
-/* Drawer panel: always fixed to the right edge of the viewport */
 .pm-drawer {
   position: fixed;
   top: 0;
@@ -535,10 +525,8 @@ tr:hover {
   border-left: 1px solid var(--border);
   padding: 24px;
   overflow-y: auto;
-  /* backdrop already handled by .pm-drawer-overlay */
 }
 
-/* Modal card: just needs to sit above the overlay */
 .pm-modal-card {
   position: relative;
   z-index: 81;
@@ -651,13 +639,6 @@ tr:hover {
 }
 
 /* ─── SIDEBAR & NAVBAR ────────────────────────────────────────────────────── */
-/*
-  IMPORTANT: Keep navbar/sidebar at z-index 20 — lower than the
-  overlay's z-index 80. backdrop-filter on these elements creates an
-  independent compositing layer; without an explicit z-index below the
-  overlay they can bleed through even when the overlay has a higher
-  z-index in a different stacking context.
-*/
 .sidebar {
   position: relative;
   z-index: 20;
@@ -763,17 +744,262 @@ tr:hover {
   color: var(--text-secondary);
 }
 
-/* ─── LANDING PAGE OVERRIDES (disabled) ──────────────────────────────────── */
-.lp-navbar,
-.lp-cta-btn,
-.lp-cta-btn-lg,
-.lp-gradient-text,
-.lp-highlight,
-.lp-feature-card,
-.lp-step-card,
-.lp-testimonial-card,
+/* ═══════════════════════════════════════════════════════════════════════════
+   LANDING PAGE STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Navbar ──────────────────────────────────────────────────────────────── */
+.lp-navbar {
+  background: rgba(7, 17, 31, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  transition: box-shadow 0.3s ease, background 0.3s ease;
+}
+
+[data-theme="light"] .lp-navbar {
+  background: rgba(255, 255, 255, 0.82);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.lp-nav-scrolled {
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.4);
+  background: rgba(7, 17, 31, 0.92) !important;
+}
+
+[data-theme="light"] .lp-nav-scrolled {
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* ─── CTA Buttons ─────────────────────────────────────────────────────────── */
+.lp-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  border: none;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 24px rgba(14, 165, 233, 0.3);
+  text-decoration: none;
+  color: #ffffff !important;
+}
+
+.lp-cta-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(14, 165, 233, 0.4);
+}
+
+.lp-cta-btn-lg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  border: none;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 32px rgba(14, 165, 233, 0.35);
+  text-decoration: none;
+  color: #ffffff !important;
+}
+
+.lp-cta-btn-lg:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(14, 165, 233, 0.45);
+}
+
+/* ─── Gradient Text ───────────────────────────────────────────────────────── */
+.lp-gradient-text {
+  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 50%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline;
+}
+
+/* ─── Highlight underline ─────────────────────────────────────────────────── */
+.lp-highlight {
+  position: relative;
+  display: inline;
+  color: inherit;
+}
+
+.lp-highlight::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #0ea5e9, #6366f1);
+  border-radius: 2px;
+}
+
+/* ─── Feature Cards ───────────────────────────────────────────────────────── */
+.lp-feature-card {
+  display: block;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.72);
+  padding: 24px;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+}
+
+[data-theme="light"] .lp-feature-card {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+}
+
+/* ─── Step Cards ──────────────────────────────────────────────────────────── */
+.lp-step-card {
+  display: block;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(15, 23, 42, 0.6);
+  padding: 28px 24px;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.lp-step-card:hover {
+  border-color: rgba(14, 165, 233, 0.25);
+  box-shadow: 0 12px 36px rgba(14, 165, 233, 0.1);
+}
+
+[data-theme="light"] .lp-step-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* ─── Testimonial Cards ───────────────────────────────────────────────────── */
+.lp-testimonial-card {
+  display: block;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(15, 23, 42, 0.6);
+  padding: 24px;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: border-color 0.25s ease, transform 0.25s ease;
+}
+
+.lp-testimonial-card:hover {
+  border-color: rgba(14, 165, 233, 0.2);
+  transform: translateY(-2px);
+}
+
+[data-theme="light"] .lp-testimonial-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* ─── Live Dot ────────────────────────────────────────────────────────────── */
 .lp-live-dot {
-  all: unset;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
+  animation: lp-pulse 2s ease-in-out infinite;
+}
+
+/* ─── Section Label ───────────────────────────────────────────────────────── */
+.lp-section-label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #0ea5e9;
+  background: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  padding: 5px 14px;
+  border-radius: 999px;
+}
+
+[data-theme="light"] .lp-section-label {
+  color: #0284c7;
+  background: rgba(2, 132, 199, 0.08);
+  border-color: rgba(2, 132, 199, 0.2);
+}
+
+/* ─── Feature Badge ───────────────────────────────────────────────────────── */
+.lp-feature-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid;
+}
+
+/* ─── Hero section spacing ────────────────────────────────────────────────── */
+.lp-hero {
+  position: relative;
+}
+
+.lp-root {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Ensure hero content sits above decorative background elements */
+.lp-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Reveal animation ────────────────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Float animation for chips ───────────────────────────────────────────── */
+@keyframes floatChip {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+
+/* ─── Bar grow animation for chart ───────────────────────────────────────── */
+@keyframes growBarLanding {
+  from { transform: scaleY(0); transform-origin: bottom; }
+  to   { transform: scaleY(1); transform-origin: bottom; }
+}
+
+/* ─── Fade slide up ───────────────────────────────────────────────────────── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Float for dashboard mockup ──────────────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+
+/* ─── Live dot pulse ──────────────────────────────────────────────────────── */
+@keyframes lp-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(52, 211, 153, 0.6); }
+  50%       { opacity: 0.6; box-shadow: 0 0 14px rgba(52, 211, 153, 0.9); }
 }
 
 /* ─── ANIMATIONS ──────────────────────────────────────────────────────────── */
