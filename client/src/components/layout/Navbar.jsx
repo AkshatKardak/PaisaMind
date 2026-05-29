@@ -25,7 +25,7 @@ function Navbar() {
 
   return (
     <header
-      className="navbar sticky top-0 z-30 mb-6 flex items-center justify-between rounded-2xl px-5 py-4"
+      className="navbar sticky top-0 z-20 mb-6 flex items-center justify-between rounded-2xl px-5 py-4"
       style={{ color: "var(--text-primary)" }}
     >
       <div>

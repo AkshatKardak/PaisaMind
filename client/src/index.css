@@ -12,6 +12,7 @@
   --bg-soft: rgba(34, 211, 238, 0.08);
 
   --border: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.14);
   --border-accent: rgba(34, 211, 238, 0.25);
 
@@ -28,9 +29,15 @@
   --secondary-soft: rgba(129, 140, 248, 0.14);
 
   --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.12);
   --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+  --danger-border: rgba(248, 113, 113, 0.25);
   --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.12);
+  --warning-border: rgba(251, 191, 36, 0.25);
 
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.28);
   --nav-bg: rgba(7, 17, 31, 0.74);
   --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
   --card-glow: 0 8px 40px rgba(34, 211, 238, 0.08);
@@ -39,7 +46,6 @@
   --skeleton-base: rgba(255, 255, 255, 0.06);
   --skeleton-shine: rgba(255, 255, 255, 0.12);
 
-  /* Option dropdown colours for dark mode */
   --option-bg: #0f1c2e;
   --option-color: #f8fafc;
   --option-selected-bg: #22d3ee;
@@ -56,6 +62,7 @@
   --bg-soft: rgba(8, 145, 178, 0.08);
 
   --border: rgba(0, 0, 0, 0.10);
+  --border-default: rgba(0, 0, 0, 0.10);
   --border-strong: rgba(0, 0, 0, 0.18);
   --border-accent: rgba(6, 148, 162, 0.35);
 
@@ -72,9 +79,15 @@
   --secondary-soft: rgba(99, 102, 241, 0.12);
 
   --success: #059669;
+  --success-soft: rgba(5, 150, 105, 0.1);
   --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.08);
+  --danger-border: rgba(220, 38, 38, 0.22);
   --warning: #d97706;
+  --warning-soft: rgba(217, 119, 6, 0.08);
+  --warning-border: rgba(217, 119, 6, 0.22);
 
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.08);
   --nav-bg: rgba(255, 255, 255, 0.88);
   --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
   --card-glow: 0 8px 32px rgba(8, 145, 178, 0.08);
@@ -83,7 +96,6 @@
   --skeleton-base: rgba(0, 0, 0, 0.07);
   --skeleton-shine: rgba(0, 0, 0, 0.13);
 
-  /* Option dropdown colours for light mode */
   --option-bg: #ffffff;
   --option-color: #0f172a;
   --option-selected-bg: #0891b2;
@@ -267,14 +279,6 @@ select:focus {
 }
 
 /* ─── SELECT DROPDOWN OPTIONS ─────────────────────────────────────────────── */
-/*
-  Native <option> elements largely ignore CSS, but background + color +
-  color-scheme on the <select> itself forces the OS to render the picker
-  in the correct light/dark palette. This fixes the invisible-text bug
-  where dark text appeared on a dark dropdown in dark mode.
-*/
-
-/* Dark mode — default */
 select,
 .pm-select {
   color-scheme: dark;
@@ -296,7 +300,6 @@ select option:hover,
   color: #07111f;
 }
 
-/* Light mode overrides */
 [data-theme="light"] select,
 [data-theme="light"] .pm-select {
   color-scheme: light;
@@ -458,14 +461,27 @@ tr:hover {
 }
 
 /* ─── MODALS & DRAWERS ────────────────────────────────────────────────────── */
+/*
+  z-index stack:
+    navbar / sidebar  → z-index: 20  (sticky, backdrop-filter creates stacking ctx)
+    drawer/modal overlay → z-index: 50  (must be ABOVE navbar)
+    drawer/modal panel   → z-index: 51  (above the overlay)
+    toast notifications  → z-index: 60  (always on top)
+*/
 .pm-modal-overlay,
 .pm-drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(2, 6, 23, 0.7);
+  background: rgba(2, 6, 23, 0.72);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-  z-index: 40;
+  z-index: 50;
+  /* Prevent background page from scrolling when overlay is open */
+  overflow: hidden;
+  /* Flex so the modal card can be centred */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 [data-theme="light"] .pm-modal-overlay,
@@ -473,19 +489,31 @@ tr:hover {
   background: rgba(15, 23, 42, 0.45);
 }
 
+/* Drawer panel: always fixed to the right edge of the viewport */
+.pm-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100dvh;
+  width: min(420px, 100vw);
+  z-index: 51;
+  border-left: 1px solid var(--border);
+  padding: 24px;
+  overflow-y: auto;
+  /* backdrop already handled by .pm-drawer-overlay */
+}
+
+/* Modal card: just needs to sit above the overlay */
 .pm-modal-card {
+  position: relative;
+  z-index: 51;
   border-radius: 24px;
   padding: 28px;
   width: min(520px, calc(100vw - 24px));
-}
-
-.pm-drawer {
-  border-left: 1px solid var(--border);
-  width: min(420px, 100vw);
-  height: 100vh;
-  margin-left: auto;
-  padding: 24px;
+  max-height: 90dvh;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ─── PAGE HEADER ─────────────────────────────────────────────────────────── */
@@ -550,7 +578,16 @@ tr:hover {
 }
 
 /* ─── SIDEBAR & NAVBAR ────────────────────────────────────────────────────── */
+/*
+  IMPORTANT: Keep navbar/sidebar at z-index 20 — lower than the
+  overlay's z-index 50. backdrop-filter on these elements creates an
+  independent compositing layer; without an explicit z-index below the
+  overlay they can bleed through even when the overlay has a higher
+  z-index in a different stacking context.
+*/
 .sidebar {
+  position: relative;
+  z-index: 20;
   background: rgba(7, 17, 31, 0.72);
   border-right: 1px solid var(--border);
   -webkit-backdrop-filter: blur(18px);
@@ -563,6 +600,9 @@ tr:hover {
 }
 
 .navbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   background: var(--nav-bg);
   border-bottom: 1px solid var(--border);
   -webkit-backdrop-filter: blur(18px);
@@ -636,20 +676,20 @@ tr:hover {
 /* ─── RESPONSIVE ──────────────────────────────────────────────────────────── */
 @media (max-width: 767px) {
   .pm-drawer {
+    top: auto;
+    bottom: 0;
+    right: 0;
     width: 100vw;
-    height: 85vh;
+    height: 85dvh;
     border-left: none;
     border-top: 1px solid var(--border);
     border-radius: 24px 24px 0 0;
-    margin-top: auto;
   }
 
   .pm-modal-card {
     width: 100vw;
     border-radius: 24px 24px 0 0;
-    margin-top: auto;
-    max-height: 90vh;
-    overflow-y: auto;
+    max-height: 90dvh;
   }
 
   .pm-page-header {
