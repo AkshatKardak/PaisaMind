@@ -18,14 +18,10 @@ export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /* ── sync Firebase user → our Express backend ── */
   const syncWithBackend = async (firebaseUser) => {
-    // Reload the Firebase profile so displayName is always fresh
     await firebaseUser.reload();
     const fresh = auth.currentUser;
 
-    // If displayName is still missing (race condition after register),
-    // wait briefly and reload once more before falling back to email prefix
     if (!fresh.displayName) {
       await new Promise((resolve) => setTimeout(resolve, 800));
       await fresh.reload();
@@ -33,11 +29,19 @@ export function AuthProvider({ children }) {
 
     const current = auth.currentUser;
     const idToken = await current.getIdToken();
+
+    // Prefer displayName, then Google provider profile, then email prefix
+    const displayName =
+      current.displayName ||
+      current.providerData?.[0]?.displayName ||
+      current.email?.split("@")[0] ||
+      "User";
+
     const res = await api.post(
       "/auth/firebase-sync",
       {
         uid:      current.uid,
-        name:     current.displayName || current.email?.split("@")[0] || "User",
+        name:     displayName,
         email:    current.email,
         photoURL: current.photoURL || "",
       },
@@ -46,14 +50,10 @@ export function AuthProvider({ children }) {
     return { ...res.data.data, idToken };
   };
 
-  /* ── On mount: pick up any pending Google redirect result ── */
   useEffect(() => {
-    getRedirectResult(auth).catch(() => {
-      // Silently ignore — onAuthStateChanged handles user state on return
-    });
+    getRedirectResult(auth).catch(() => {});
   }, []);
 
-  /* ── listen to Firebase auth state ── */
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -71,34 +71,27 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
-  /* ── get fresh ID token for every API call ── */
   const getToken = async () => {
     if (!auth.currentUser) return null;
     return auth.currentUser.getIdToken();
   };
 
-  /* ── Email / Password Register ── */
   const register = async ({ name, email, password }) => {
     const credential = await createUserWithEmailAndPassword(auth, email, password);
-    // updateProfile must complete before the auth state observer fires
     await updateProfile(credential.user, { displayName: name });
-    // Force-reload so the displayName is immediately visible
     await credential.user.reload();
     return credential.user;
   };
 
-  /* ── Email / Password Login ── */
   const login = async ({ email, password }) => {
     const credential = await signInWithEmailAndPassword(auth, email, password);
     return credential.user;
   };
 
-  /* ── Google Sign-In via redirect (avoids COOP/popup issues entirely) ── */
   const loginWithGoogle = async () => {
     await signInWithRedirect(auth, googleProvider);
   };
 
-  /* ── Logout ── */
   const logout = async () => {
     await signOut(auth);
     setUser(null);

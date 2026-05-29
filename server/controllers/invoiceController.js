@@ -20,7 +20,15 @@ const getSummary = asyncHandler(async (req, res) => {
 });
 
 const createInvoice = asyncHandler(async (req, res) => {
+  if (!req.user?._id) {
+    return res.status(401).json({ success: false, message: "Not authenticated" });
+  }
+
   const { clientName, clientEmail, clientPhone, serviceDescription, amount, issueDate, dueDate, gstApplicable, items, notes } = req.body;
+
+  if (!clientName || !amount) {
+    return res.status(400).json({ success: false, message: "Client name and amount are required" });
+  }
 
   const count = await Invoice.countDocuments({ userId: req.user._id });
   const invoiceNumber = `INV-${String(count + 1).padStart(3, "0")}`;
@@ -99,7 +107,6 @@ const sendReminder = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: "Reminder sent" });
 });
 
-// Creates a Razorpay payment link for the invoice
 const createCheckoutSession = asyncHandler(async (req, res) => {
   const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.user._id });
   if (!invoice) {
@@ -107,14 +114,10 @@ const createCheckoutSession = asyncHandler(async (req, res) => {
   }
 
   const link = await createInvoicePaymentLink(invoice);
-
-  // Save payment link URL on invoice for use in reminder emails
   await Invoice.findByIdAndUpdate(invoice._id, { paymentLink: link.url });
-
   res.status(200).json({ success: true, data: { url: link.url } });
 });
 
-// Razorpay webhook — auto-marks invoice as Paid on successful payment
 const handleWebhook = (req, res) => {
   const signature = req.headers["x-razorpay-signature"];
 
