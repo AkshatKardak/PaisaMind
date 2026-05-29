@@ -1,4 +1,4 @@
-import { Plus, Wallet2 } from "lucide-react";
+import { Plus, Wallet2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -67,6 +67,12 @@ function Income() {
       notes: item.notes || "",
     });
     setDrawerOpen(true);
+  };
+
+  const handleClose = () => {
+    setDrawerOpen(false);
+    setEditing(null);
+    setForm(initialForm);
   };
 
   const chartData = summaryQuery.data?.data ?? [];
@@ -153,11 +159,33 @@ function Income() {
       )}
 
       {drawerOpen && (
-        <div className="pm-drawer-overlay">
+        <div className="pm-drawer-overlay" onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
           <div className="pm-drawer">
             <div className="mb-6 flex items-center justify-between">
               <h3 className="text-2xl font-bold">{editing ? "Edit Income" : "Add Income"}</h3>
-              <button className="text-[var(--text-secondary)]" onClick={() => { setDrawerOpen(false); setEditing(null); setForm(initialForm); }}>Close</button>
+              <button
+                type="button"
+                onClick={handleClose}
+                aria-label="Close drawer"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "10px",
+                  background: "rgba(255,255,255,0.07)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  color: "var(--text-secondary)",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  transition: "background 0.18s ease, color 0.18s ease",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(248,113,113,0.18)"; e.currentTarget.style.color = "#fca5a5"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+              >
+                <X size={18} />
+              </button>
             </div>
             <form
               className="space-y-4"
