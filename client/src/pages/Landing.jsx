@@ -77,9 +77,14 @@ function ChartBars({ data, color = "#0EA5E9" }) {
 /* ─────────── FLOATING DASHBOARD MOCKUP ─────────── */
 function DashboardMockup() {
   return (
-    <div className="relative w-full select-none">
+    /*
+      Outer wrapper: relative + horizontal padding to give room
+      for the floating chips WITHOUT them going outside the column.
+      px-6 = 24px each side so chips at -left-5 / -right-5 stay contained.
+    */
+    <div className="relative w-full select-none px-6">
       {/* glow halo */}
-      <div className="pointer-events-none absolute inset-[-8%] rounded-[40px] bg-[radial-gradient(ellipse_at_center,rgba(14,165,233,0.18),transparent_70%)] blur-2xl" />
+      <div className="pointer-events-none absolute inset-0 rounded-[40px] bg-[radial-gradient(ellipse_at_center,rgba(14,165,233,0.15),transparent_70%)] blur-2xl" />
 
       {/* main card */}
       <div
@@ -158,22 +163,25 @@ function DashboardMockup() {
         </div>
       </div>
 
-      {/* Floating notification chip */}
-      <div
-        className="absolute -right-4 top-[15%] z-20 flex items-center gap-2 rounded-2xl border border-emerald-500/25 px-4 py-2.5 shadow-xl"
-        style={{ background: "rgba(17,24,39,0.92)", backdropFilter: "blur(16px)", animation: "floatChip 4s ease-in-out infinite" }}
-      >
-        <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-        <span className="text-xs font-semibold text-emerald-300">₹28,000 received</span>
-      </div>
+      {/* ── Notification chips — now BELOW the card, not floating over it ── */}
+      <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
+        {/* received chip */}
+        <div
+          className="flex items-center gap-2 rounded-2xl border border-emerald-500/25 px-4 py-2.5 shadow-md"
+          style={{ background: "rgba(17,24,39,0.92)", backdropFilter: "blur(16px)" }}
+        >
+          <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs font-semibold text-emerald-300">₹28,000 received</span>
+        </div>
 
-      {/* Floating tax chip */}
-      <div
-        className="absolute -left-4 bottom-[20%] z-20 flex items-center gap-2 rounded-2xl border border-amber-500/25 px-4 py-2.5 shadow-xl"
-        style={{ background: "rgba(17,24,39,0.92)", backdropFilter: "blur(16px)", animation: "floatChip 5s ease-in-out 1s infinite" }}
-      >
-        <span className="text-xs">⚠️</span>
-        <span className="text-xs font-semibold text-amber-300">GST at 82%</span>
+        {/* GST chip */}
+        <div
+          className="flex items-center gap-2 rounded-2xl border border-amber-500/25 px-4 py-2.5 shadow-md"
+          style={{ background: "rgba(17,24,39,0.92)", backdropFilter: "blur(16px)" }}
+        >
+          <span className="text-xs">⚠️</span>
+          <span className="text-xs font-semibold text-amber-300">GST at 82%</span>
+        </div>
       </div>
     </div>
   );
@@ -224,22 +232,9 @@ function Landing() {
     window.addEventListener("scroll", onScroll);
     onScroll();
 
-    /* Parallax orbs */
-    const onMouseMove = (e) => {
-      const orbs = document.querySelectorAll(".parallax-orb");
-      orbs.forEach((orb, i) => {
-        const speed = (i + 1) * 0.012;
-        const x = (e.clientX - window.innerWidth / 2) * speed;
-        const y = (e.clientY - window.innerHeight / 2) * speed;
-        orb.style.transform = `translate(${x}px, ${y}px)`;
-      });
-    };
-    window.addEventListener("mousemove", onMouseMove);
-
     return () => {
       observer.disconnect();
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("mousemove", onMouseMove);
     };
   }, []);
 
@@ -299,25 +294,42 @@ function Landing() {
       )}
 
       {/* ── HERO ── */}
-      <section ref={heroRef} className="lp-hero relative min-h-screen overflow-hidden px-5 pb-20 pt-28">
-        {/* Background orbs */}
-        <div className="parallax-orb orb orb-blue transition-transform duration-300 ease-out" />
-        <div className="parallax-orb orb orb-purple transition-transform duration-300 ease-out" />
-        <div className="lp-grid-overlay pointer-events-none absolute inset-0 z-0" />
+      {/*
+        pt-24 = 96px clears the fixed 64px navbar with breathing room.
+        pb-20 gives footer breathing room.
+        No min-h-screen — let content dictate height to avoid overflow.
+        overflow-hidden clips any decorative blur orbs to this section.
+      */}
+      <section ref={heroRef} className="lp-hero relative overflow-hidden px-5 pb-24 pt-24">
+        {/* Subtle background gradient — no heavy orbs that cause overlap */}
+        <div
+          className="pointer-events-none absolute inset-0 z-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 60% at 60% 40%, rgba(14,165,233,0.09) 0%, transparent 70%), " +
+              "radial-gradient(ellipse 60% 50% at 20% 70%, rgba(99,102,241,0.07) 0%, transparent 65%)",
+          }}
+        />
         {/* light streaks */}
-        <div className="pointer-events-none absolute left-1/4 top-0 h-[400px] w-[1px] bg-gradient-to-b from-sky-500/20 via-sky-500/5 to-transparent" />
-        <div className="pointer-events-none absolute right-1/3 top-0 h-[300px] w-[1px] bg-gradient-to-b from-violet-500/15 via-violet-500/5 to-transparent" />
+        <div className="pointer-events-none absolute left-1/4 top-0 h-[300px] w-[1px] bg-gradient-to-b from-sky-500/20 via-sky-500/5 to-transparent z-0" />
+        <div className="pointer-events-none absolute right-1/3 top-0 h-[200px] w-[1px] bg-gradient-to-b from-violet-500/15 via-violet-500/5 to-transparent z-0" />
 
-        <div className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-col items-center gap-16 lg:flex-row lg:items-center lg:gap-12">
+        {/*
+          Two-column flex layout.
+          lg:items-start so both columns grow from the top — prevents vertical
+          centering from pushing the mockup outside the section bounds.
+          gap-12 on large screens, gap-16 stacked on mobile.
+        */}
+        <div className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-col items-center gap-16 lg:flex-row lg:items-start lg:gap-12">
 
-          {/* LEFT: copy */}
-          <div className="w-full lg:w-[52%]">
+          {/* LEFT: copy — top-aligned, 52% width on desktop */}
+          <div className="w-full lg:w-[52%] lg:pt-6">
             <div className="mb-6 inline-flex animate-[fadeSlideUp_0.6s_ease_both] items-center gap-2 rounded-full border border-sky-500/25 bg-sky-500/8 px-4 py-1.5">
               <div className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-pulse" />
               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-400">AI-Powered Finance OS · India</span>
             </div>
 
-            <h1 className="animate-[fadeSlideUp_0.7s_ease_0.1s_both] font-display text-[clamp(38px,5.5vw,76px)] font-extrabold leading-[1.04] tracking-tight text-[var(--text-primary)]">
+            <h1 className="animate-[fadeSlideUp_0.7s_ease_0.1s_both] font-display text-[clamp(34px,4.5vw,68px)] font-extrabold leading-[1.06] tracking-tight text-[var(--text-primary)]">
               The financial{" "}
               <span className="lp-highlight">intelligence</span>
               <br />platform built for
@@ -325,24 +337,24 @@ function Landing() {
               <span className="lp-gradient-text">Indian freelancers.</span>
             </h1>
 
-            <p className="animate-[fadeSlideUp_0.7s_ease_0.25s_both] mt-6 max-w-[520px] text-[17px] leading-[1.75] text-[var(--text-secondary)]">
+            <p className="animate-[fadeSlideUp_0.7s_ease_0.25s_both] mt-6 max-w-[500px] text-[16px] leading-[1.75] text-[var(--text-secondary)]">
               Track every rupee, automate GST alerts, generate invoices, and let Groq AI surface insights
               your CA would charge ₹5,000/month to tell you.
             </p>
 
-            <div className="animate-[fadeSlideUp_0.7s_ease_0.4s_both] mt-10 flex flex-wrap gap-4">
-              <Link to="/register" className="lp-cta-btn-lg group flex items-center gap-2 rounded-2xl px-8 py-4 text-base font-bold text-white">
+            <div className="animate-[fadeSlideUp_0.7s_ease_0.4s_both] mt-8 flex flex-wrap gap-4">
+              <Link to="/register" className="lp-cta-btn-lg group flex items-center gap-2 rounded-2xl px-7 py-3.5 text-base font-bold text-white">
                 Start for Free
                 <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
               </Link>
-              <a href="#features" className="flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] px-8 py-4 text-base font-semibold text-[var(--text-secondary)] transition-all hover:border-sky-500/30 hover:text-[var(--text-primary)]">
+              <a href="#features" className="flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] px-7 py-3.5 text-base font-semibold text-[var(--text-secondary)] transition-all hover:border-sky-500/30 hover:text-[var(--text-primary)]">
                 <Zap size={16} className="text-amber-400" />
                 See features
               </a>
             </div>
 
             {/* Social proof */}
-            <div className="animate-[fadeSlideUp_0.7s_ease_0.55s_both] mt-10 flex flex-wrap items-center gap-4">
+            <div className="animate-[fadeSlideUp_0.7s_ease_0.55s_both] mt-8 flex flex-wrap items-center gap-4">
               <div className="flex items-center">
                 {["A", "R", "S", "K", "P"].map((v, i) => (
                   <span key={v} className={`-ml-2 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[var(--bg-primary)] text-xs font-bold text-white first:ml-0 ${["bg-sky-500", "bg-violet-500", "bg-emerald-500", "bg-amber-500", "bg-pink-500"][i]}`}>{v}</span>
@@ -359,8 +371,8 @@ function Landing() {
             </div>
           </div>
 
-          {/* RIGHT: dashboard mockup */}
-          <div className="w-full animate-[float_8s_ease-in-out_infinite] lg:w-[48%]">
+          {/* RIGHT: dashboard mockup — 48% width, no float animation that causes height issues */}
+          <div className="w-full lg:w-[48%]">
             <DashboardMockup />
           </div>
         </div>
@@ -558,7 +570,7 @@ function Landing() {
           <div className="reveal relative grid gap-6 md:grid-cols-3">
             {/* connector line */}
             <div className="pointer-events-none absolute left-0 right-0 top-[52px] hidden h-[1px] bg-gradient-to-r from-transparent via-[var(--border)] to-transparent md:block" />
-            {steps.map((step, idx) => {
+            {steps.map((step) => {
               const Icon = step.icon;
               return (
                 <div key={step.n} className="lp-step-card relative">
