@@ -75,24 +75,49 @@ function Sidebar() {
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={({ isActive }) =>
-                  `group flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all duration-200 ${
-                    isActive
-                      ? "border border-cyan-400/20 bg-[linear-gradient(135deg,rgba(34,211,238,0.16),rgba(129,140,248,0.12))] shadow-[0_10px_24px_rgba(34,211,238,0.08)]"
-                      : "border border-transparent hover:border-white/[0.06] hover:bg-white/[0.04]"
-                  }`
-                }
+                className="group flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all duration-200"
                 style={({ isActive }) => ({
-                  color: isActive ? "var(--text-primary)" : "var(--text-secondary)",
+                  color: isActive ? "var(--primary)" : "var(--text-secondary)",
+                  background: isActive ? "var(--primary-soft)" : "transparent",
+                  border: isActive
+                    ? "1px solid var(--border-accent)"
+                    : "1px solid transparent",
+                  boxShadow: isActive ? "var(--card-glow)" : "none",
                 })}
+                onMouseEnter={(e) => {
+                  if (!e.currentTarget.classList.contains("active")) {
+                    e.currentTarget.style.background = "var(--bg-hover)";
+                    e.currentTarget.style.borderColor = "var(--border)";
+                    e.currentTarget.style.color = "var(--text-primary)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  const link = e.currentTarget;
+                  // restore based on active state via data attribute
+                  const isActive = link.getAttribute("data-active") === "true";
+                  if (!isActive) {
+                    link.style.background = "transparent";
+                    link.style.borderColor = "transparent";
+                    link.style.color = "var(--text-secondary)";
+                  }
+                }}
               >
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-xl"
-                  style={{ background: "var(--bg-elevated)" }}
-                >
-                  <Icon size={17} />
-                </span>
-                <span className="tracking-tight">{item.label}</span>
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className="flex h-9 w-9 items-center justify-center rounded-xl transition-all"
+                      style={{
+                        background: isActive
+                          ? "var(--primary-soft)"
+                          : "var(--bg-elevated)",
+                        color: isActive ? "var(--primary)" : "var(--text-secondary)",
+                      }}
+                    >
+                      <Icon size={17} />
+                    </span>
+                    <span className="tracking-tight">{item.label}</span>
+                  </>
+                )}
               </NavLink>
             );
           })}
@@ -108,7 +133,15 @@ function Sidebar() {
           }}
         >
           <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(34,211,238,0.22),rgba(129,140,248,0.2))] font-bold text-cyan-200 shadow-[0_8px_24px_rgba(34,211,238,0.12)]">
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-2xl font-bold"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--primary-soft), var(--secondary-soft))",
+                color: "var(--primary)",
+                boxShadow: "0 8px 24px var(--primary-soft)",
+              }}
+            >
               {initials}
             </div>
             <div className="min-w-0">
@@ -144,7 +177,7 @@ function Sidebar() {
             <NavLink
               key={item.to}
               to={item.to}
-              className="flex min-w-14 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium"
+              className="flex min-w-14 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium transition-all"
               style={({ isActive }) => ({
                 color: isActive ? "var(--primary)" : "var(--text-secondary)",
               })}
