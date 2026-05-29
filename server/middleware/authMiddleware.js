@@ -1,7 +1,21 @@
-const admin = require("../config/firebaseAdmin");
-const User  = require("../models/User");
+let admin;
+try {
+  admin = require("../config/firebaseAdmin");
+} catch (e) {
+  console.error("[auth] firebaseAdmin failed to load:", e.message);
+}
+
+const User = require("../models/User");
 
 const protect = async (req, res, next) => {
+  // Guard: if Firebase Admin didn't initialise (missing env vars), fail fast with a clear message
+  if (!admin) {
+    return res.status(500).json({
+      success: false,
+      message: "Server auth not configured — FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY missing from .env",
+    });
+  }
+
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) {
     return res.status(401).json({ success: false, message: "No token provided" });
@@ -11,31 +25,43 @@ const protect = async (req, res, next) => {
     const token   = header.split(" ")[1];
     const decoded = await admin.auth().verifyIdToken(token);
 
-    // Find by Firebase UID first; fall back to email for legacy accounts
+    // 1. Find by Firebase UID
     let user = await User.findOne({ firebaseUid: decoded.uid });
+
+    // 2. Fall back to email for accounts created before UID was stored
     if (!user && decoded.email) {
       user = await User.findOne({ email: decoded.email });
-      // Back-fill the uid so future lookups are fast
       if (user) {
         user.firebaseUid = decoded.uid;
         await user.save();
       }
     }
 
+    // 3. Auto-provision — first-ever login for this Firebase user
     if (!user) {
-      // Auto-provision: first time a valid Firebase user hits the API
+      const email = decoded.email;
+      if (!email) {
+        // Phone-auth or anonymous users have no email — cannot create User doc
+        return res.status(401).json({ success: false, message: "Account has no email address" });
+      }
       user = await User.create({
         firebaseUid : decoded.uid,
-        email       : decoded.email || "",
-        name        : decoded.name  || decoded.email?.split("@")[0] || "User",
+        email,
+        name        : decoded.name || email.split("@")[0] || "User",
+        photoURL    : decoded.picture || "",
       });
     }
 
     req.user = user;
     next();
   } catch (err) {
-    console.error("[auth] token verification failed:", err.message);
-    return res.status(401).json({ success: false, message: "Invalid or expired token" });
+    console.error("[auth] protect middleware error:", err.message);
+    // Distinguish token errors from DB errors so the client shows the right message
+    const isTokenError = err.code?.startsWith("auth/") || err.message?.includes("token");
+    return res.status(isTokenError ? 401 : 500).json({
+      success: false,
+      message: isTokenError ? "Invalid or expired token" : err.message,
+    });
   }
 };
 
