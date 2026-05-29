@@ -4,20 +4,23 @@ const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem("paisamind-theme");
-    return saved ? saved === "dark" : true;
+    // localStorage is blocked in sandboxed iframes — use system preference
+    try {
+      const saved = localStorage.getItem("paisamind-theme");
+      if (saved) return saved === "dark";
+    } catch (_) {}
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
 
   useEffect(() => {
     const root = document.documentElement;
-    if (isDark) {
-      root.classList.add("dark");
-      root.classList.remove("light");
-    } else {
-      root.classList.remove("dark");
-      root.classList.add("light");
-    }
-    localStorage.setItem("paisamind-theme", isDark ? "dark" : "light");
+    const theme = isDark ? "dark" : "light";
+    root.setAttribute("data-theme", theme);
+    root.classList.toggle("dark", isDark);
+    root.classList.toggle("light", !isDark);
+    try {
+      localStorage.setItem("paisamind-theme", theme);
+    } catch (_) {}
   }, [isDark]);
 
   const toggleTheme = () => setIsDark((prev) => !prev);
