@@ -24,8 +24,7 @@ import * as invoiceService from "../services/invoiceService";
 const CHART_COLORS = ["#0891b2", "#6366f1", "#059669", "#ea580c", "#7c3aed", "#db2777"];
 
 /* ── KPI Card ── */
-function KPI({ title, value, change, icon: Icon, accent }) {
-  const up = change >= 0;
+function KPI({ title, value, icon: Icon, accent }) {
   return (
     <div
       className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5"
@@ -42,15 +41,6 @@ function KPI({ title, value, change, icon: Icon, accent }) {
         >
           <Icon size={17} />
         </div>
-        <span
-          className="rounded-full px-2.5 py-1 text-xs font-bold tabular-nums"
-          style={{
-            background: up ? "var(--success-soft)" : "var(--danger-soft)",
-            color: up ? "var(--success)" : "var(--danger)",
-          }}
-        >
-          {up ? "+" : ""}{change}%
-        </span>
       </div>
       <div>
         <p
@@ -203,6 +193,14 @@ export default function Dashboard() {
 
   const scoreColor = health.score >= 70 ? "#059669" : health.score >= 50 ? "#d97706" : "#dc2626";
 
+  // Derive user's first name — prefer the name field from backend, fallback to email prefix
+  const firstName = useMemo(() => {
+    const name = user?.name || user?.displayName || "";
+    if (name && name !== "PaisaMind User") return name.split(" ")[0];
+    if (user?.email) return user.email.split("@")[0];
+    return "there";
+  }, [user]);
+
   // Chart tooltip style — adapts to theme
   const tooltipStyle = {
     background: isDark ? "#1e293b" : "#ffffff",
@@ -248,7 +246,7 @@ export default function Dashboard() {
               className="mt-2 text-2xl font-extrabold tracking-tight"
               style={{ color: "var(--text-primary)" }}
             >
-              Hey, <span style={{ color: "var(--primary)" }}>{user?.name?.split(" ")[0]}</span>
+              Hey, <span style={{ color: "var(--primary)" }}>{firstName}</span> 👋
             </h1>
             <p
               className="mt-1.5 max-w-lg text-sm leading-relaxed"
@@ -269,12 +267,12 @@ export default function Dashboard() {
         </div>
       </Card>
 
-      {/* ── KPI row ── */}
+      {/* ── KPI row — no fake change badges, show real data only ── */}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <KPI title="Total Income"   value={formatINR(totalIncome)}   change={12.4} icon={TrendingUp}   accent="#0891b2" />
-        <KPI title="Total Expenses" value={formatINR(totalExpenses)} change={-3.2} icon={TrendingDown} accent="#dc2626" />
-        <KPI title="Net Profit"     value={formatINR(netProfit)}     change={8.6}  icon={IndianRupee}  accent={netProfit >= 0 ? "#059669" : "#dc2626"} />
-        <KPI title="Health Score"   value={`${health.score} / 100`} change={5.1}  icon={Activity}     accent={scoreColor} />
+        <KPI title="Total Income"   value={formatINR(totalIncome)}   icon={TrendingUp}   accent="#0891b2" />
+        <KPI title="Total Expenses" value={formatINR(totalExpenses)} icon={TrendingDown} accent="#dc2626" />
+        <KPI title="Net Profit"     value={formatINR(netProfit)}     icon={IndianRupee}  accent={netProfit >= 0 ? "#059669" : "#dc2626"} />
+        <KPI title="Health Score"   value={`${health.score} / 100`} icon={Activity}     accent={scoreColor} />
       </div>
 
       {/* ── Charts ── */}
@@ -292,262 +290,114 @@ export default function Dashboard() {
                 Monthly comparison — last 6 months
               </p>
             </div>
-            <div className="flex items-center gap-4 pt-1">
-              {[["#0891b2", "Income"], ["#dc2626", "Expenses"]].map(([c, l]) => (
-                <div key={l} className="flex items-center gap-1.5">
-                  <div className="h-2 w-2 rounded-full" style={{ background: c }} />
-                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>{l}</span>
-                </div>
-              ))}
-            </div>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={incomeSeries} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
-              <CartesianGrid stroke={gridStroke} strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="month" stroke="transparent" tick={{ fill: axisTickColor, fontSize: 11 }} tickLine={false} />
-              <YAxis stroke="transparent" tick={{ fill: axisTickColor, fontSize: 11 }} tickLine={false} tickFormatter={(v) => `₹${v / 1000}k`} />
-              <Tooltip formatter={(v) => formatINR(v)} contentStyle={tooltipStyle} cursor={{ fill: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.03)" }} />
-              <Bar dataKey="income"  fill="#0891b2" radius={[5, 5, 0, 0]} maxBarSize={24} />
-              <Bar dataKey="expense" fill="#dc2626" radius={[5, 5, 0, 0]} maxBarSize={24} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={incomeSeries} barGap={4}>
+                <CartesianGrid vertical={false} stroke={gridStroke} />
+                <XAxis dataKey="month" tick={{ fill: axisTickColor, fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: axisTickColor, fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v) => formatINR(v)} />
+                <Bar dataKey="income"  fill="#0891b2" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expense" fill="#dc2626" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
 
-        {/* Donut chart */}
+        {/* Pie chart */}
         <Card className="xl:col-span-2">
           <div className="mb-5">
             <SectionLabel color="#6366f1">Breakdown</SectionLabel>
-            <h3 className="mt-2 text-base font-bold" style={{ color: "var(--text-primary)" }}>
-              Expense Mix
-            </h3>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Current category spread
-            </p>
+            <h3 className="mt-2 text-base font-bold" style={{ color: "var(--text-primary)" }}>Expense Mix</h3>
           </div>
-          <ResponsiveContainer width="100%" height={180}>
-            <PieChart>
-              <Pie
-                data={expenseSummary.length ? expenseSummary : [{ category: "No data", total: 1 }]}
-                dataKey="total" nameKey="category"
-                innerRadius={52} outerRadius={80} paddingAngle={3}
-              >
-                {(expenseSummary.length ? expenseSummary : [{ category: "No data" }]).map((entry, i) => (
-                  <Cell key={entry.category} fill={CHART_COLORS[i % CHART_COLORS.length]} opacity={expenseSummary.length ? 1 : 0.2} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v) => formatINR(v)} contentStyle={tooltipStyle} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="mt-3 space-y-2">
-            {expenseSummary.slice(0, 4).map((item, i) => (
-              <div key={item.category} className="flex items-center justify-between">
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={expenseSummary.map((item) => ({ name: item._id || item.category, value: item.total }))} dataKey="value" cx="50%" cy="50%" outerRadius={72} innerRadius={36}>
+                  {expenseSummary.map((_, index) => (
+                    <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={tooltipStyle} formatter={(v) => formatINR(v)} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-3 space-y-1.5">
+            {expenseSummary.slice(0, 4).map((item, index) => (
+              <div key={index} className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
-                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>{item.category}</span>
+                  <span className="h-2 w-2 rounded-full" style={{ background: CHART_COLORS[index % CHART_COLORS.length] }} />
+                  <span style={{ color: "var(--text-muted)" }}>{item._id || item.category}</span>
                 </div>
-                <span className="text-xs font-semibold tabular-nums" style={{ color: "var(--text-primary)" }}>
-                  {formatINR(item.total)}
-                </span>
+                <span style={{ color: "var(--text-primary)" }} className="font-medium tabular-nums">{formatINR(item.total)}</span>
               </div>
             ))}
-            {!expenseSummary.length && (
-              <p className="text-center text-xs" style={{ color: "var(--text-faint)" }}>
-                No expense data yet
-              </p>
-            )}
-          </div>
-          <div
-            className="mt-4 border-t pt-3 text-center"
-            style={{ borderColor: "var(--border-default)" }}
-          >
-            <span className="text-xs" style={{ color: "var(--text-muted)" }}>Total expenses · </span>
-            <span className="text-sm font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>
-              {formatINR(expenseSummary.reduce((s, i) => s + Number(i.total || 0), 0))}
-            </span>
           </div>
         </Card>
       </div>
 
-      {/* ── Transactions + AI Insights ── */}
-      <div className="grid gap-5 xl:grid-cols-5">
-
-        {/* Transactions */}
-        <Card className="xl:col-span-3">
-          <div className="mb-5">
-            <SectionLabel color="#059669">Activity</SectionLabel>
-            <h3 className="mt-2 text-base font-bold" style={{ color: "var(--text-primary)" }}>
-              Recent Transactions
-            </h3>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Latest inflows and outflows
-            </p>
-          </div>
-          <div
-            className="overflow-hidden rounded-xl"
-            style={{ border: "1px solid var(--border-default)" }}
-          >
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ background: "var(--bg-table-head)", borderBottom: "1px solid var(--border-default)" }}>
-                  {["Date", "Title", "Category", "Amount"].map((h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {recentTransactions.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={4}
-                      className="px-4 py-10 text-center text-xs"
-                      style={{ color: "var(--text-faint)" }}
-                    >
-                      No transactions yet. Add income or expenses to get started.
-                    </td>
-                  </tr>
-                )}
-                {recentTransactions.slice(0, 6).map((item) => (
-                  <tr
-                    key={`${item.type}-${item._id}`}
-                    className="transition-colors"
-                    style={{ borderBottom: "1px solid var(--border-subtle)" }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-row-hover)"}
-                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                  >
-                    <td className="px-4 py-3 text-xs tabular-nums" style={{ color: "var(--text-muted)" }}>
-                      {new Date(item.date).toLocaleDateString("en-IN")}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                      {item.title}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className="rounded-lg px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-                        style={{
-                          background: "var(--bg-badge)",
-                          border: "1px solid var(--border-default)",
-                          color: "var(--text-muted)",
-                        }}
-                      >
-                        {item.category}
-                      </span>
-                    </td>
-                    <td
-                      className="px-4 py-3 text-sm font-bold tabular-nums"
-                      style={{ color: item.type === "income" ? "#059669" : "#dc2626" }}
-                    >
-                      {item.type === "income" ? "+" : "−"} {formatINR(item.amount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        {/* AI Insights */}
-        <Card className="xl:col-span-2" accentGlow="#6366f1">
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <div
-                  className="flex h-7 w-7 items-center justify-center rounded-lg"
-                  style={{ background: "#6366f118", border: "1px solid #6366f125" }}
-                >
-                  <Brain size={14} style={{ color: "#6366f1" }} />
+      {/* ── Recent Transactions ── */}
+      <Card>
+        <div className="mb-5">
+          <SectionLabel color="#059669">Activity</SectionLabel>
+          <h3 className="mt-2 text-base font-bold" style={{ color: "var(--text-primary)" }}>Recent Transactions</h3>
+        </div>
+        <div className="space-y-3">
+          {recentTransactions.slice(0, 8).map((item) => (
+            <div key={item._id} className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)" }}>
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: item.type === "income" ? "#0891b220" : "#dc262620" }}>
+                  {item.type === "income" ? <TrendingUp size={14} color="#0891b2" /> : <TrendingDown size={14} color="#dc2626" />}
                 </div>
-                <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                  AI Insights
-                </span>
-                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: "#6366f1" }} />
+                <div>
+                  <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{item.title}</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>{new Date(item.date).toLocaleDateString("en-IN")}</p>
+                </div>
               </div>
-              <p className="mt-0.5 text-xs" style={{ color: "var(--text-faint)" }}>
-                Powered by Groq llama-3
-              </p>
+              <span className="text-sm font-bold tabular-nums" style={{ color: item.type === "income" ? "#0891b2" : "#dc2626" }}>
+                {item.type === "income" ? "+" : "-"}{formatINR(item.amount)}
+              </span>
             </div>
-            <button
-              onClick={() => insightsQuery.refetch()}
-              className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition hover:opacity-80"
-              style={{
-                background: "#6366f112",
-                border: "1px solid #6366f122",
-                color: "#6366f1",
-              }}
-            >
-              <RefreshCw size={11} /> Refresh
-            </button>
-          </div>
+          ))}
+          {recentTransactions.length === 0 && (
+            <p className="text-center text-sm" style={{ color: "var(--text-muted)" }}>No transactions yet. Add income or expenses to get started.</p>
+          )}
+        </div>
+      </Card>
 
-          <div className="space-y-2.5">
-            {insightsQuery.isLoading
-              ? Array.from({ length: 3 }).map((_, i) => <SkeletonLoader key={i} variant="card" />)
-              : (insightsQuery.data?.data?.insights || []).length === 0
-              ? (
-                <div
-                  className="rounded-xl px-4 py-8 text-center"
-                  style={{ background: "var(--bg-empty)", border: "1px solid var(--border-default)" }}
-                >
-                  <Sparkles size={20} className="mx-auto mb-2" style={{ color: "var(--text-faint)" }} />
-                  <p className="text-xs" style={{ color: "var(--text-faint)" }}>
-                    Add income and expenses to unlock AI insights.
-                  </p>
-                </div>
-              )
-              : (insightsQuery.data?.data?.insights || [])
-                  .filter((_, i) => !dismissed.includes(i))
-                  .slice(0, 3)
-                  .map((insight, i) => (
-                    <AIInsightCard
-                      key={insight}
-                      insight={insight}
-                      type={i === 0 ? "warning" : i === 1 ? "danger" : "success"}
-                      onDismiss={() => setDismissed((curr) => [...curr, i])}
-                    />
-                  ))
-            }
+      {/* ── AI Insights ── */}
+      <Card accentGlow="#8B5CF6">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <SectionLabel color="#8B5CF6">AI</SectionLabel>
+            <h3 className="mt-2 text-base font-bold" style={{ color: "var(--text-primary)" }}>Smart Insights</h3>
           </div>
-
-          {/* Health score bar */}
-          <div
-            className="mt-5 rounded-xl px-4 py-4"
-            style={{ background: "var(--bg-empty)", border: "1px solid var(--border-default)" }}
+          <button
+            onClick={() => insightsQuery.refetch()}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors"
+            style={{ background: "#8B5CF615", color: "#8B5CF6" }}
           >
-            <div className="mb-2 flex items-center justify-between">
-              <span
-                className="text-xs font-semibold uppercase tracking-widest"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Financial Health
-              </span>
-              <span className="text-xs font-extrabold" style={{ color: scoreColor }}>
-                Grade {health.grade}
-              </span>
-            </div>
-            <div
-              className="h-2 overflow-hidden rounded-full"
-              style={{ background: "var(--bg-progress-track)" }}
-            >
-              <div
-                className="h-2 rounded-full transition-all duration-1000"
-                style={{ width: `${health.score}%`, background: scoreColor }}
-              />
-            </div>
-            <div className="mt-1.5 flex justify-between">
-              <span className="text-[10px]" style={{ color: "var(--text-faint)" }}>0</span>
-              <span className="text-[10px] font-bold tabular-nums" style={{ color: scoreColor }}>
-                {health.score} / 100
-              </span>
-              <span className="text-[10px]" style={{ color: "var(--text-faint)" }}>100</span>
-            </div>
-          </div>
-        </Card>
-      </div>
+            <RefreshCw size={13} className={insightsQuery.isFetching ? "animate-spin" : ""} />
+            Refresh
+          </button>
+        </div>
+        <div className="space-y-3">
+          {insightsQuery.isLoading && <SkeletonLoader lines={3} />}
+          {insightsQuery.isError && (
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>AI insights unavailable — check your API key configuration.</p>
+          )}
+          {(insightsQuery.data?.data?.insights || []).filter((item) => !dismissed.includes(item.insight)).map((item) => (
+            <AIInsightCard
+              key={item.insight}
+              insight={item.insight}
+              type={item.type}
+              onDismiss={() => setDismissed((prev) => [...prev, item.insight])}
+            />
+          ))}
+        </div>
+      </Card>
+
     </div>
   );
 }

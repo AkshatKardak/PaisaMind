@@ -20,25 +20,24 @@ export function AuthProvider({ children }) {
 
   /* ── sync Firebase user → our Express backend ── */
   const syncWithBackend = async (firebaseUser) => {
-    const idToken = await firebaseUser.getIdToken();
+    // Reload the Firebase profile so displayName is always fresh
+    await firebaseUser.reload();
+    const fresh = auth.currentUser;
+    const idToken = await fresh.getIdToken();
     const res = await api.post(
       "/auth/firebase-sync",
       {
-        uid:      firebaseUser.uid,
-        name:     firebaseUser.displayName || "PaisaMind User",
-        email:    firebaseUser.email,
-        photoURL: firebaseUser.photoURL || "",
+        uid:      fresh.uid,
+        name:     fresh.displayName || fresh.email?.split("@")[0] || "User",
+        email:    fresh.email,
+        photoURL: fresh.photoURL || "",
       },
       { headers: { Authorization: `Bearer ${idToken}` } }
     );
     return { ...res.data.data, idToken };
   };
 
-  /* ── On mount: pick up any pending Google redirect result ──
-     getRedirectResult resolves with a UserCredential when the user
-     returns from Google's OAuth page, or null if no redirect occurred.
-     onAuthStateChanged will also fire, so we just silently handle
-     any errors here without duplicating the sync logic. */
+  /* ── On mount: pick up any pending Google redirect result ── */
   useEffect(() => {
     getRedirectResult(auth).catch(() => {
       // Silently ignore — onAuthStateChanged handles user state on return
@@ -72,7 +71,10 @@ export function AuthProvider({ children }) {
   /* ── Email / Password Register ── */
   const register = async ({ name, email, password }) => {
     const credential = await createUserWithEmailAndPassword(auth, email, password);
+    // updateProfile must complete before the auth state observer fires
     await updateProfile(credential.user, { displayName: name });
+    // Force-reload so the displayName is immediately visible
+    await credential.user.reload();
     return credential.user;
   };
 
@@ -82,10 +84,7 @@ export function AuthProvider({ children }) {
     return credential.user;
   };
 
-  /* ── Google Sign-In via redirect (avoids COOP/popup issues entirely) ──
-     The browser navigates to Google's OAuth page and returns here.
-     onAuthStateChanged fires on return and syncs the user automatically.
-     No navigate() call needed in the Login component. */
+  /* ── Google Sign-In via redirect (avoids COOP/popup issues entirely) ── */
   const loginWithGoogle = async () => {
     await signInWithRedirect(auth, googleProvider);
   };

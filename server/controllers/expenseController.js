@@ -19,7 +19,8 @@ const getExpenses = async (req, res, next) => {
     };
 
     const expenses = await Expense.find(filters).sort({ date: -1, createdAt: -1 });
-    res.json({ success: true, expenses });
+    // Return under both keys for backward compatibility
+    res.json({ success: true, data: expenses, expenses });
   } catch (error) {
     next(error);
   }
@@ -122,6 +123,7 @@ const getSubscriptions = async (req, res, next) => {
 
     res.json({
       success: true,
+      data: { subscriptions, flaggedItems, monthlyBleed, annualBleed },
       subscriptions,
       monthlyBleed,
       annualBleed,
