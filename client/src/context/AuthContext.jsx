@@ -34,10 +34,14 @@ export function AuthProvider({ children }) {
     return { ...res.data.data, idToken };
   };
 
-  /* ── On mount: pick up any pending Google redirect result ── */
+  /* ── On mount: pick up any pending Google redirect result ──
+     getRedirectResult resolves with a UserCredential when the user
+     returns from Google's OAuth page, or null if no redirect occurred.
+     onAuthStateChanged will also fire, so we just silently handle
+     any errors here without duplicating the sync logic. */
   useEffect(() => {
     getRedirectResult(auth).catch(() => {
-      // silently ignore – onAuthStateChanged handles the user state
+      // Silently ignore — onAuthStateChanged handles user state on return
     });
   }, []);
 
@@ -78,11 +82,12 @@ export function AuthProvider({ children }) {
     return credential.user;
   };
 
-  /* ── Google Sign-In (redirect – no popup, no COOP issues) ── */
+  /* ── Google Sign-In via redirect (avoids COOP/popup issues entirely) ──
+     The browser navigates to Google's OAuth page and returns here.
+     onAuthStateChanged fires on return and syncs the user automatically.
+     No navigate() call needed in the Login component. */
   const loginWithGoogle = async () => {
     await signInWithRedirect(auth, googleProvider);
-    // Page will redirect to Google and come back;
-    // onAuthStateChanged + getRedirectResult handle the result on return.
   };
 
   /* ── Logout ── */

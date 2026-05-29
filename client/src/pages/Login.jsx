@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 
 export default function Login() {
   const { login, loginWithGoogle } = useAuth();
-  const navigate = useNavigate();
-  const [form, setForm]     = useState({ email: "", password: "" });
-  const [error, setError]   = useState("");
+  const [form, setForm]       = useState({ email: "", password: "" });
+  const [error, setError]     = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,26 +15,31 @@ export default function Login() {
     setLoading(true);
     try {
       await login(form);
-      navigate("/dashboard");
+      // onAuthStateChanged in AuthContext will set user → App.jsx redirects
     } catch (err) {
       setError(err?.message || "Login failed");
-    } finally {
       setLoading(false);
     }
   };
 
   const handleGoogle = async () => {
     setError("");
-    setLoading(true);
+    setGoogleLoading(true);
     try {
+      // loginWithGoogle() calls signInWithRedirect — the page will navigate
+      // away to Google and return. Do NOT call navigate() here; the redirect
+      // result is handled by getRedirectResult + onAuthStateChanged in
+      // AuthContext, which sets the user and lets App.jsx route to /dashboard.
       await loginWithGoogle();
-      navigate("/dashboard");
+      // If we reach here the redirect hasn't fired yet (shouldn't happen),
+      // so just leave the spinner running until the page leaves.
     } catch (err) {
       setError(err?.message || "Google sign-in failed");
-    } finally {
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
+
+  const busy = loading || googleLoading;
 
   return (
     <div className="pm-auth-shell px-4">
@@ -65,16 +70,22 @@ export default function Login() {
 
         <button
           onClick={handleGoogle}
-          disabled={loading}
+          disabled={busy}
           className="pm-button pm-button-ghost mb-5 flex w-full items-center justify-center gap-3"
         >
-          <svg width="18" height="18" viewBox="0 0 48 48">
-            <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.1 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z"/>
-            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4c-7.8 0-14.5 4.3-17.7 10.7z"/>
-            <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.6 26.8 36.5 24 36.5c-5.2 0-9.6-3.5-11.2-8.3l-6.5 5C9.4 39.6 16.2 44 24 44z"/>
-            <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.5l6.2 5.2C41 35.2 44 30 44 24c0-1.3-.1-2.7-.4-4z"/>
-          </svg>
-          Continue with Google
+          {googleLoading ? (
+            <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.1 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z"/>
+              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4c-7.8 0-14.5 4.3-17.7 10.7z"/>
+              <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.6 26.8 36.5 24 36.5c-5.2 0-9.6-3.5-11.2-8.3l-6.5 5C9.4 39.6 16.2 44 24 44z"/>
+              <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.5l6.2 5.2C41 35.2 44 30 44 24c0-1.3-.1-2.7-.4-4z"/>
+            </svg>
+          )}
+          {googleLoading ? "Redirecting to Google…" : "Continue with Google"}
         </button>
 
         <div className="mb-5 flex items-center gap-3">
@@ -106,8 +117,8 @@ export default function Login() {
               required
             />
           </div>
-          <button type="submit" disabled={loading} className="pm-button pm-button-primary w-full">
-            {loading ? "Signing in..." : "Sign In"}
+          <button type="submit" disabled={busy} className="pm-button pm-button-primary w-full">
+            {loading ? "Signing in…" : "Sign In"}
           </button>
         </form>
 

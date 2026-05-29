@@ -1,0 +1,14 @@
+# Netlify production config for PaisaMind client
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Fix: COOP must be unsafe-none so Firebase Google OAuth redirect flow can
+# read window.closed without being blocked by the browser security policy.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cross-Origin-Opener-Policy = "unsafe-none"
+    Cross-Origin-Embedder-Policy = "unsafe-none"
