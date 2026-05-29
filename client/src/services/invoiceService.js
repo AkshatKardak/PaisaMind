@@ -27,8 +27,9 @@ export const getSummary = async () => {
   return { ...response, data: response.data || response.summary || {} };
 };
 
+// Fix: route is /:id/checkout on the server, not /:id/payment-link
 export const createPaymentLink = async (id) => {
-  const response = (await api.post(`/invoices/${id}/payment-link`)).data;
+  const response = (await api.post(`/invoices/${id}/checkout`)).data;
   return { ...response, data: response.data || { url: response.url } };
 };
 
