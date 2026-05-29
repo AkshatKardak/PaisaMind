@@ -38,6 +38,12 @@
   --input-bg: rgba(255, 255, 255, 0.03);
   --skeleton-base: rgba(255, 255, 255, 0.06);
   --skeleton-shine: rgba(255, 255, 255, 0.12);
+
+  /* Option dropdown colours for dark mode */
+  --option-bg: #0f1c2e;
+  --option-color: #f8fafc;
+  --option-selected-bg: #22d3ee;
+  --option-selected-color: #07111f;
 }
 
 /* ─── LIGHT MODE ──────────────────────────────────────────────────────────── */
@@ -76,6 +82,12 @@
   --input-bg: rgba(0, 0, 0, 0.03);
   --skeleton-base: rgba(0, 0, 0, 0.07);
   --skeleton-shine: rgba(0, 0, 0, 0.13);
+
+  /* Option dropdown colours for light mode */
+  --option-bg: #ffffff;
+  --option-color: #0f172a;
+  --option-selected-bg: #0891b2;
+  --option-selected-color: #ffffff;
 }
 
 /* ─── HTML BACKGROUND ─────────────────────────────────────────────────────── */
@@ -252,6 +264,58 @@ textarea:focus,
 select:focus {
   border-color: var(--primary) !important;
   box-shadow: 0 0 0 4px var(--primary-soft);
+}
+
+/* ─── SELECT DROPDOWN OPTIONS ─────────────────────────────────────────────── */
+/*
+  Native <option> elements largely ignore CSS, but background + color +
+  color-scheme on the <select> itself forces the OS to render the picker
+  in the correct light/dark palette. This fixes the invisible-text bug
+  where dark text appeared on a dark dropdown in dark mode.
+*/
+
+/* Dark mode — default */
+select,
+.pm-select {
+  color-scheme: dark;
+  background-color: #0f1c2e !important;
+  color: #f8fafc !important;
+}
+
+select option,
+.pm-select option {
+  background-color: #0f1c2e;
+  color: #f8fafc;
+}
+
+select option:checked,
+select option:hover,
+.pm-select option:checked,
+.pm-select option:hover {
+  background-color: #22d3ee;
+  color: #07111f;
+}
+
+/* Light mode overrides */
+[data-theme="light"] select,
+[data-theme="light"] .pm-select {
+  color-scheme: light;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] select option,
+[data-theme="light"] .pm-select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+[data-theme="light"] select option:checked,
+[data-theme="light"] select option:hover,
+[data-theme="light"] .pm-select option:checked,
+[data-theme="light"] .pm-select option:hover {
+  background-color: #0891b2;
+  color: #ffffff;
 }
 
 /* ─── BUTTONS ─────────────────────────────────────────────────────────────── */
