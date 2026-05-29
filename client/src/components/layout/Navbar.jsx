@@ -1,83 +1,59 @@
-import { Bell, ChevronDown, LogOut, Settings, User } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { LogOut, MoonStar, SunMedium } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
-import ThemeToggle from "../ui/ThemeToggle";
+import { useTheme } from "../../context/ThemeContext";
 
-function Navbar({ title }) {
-  const { user, logout } = useAuth();
-  const [open, setOpen] = useState(false);
-  const initials = useMemo(
-    () =>
-      user?.name
-        ?.split(" ")
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase() || "PM",
-    [user?.name]
-  );
+const titleMap = {
+  "/dashboard": "Dashboard",
+  "/income": "Income",
+  "/expenses": "Expenses",
+  "/invoices": "Invoices",
+  "/tax": "Tax Planner",
+  "/tax-assistant": "AI Tax Assistant",
+  "/cash-flow": "Cash Flow",
+  "/goals": "Goals",
+  "/reports": "Reports",
+  "/settings": "Settings",
+};
+
+function Navbar() {
+  const location = useLocation();
+  const { logout, user } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
+
+  const pageTitle = titleMap[location.pathname] || "PaisaMind";
 
   return (
-    <header className="navbar sticky top-0 z-30 flex h-16 items-center justify-between px-4 backdrop-blur-xl md:px-8">
-      <div className="flex items-center gap-3">
-        <img src="/logo.png" alt="PaisaMind logo" className="pm-logo" />
-        <div>
-          <div className="font-display text-lg font-bold">PaisaMind</div>
-          <div className="hidden text-xs text-[var(--text-secondary)] md:block">{title}</div>
-        </div>
+    <header className="navbar sticky top-0 z-30 mb-6 flex items-center justify-between rounded-2xl px-5 py-4 shadow-[0_8px_28px_rgba(0,0,0,0.18)]">
+      <div>
+        <div className="pm-kicker">Workspace</div>
+        <h1 className="mt-2 font-display text-2xl font-extrabold tracking-tight text-white">
+          {pageTitle}
+        </h1>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">
+          Welcome back{user?.name ? `, ${user.name.split(" ")[0]}` : ""}. Your finance cockpit is
+          live.
+        </p>
       </div>
-      <div className="hidden text-lg font-semibold text-[var(--text-primary)] md:block">{title}</div>
+
       <div className="flex items-center gap-3">
-        <ThemeToggle />
-        <button className="relative rounded-full border border-[var(--border)] bg-[var(--bg-card)] p-2.5 text-[var(--text-secondary)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]">
-          <Bell size={18} />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[var(--danger)]" />
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-[var(--text-secondary)] transition hover:bg-white/[0.07] hover:text-white"
+          aria-label="Toggle theme"
+        >
+          {isDark ? <SunMedium size={18} /> : <MoonStar size={18} />}
         </button>
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setOpen((prev) => !prev)}
-            className="flex items-center gap-3 rounded-full border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 transition hover:border-sky-500"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-500/15 text-sm font-bold text-sky-300">
-              {initials}
-            </div>
-            <div className="hidden text-left md:block">
-              <div className="text-sm font-semibold text-[var(--text-primary)]">{user?.name}</div>
-              <div className="text-xs text-[var(--text-secondary)]">{user?.email}</div>
-            </div>
-            <ChevronDown size={16} className="text-[var(--text-secondary)]" />
-          </button>
-          {open && (
-            <div className="absolute right-0 top-14 w-56 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-2 shadow-2xl">
-              <Link
-                to="/settings"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
-              >
-                <User size={16} />
-                Profile
-              </Link>
-              <Link
-                to="/settings"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-[var(--text-secondary)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
-              >
-                <Settings size={16} />
-                Settings
-              </Link>
-              <button
-                type="button"
-                onClick={logout}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-[var(--text-secondary)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
-              >
-                <LogOut size={16} />
-                Logout
-              </button>
-            </div>
-          )}
-        </div>
+
+        <button
+          type="button"
+          onClick={logout}
+          className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:bg-white/[0.07] hover:text-white"
+        >
+          <LogOut size={16} />
+          Logout
+        </button>
       </div>
     </header>
   );

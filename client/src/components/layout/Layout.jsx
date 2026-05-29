@@ -1,29 +1,18 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 
-const titles = {
-  "/dashboard": "Dashboard",
-  "/income": "Income",
-  "/expenses": "Expenses",
-  "/invoices": "Invoices",
-  "/tax": "Tax Planner",
-  "/goals": "Goals",
-  "/reports": "Reports",
-  "/settings": "Settings",
-};
-
 function Layout() {
-  const location = useLocation();
-
   return (
-    <div className="app-shell md:flex">
-      <Sidebar />
-      <div className="flex min-h-screen flex-1 flex-col">
-        <Navbar title={titles[location.pathname] || "PaisaMind"} />
-        <main className="flex-1 px-4 pb-24 pt-6 md:px-8 md:pb-8">
-          <Outlet />
-        </main>
+    <div className="app-shell relative min-h-screen bg-transparent text-[var(--text-primary)]">
+      <div className="relative z-10 flex min-h-screen">
+        <Sidebar />
+        <div className="flex min-h-screen flex-1 flex-col px-4 py-4 md:px-6 md:py-5">
+          <Navbar />
+          <main className="pm-page relative z-10 flex-1 pb-24 md:pb-8">
+            <Outlet />
+          </main>
+        </div>
       </div>
     </div>
   );
