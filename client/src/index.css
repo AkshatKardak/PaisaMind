@@ -167,6 +167,7 @@ body::after {
     linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
   background-size: 72px 72px;
+  -webkit-mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.55), transparent 90%);
   mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.55), transparent 90%);
   z-index: 0;
 }
