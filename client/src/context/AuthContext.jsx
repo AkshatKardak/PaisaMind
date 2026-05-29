@@ -2,7 +2,8 @@ import { createContext, useEffect, useMemo, useState } from "react";
 import {
   auth,
   googleProvider,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
@@ -14,7 +15,7 @@ import api from "../services/api";
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser]     = useState(null);
+  const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
 
   /* ── sync Firebase user → our Express backend ── */
@@ -23,15 +24,22 @@ export function AuthProvider({ children }) {
     const res = await api.post(
       "/auth/firebase-sync",
       {
-        uid:         firebaseUser.uid,
-        name:        firebaseUser.displayName || "PaisaMind User",
-        email:       firebaseUser.email,
-        photoURL:    firebaseUser.photoURL || "",
+        uid:      firebaseUser.uid,
+        name:     firebaseUser.displayName || "PaisaMind User",
+        email:    firebaseUser.email,
+        photoURL: firebaseUser.photoURL || "",
       },
       { headers: { Authorization: `Bearer ${idToken}` } }
     );
     return { ...res.data.data, idToken };
   };
+
+  /* ── On mount: pick up any pending Google redirect result ── */
+  useEffect(() => {
+    getRedirectResult(auth).catch(() => {
+      // silently ignore – onAuthStateChanged handles the user state
+    });
+  }, []);
 
   /* ── listen to Firebase auth state ── */
   useEffect(() => {
@@ -61,7 +69,6 @@ export function AuthProvider({ children }) {
   const register = async ({ name, email, password }) => {
     const credential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(credential.user, { displayName: name });
-    // onAuthStateChanged fires automatically → syncWithBackend called
     return credential.user;
   };
 
@@ -71,10 +78,11 @@ export function AuthProvider({ children }) {
     return credential.user;
   };
 
-  /* ── Google Sign-In ── */
+  /* ── Google Sign-In (redirect – no popup, no COOP issues) ── */
   const loginWithGoogle = async () => {
-    const credential = await signInWithPopup(auth, googleProvider);
-    return credential.user;
+    await signInWithRedirect(auth, googleProvider);
+    // Page will redirect to Google and come back;
+    // onAuthStateChanged + getRedirectResult handle the result on return.
   };
 
   /* ── Logout ── */
