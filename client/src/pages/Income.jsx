@@ -10,13 +10,14 @@ import { useTheme } from "../context/ThemeContext";
 import { formatINR } from "../utils/formatCurrency";
 import * as incomeService from "../services/incomeService";
 
-const initialForm = {
+// Factory function so every drawer open gets today's date fresh
+const getInitialForm = () => ({
   source: "",
   amount: "",
   category: "Client Payment",
   date: new Date().toISOString().slice(0, 10),
   notes: "",
-};
+});
 
 function Income() {
   const queryClient = useQueryClient();
@@ -24,7 +25,7 @@ function Income() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(getInitialForm);
 
   const incomeQuery = useQuery({ queryKey: ["income-page"], queryFn: () => incomeService.getIncome({}) });
   const summaryQuery = useQuery({ queryKey: ["income-summary-page"], queryFn: incomeService.getSummary });
@@ -36,7 +37,7 @@ function Income() {
       queryClient.invalidateQueries({ queryKey: ["income-summary-page"] });
       setDrawerOpen(false);
       setEditing(null);
-      setForm(initialForm);
+      setForm(getInitialForm());
       showToast({ type: "success", title: editing ? "Income updated" : "Income added" });
     },
     onError: (error) => showToast({ type: "error", title: "Could not save income", message: error.response?.data?.message }),
@@ -61,11 +62,16 @@ function Income() {
 
   const handleEdit = (item) => {
     setEditing(item);
+    // Fix UTC timezone offset so the date doesn't shift by one day
+    const d = new Date(item.date);
+    const localDate = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 10);
     setForm({
       source: item.source,
       amount: item.amount,
       category: item.category,
-      date: new Date(item.date).toISOString().slice(0, 10),
+      date: localDate,
       notes: item.notes || "",
     });
     setDrawerOpen(true);
@@ -74,7 +80,7 @@ function Income() {
   const handleClose = () => {
     setDrawerOpen(false);
     setEditing(null);
-    setForm(initialForm);
+    setForm(getInitialForm());
   };
 
   const chartData = summaryQuery.data?.data ?? [];
@@ -197,7 +203,7 @@ function Income() {
               </select>
               <input className="pm-input" type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} required />
               <textarea className="pm-textarea" rows="4" placeholder="Notes" value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} />
-              <button className="pm-button pm-button-primary w-full" disabled={saveMutation.isPending}>
+              <button type="submit" className="pm-button pm-button-primary w-full" disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? "Saving..." : editing ? "Update Income" : "Save Income"}
               </button>
             </form>

@@ -8,21 +8,22 @@ import { showToast } from "../components/ui/Toast";
 import { formatINR } from "../utils/formatCurrency";
 import * as expenseService from "../services/expenseService";
 
-const initialForm = {
+// Factory so every drawer open gets today's date fresh
+const getInitialForm = () => ({
   title: "",
   amount: "",
   category: "Software",
   date: new Date().toISOString().slice(0, 10),
   isRecurring: false,
   lastUsed: new Date().toISOString().slice(0, 10),
-};
+});
 
 function Expenses() {
   const queryClient = useQueryClient();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(getInitialForm);
 
   const expensesQuery = useQuery({ queryKey: ["expenses-page"], queryFn: () => expenseService.getExpenses({}) });
   const subscriptionsQuery = useQuery({ queryKey: ["subscriptions-page"], queryFn: expenseService.getSubscriptions });
@@ -34,7 +35,7 @@ function Expenses() {
       queryClient.invalidateQueries({ queryKey: ["subscriptions-page"] });
       setDrawerOpen(false);
       setEditing(null);
-      setForm(initialForm);
+      setForm(getInitialForm());
       showToast({ type: "success", title: editing ? "Expense updated" : "Expense added" });
     },
   });
@@ -61,13 +62,25 @@ function Expenses() {
 
   const startEdit = (item) => {
     setEditing(item);
+    // Fix UTC timezone offset so the date doesn't shift by one day
+    const d = new Date(item.date);
+    const localDate = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 10);
+    let localLastUsed = new Date().toISOString().slice(0, 10);
+    if (item.lastUsed) {
+      const lu = new Date(item.lastUsed);
+      localLastUsed = new Date(lu.getTime() - lu.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 10);
+    }
     setForm({
       title: item.title,
       amount: item.amount,
       category: item.category,
-      date: new Date(item.date).toISOString().slice(0, 10),
+      date: localDate,
       isRecurring: item.isRecurring,
-      lastUsed: item.lastUsed ? new Date(item.lastUsed).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+      lastUsed: localLastUsed,
     });
     setDrawerOpen(true);
   };
@@ -75,7 +88,7 @@ function Expenses() {
   const handleCloseDrawer = () => {
     setDrawerOpen(false);
     setEditing(null);
-    setForm(initialForm);
+    setForm(getInitialForm());
   };
 
   return (
@@ -212,10 +225,15 @@ function Expenses() {
                 <input type="checkbox" checked={form.isRecurring} onChange={(event) => setForm((current) => ({ ...current, isRecurring: event.target.checked }))} />
                 <span>Recurring expense</span>
               </label>
-              {form.isRecurring ? (
-                <input className="pm-input" type="date" value={form.lastUsed} onChange={(event) => setForm((current) => ({ ...current, lastUsed: event.target.value }))} />
-              ) : null}
-              <button className="pm-button pm-button-primary w-full" disabled={saveMutation.isPending}>
+              {/* Always rendered but hidden — avoids flicker/remount when toggling recurring */}
+              <input
+                className="pm-input"
+                type="date"
+                value={form.lastUsed}
+                onChange={(event) => setForm((current) => ({ ...current, lastUsed: event.target.value }))}
+                style={{ display: form.isRecurring ? "block" : "none" }}
+              />
+              <button type="submit" className="pm-button pm-button-primary w-full" disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? "Saving..." : editing ? "Update Expense" : "Save Expense"}
               </button>
             </form>

@@ -10,20 +10,21 @@ import { formatINR } from "../utils/formatCurrency";
 import * as invoiceService from "../services/invoiceService";
 import * as aiService from "../services/aiService";
 
-const initialForm = {
+// Factory so every modal open gets today's date fresh
+const getInitialForm = () => ({
   clientName: "",
   serviceDescription: "",
   amount: "",
   issueDate: new Date().toISOString().slice(0, 10),
   dueDate: new Date().toISOString().slice(0, 10),
   gstApplicable: false,
-};
+});
 
 function Invoices() {
   const queryClient = useQueryClient();
   const [params] = useSearchParams();
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(getInitialForm);
   const [deleting, setDeleting] = useState(null);
   const [reminderTarget, setReminderTarget] = useState(null);
   const [paymentTarget, setPaymentTarget] = useState(null);
@@ -43,9 +44,14 @@ function Invoices() {
       queryClient.invalidateQueries({ queryKey: ["invoices-page"] });
       queryClient.invalidateQueries({ queryKey: ["invoice-summary-page"] });
       setModalOpen(false);
-      setForm(initialForm);
+      setForm(getInitialForm());
       showToast({ type: "success", title: "Invoice created" });
     },
+    onError: (error) => showToast({
+      type: "error",
+      title: "Could not create invoice",
+      message: error.response?.data?.message || "Please check all fields and try again.",
+    }),
   });
 
   const statusMutation = useMutation({
@@ -194,7 +200,8 @@ function Invoices() {
                 <div className="mt-2 flex justify-between"><span>GST 18%</span><span>{formatINR(gstAmount)}</span></div>
                 <div className="mt-3 flex justify-between font-semibold text-[var(--text-primary)]"><span>Total</span><span>{formatINR(totalAmount)}</span></div>
               </div>
-              <button className="pm-button pm-button-primary w-full" disabled={createMutation.isPending}>
+              {/* type="submit" is critical — without it some browsers treat the button as type="button" inside a modal */}
+              <button type="submit" className="pm-button pm-button-primary w-full" disabled={createMutation.isPending}>
                 {createMutation.isPending ? "Creating..." : "Save Invoice"}
               </button>
             </form>

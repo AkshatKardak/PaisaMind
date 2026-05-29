@@ -7,18 +7,19 @@ import { showToast } from "../components/ui/Toast";
 import { formatINR } from "../utils/formatCurrency";
 import * as goalService from "../services/goalService";
 
-const initialForm = {
+const getInitialForm = () => ({
   name: "",
   targetAmount: "",
+  savedAmount: "",
   deadline: new Date().toISOString().slice(0, 10),
-};
+});
 
 function Goals() {
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [progressTarget, setProgressTarget] = useState(null);
   const [deleting, setDeleting] = useState(null);
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(getInitialForm);
 
   const goalsQuery = useQuery({ queryKey: ["goals-page"], queryFn: goalService.getGoals });
 
@@ -27,7 +28,7 @@ function Goals() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["goals-page"] });
       setModalOpen(false);
-      setForm(initialForm);
+      setForm(getInitialForm());
       showToast({ type: "success", title: "Goal created" });
     },
   });
@@ -116,13 +117,15 @@ function Goals() {
                 createMutation.mutate({
                   ...form,
                   targetAmount: Number(form.targetAmount),
+                  savedAmount: Number(form.savedAmount || 0),
                 });
               }}
             >
               <input className="pm-input" placeholder="Goal Name" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} required />
-              <input className="pm-input" type="number" placeholder="Target Amount" value={form.targetAmount} onChange={(event) => setForm((current) => ({ ...current, targetAmount: event.target.value }))} required />
+              <input className="pm-input" type="number" placeholder="Target Amount (₹)" value={form.targetAmount} onChange={(event) => setForm((current) => ({ ...current, targetAmount: event.target.value }))} required />
+              <input className="pm-input" type="number" placeholder="Current Savings (₹) — optional" value={form.savedAmount} onChange={(event) => setForm((current) => ({ ...current, savedAmount: event.target.value }))} />
               <input className="pm-input" type="date" value={form.deadline} onChange={(event) => setForm((current) => ({ ...current, deadline: event.target.value }))} required />
-              <button className="pm-button pm-button-primary w-full" disabled={createMutation.isPending}>
+              <button type="submit" className="pm-button pm-button-primary w-full" disabled={createMutation.isPending}>
                 {createMutation.isPending ? "Saving..." : "Create Goal"}
               </button>
             </form>
@@ -153,7 +156,7 @@ function Goals() {
               }}
             >
               <input className="pm-input" name="savedAmount" type="number" defaultValue={progressTarget.savedAmount} />
-              <button className="pm-button pm-button-primary w-full" disabled={progressMutation.isPending}>
+              <button type="submit" className="pm-button pm-button-primary w-full" disabled={progressMutation.isPending}>
                 Update Progress
               </button>
             </form>

@@ -28,6 +28,8 @@ function CashFlowForecaster() {
     queryKey: ["cash-flow-forecast"],
     queryFn: getCashFlowForecast,
     staleTime: 1000 * 60 * 5,
+    // Don't hammer the API on failure — one attempt is enough
+    retry: 0,
   });
 
   const { history = [], forecast = [], pendingInvoiceValue = 0, runway = "" } =
@@ -91,12 +93,17 @@ function CashFlowForecaster() {
       )}
 
       {query.isError && (
-        <div className="rounded-3xl border border-red-500/25 bg-red-500/10 p-6 text-center text-sm text-red-400">
-          Could not load forecast. Please try again.
+        <div className="rounded-3xl border border-amber-500/25 bg-amber-500/10 p-6 text-center">
+          <p className="font-semibold text-amber-400">Not enough data to forecast yet</p>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+            Add at least 2–3 months of income and expense records so the AI has enough history
+            to generate a reliable 3-month prediction. Once you have data, click{" "}
+            <strong>Refresh Forecast</strong> above.
+          </p>
         </div>
       )}
 
-      {!query.isLoading && (
+      {!query.isLoading && !query.isError && (
         <>
           <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
             <div className="pm-card">
@@ -198,40 +205,4 @@ function CashFlowForecaster() {
                   </div>
                   <div className="mt-3 text-xs text-[var(--text-muted)]">
                     {item.confidence === "High"
-                      ? "Based on 4+ months of stable data"
-                      : item.confidence === "Medium"
-                      ? "Based on 2–3 months of data"
-                      : "Limited history — add more income entries"}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {pendingInvoiceValue > 0 && (
-            <div className="flex items-start gap-3 rounded-3xl border border-violet-500/20 bg-violet-500/5 p-4 text-sm text-violet-300">
-              <Wallet size={18} className="mt-0.5 shrink-0" />
-              <p>
-                <strong>{formatINR(pendingInvoiceValue)}</strong> in unpaid invoices is factored
-                into your pipeline as confirmed upcoming income. Chase these for a stronger
-                cash position.
-              </p>
-            </div>
-          )}
-
-          {forecast.length === 0 && !query.isFetching && (
-            <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-16 text-center">
-              <TrendingUp size={40} className="text-sky-400" />
-              <p className="font-semibold">Not enough data to forecast</p>
-              <p className="text-sm text-[var(--text-secondary)]">
-                Log at least 2 months of income entries to generate predictions.
-              </p>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-export default CashFlowForecaster;
+                      ? "Based o

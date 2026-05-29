@@ -23,14 +23,23 @@ export function AuthProvider({ children }) {
     // Reload the Firebase profile so displayName is always fresh
     await firebaseUser.reload();
     const fresh = auth.currentUser;
-    const idToken = await fresh.getIdToken();
+
+    // If displayName is still missing (race condition after register),
+    // wait briefly and reload once more before falling back to email prefix
+    if (!fresh.displayName) {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      await fresh.reload();
+    }
+
+    const current = auth.currentUser;
+    const idToken = await current.getIdToken();
     const res = await api.post(
       "/auth/firebase-sync",
       {
-        uid:      fresh.uid,
-        name:     fresh.displayName || fresh.email?.split("@")[0] || "User",
-        email:    fresh.email,
-        photoURL: fresh.photoURL || "",
+        uid:      current.uid,
+        name:     current.displayName || current.email?.split("@")[0] || "User",
+        email:    current.email,
+        photoURL: current.photoURL || "",
       },
       { headers: { Authorization: `Bearer ${idToken}` } }
     );
