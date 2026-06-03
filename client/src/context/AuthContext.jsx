@@ -2,8 +2,7 @@ import { createContext, useEffect, useMemo, useState } from "react";
 import {
   auth,
   googleProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
@@ -51,10 +50,6 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    getRedirectResult(auth).catch(() => {});
-  }, []);
-
-  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
@@ -89,7 +84,7 @@ export function AuthProvider({ children }) {
   };
 
   const loginWithGoogle = async () => {
-    await signInWithRedirect(auth, googleProvider);
+    await signInWithPopup(auth, googleProvider);
   };
 
   const logout = async () => {
