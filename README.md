@@ -32,11 +32,11 @@ Managing finances becomes stressful, manual, and time-consuming.
 
 ### Our Solution
 
-**PaisaMind** is an AI-powered financial intelligence platform built specifically for Indian freelancers, creators, solopreneurs, and small businesses.
+**PaisaMind** is an *AI-powered financial intelligence platform built specifically for Indian freelancers, creators, solopreneurs, and small businesses.*
 
 The platform transforms raw financial data into clear insights, actionable recommendations, and simplified financial planning.
 
-PaisaMind helps users:
+**PaisaMind** helps users:
 * track income and expenses in one place
 * manage invoices and payment reminders
 * monitor GST thresholds and compare tax regimes
@@ -44,7 +44,7 @@ PaisaMind helps users:
 * receive AI-powered financial insights
 * improve financial health through smart recommendations
 
-The goal is to simplify financial management, reduce tax confusion, improve financial awareness, and help users make smarter money decisions through intelligent automation and analytics.
+*The goal is to simplify financial management, reduce tax confusion, improve financial awareness, and help users make smarter money decisions through intelligent automation and analytics.*
 
 
 [Live Demo](https://paisamind.netlify.app) · [Report Bug](https://github.com/AkshatKardak/PaisaMind/issues) · [Request Feature](https://github.com/AkshatKardak/PaisaMind/issues)
@@ -53,7 +53,7 @@ The goal is to simplify financial management, reduce tax confusion, improve fina
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 ### Dashboard
 ![Dashboard](client/src/assets/Dashboard.png)
@@ -76,9 +76,12 @@ The goal is to simplify financial management, reduce tax confusion, improve fina
 ### Cash Flow Forecaster
 ![CashFlow](client/src/assets/CashFlow.png)
 
+### Reports
+![Reports](client/src/assets/Reports.png)
+
 ---
 
-## ✨ Features
+## Features
 
 | Feature | Description |
 |---|---|
@@ -95,10 +98,10 @@ The goal is to simplify financial management, reduce tax confusion, improve fina
 
 ---
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 ### Frontend
-- **React** + Vite
+- **React  + Vite**
 - **Tailwind CSS** 
 - **Lucide React** 
 - **Firebase SDK**
@@ -107,7 +110,7 @@ The goal is to simplify financial management, reduce tax confusion, improve fina
 - **Node.js + Express**
 - **MongoDB Atlas**
 - **Firebase Admin SDK** 
-- **Groq SDK (LLaMA 3.3 70B)**
+- **Groq**
 - **Razorpay** 
 - **Resend** 
 
@@ -189,7 +192,7 @@ App runs at **http://localhost:5173**
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 PaisaMind/
@@ -214,7 +217,7 @@ PaisaMind/
 
 ---
 
-## 🔐 Environment Variables Reference
+##  Environment Variables Reference
 
 ### Server (Render)
 
