@@ -155,7 +155,7 @@ function TaxAssistant() {
         <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-16 text-center">
           <Brain size={40} className="animate-pulse text-violet-400" />
           <p className="text-[var(--text-secondary)]">
-            Groq AI is analysing your income, investments, and tax regime…
+            Groq AI is analysing your income, investments, and tax regime...
           </p>
         </div>
       )}
@@ -184,8 +184,8 @@ function TaxAssistant() {
 
       {recommendations.length > 0 && (
         <div className="rounded-3xl border border-amber-500/20 bg-amber-500/5 p-4 text-xs text-amber-300 leading-6">
-          ⚠️ These are AI-generated suggestions based on your logged data. Consult a CA before making investment decisions.
-          All amounts are indicative and based on current Indian tax laws (FY 2025–26).
+          Warning: These are AI-generated suggestions based on your logged data. Consult a CA before making investment decisions.
+          All amounts are indicative and based on current Indian tax laws (FY 2025-26).
         </div>
       )}
     </div>

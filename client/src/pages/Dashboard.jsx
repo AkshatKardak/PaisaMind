@@ -125,7 +125,7 @@ function AIInsightCard({ insight, type, onDismiss }) {
           className="shrink-0 transition-opacity hover:opacity-60"
           style={{ color: "var(--text-muted)" }}
         >
-          ✕
+          x
         </button>
       </div>
     </div>
@@ -246,7 +246,7 @@ export default function Dashboard() {
               className="mt-2 text-2xl font-extrabold tracking-tight"
               style={{ color: "var(--text-primary)" }}
             >
-              Hey, <span style={{ color: "var(--primary)" }}>{firstName}</span> 👋
+              Hey, <span style={{ color: "var(--primary)" }}>{firstName}</span>
             </h1>
             <p
               className="mt-1.5 max-w-lg text-sm leading-relaxed"

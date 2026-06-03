@@ -4,12 +4,11 @@ const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [isDark, setIsDark] = useState(() => {
-    // localStorage is blocked in sandboxed iframes — use system preference
     try {
       const saved = localStorage.getItem("paisamind-theme");
       if (saved) return saved === "dark";
     } catch (_) {}
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return true;
   });
 
   useEffect(() => {

@@ -7,18 +7,45 @@
         try {
           var theme = localStorage.getItem('paisamind-theme');
           if (theme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
             document.documentElement.classList.add('light');
+            document.documentElement.classList.remove('dark');
           } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
             document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
           }
         } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark');
           document.documentElement.classList.add('dark');
         }
       })();
     </script>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PaisaMind</title>
+    <meta
+      name="description"
+      content="PaisaMind is an AI-powered finance platform for Indian freelancers to track income, plan taxes, automate invoices, monitor GST, and forecast cash flow."
+    />
+    <meta
+      name="keywords"
+      content="AI-powered finance platform, freelancer finance management, Indian tax planning software, invoice automation, GST tracker, financial intelligence platform, cash flow forecasting, finance OS for freelancers"
+    />
+    <meta name="theme-color" content="#050816" />
+    <meta property="og:title" content="PaisaMind - Finance OS for Indian Freelancers" />
+    <meta
+      property="og:description"
+      content="Track income, taxes, invoices, GST threshold, and cash flow in one AI-powered finance OS built for Indian freelancers."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="PaisaMind - Finance OS for Indian Freelancers" />
+    <meta
+      name="twitter:description"
+      content="AI-powered freelancer finance management for income tracking, Indian tax planning, invoice automation, GST alerts, and cash flow forecasting."
+    />
+    <title>PaisaMind - AI Finance OS for Indian Freelancers</title>
   </head>
   <body>
     <div id="root"></div>

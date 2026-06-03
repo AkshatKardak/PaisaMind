@@ -82,7 +82,7 @@ function Goals() {
                     Saved {formatINR(goal.savedAmount)} of {formatINR(goal.targetAmount)}
                   </div>
                   <div className="mt-3 rounded-2xl bg-emerald-500/10 p-3 text-sm text-emerald-300">
-                    💡 Save {formatINR(monthlyNeeded)}/month to hit goal
+                    Save {formatINR(monthlyNeeded)}/month to hit this goal.
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <button className="pm-button pm-button-primary !px-3 !py-2 text-sm" onClick={() => setProgressTarget(goal)}>+ Add Funds</button>
