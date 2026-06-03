@@ -371,7 +371,7 @@ function Reports() {
           {latestScore && (
             <div className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-sm font-bold ${GRADE_STYLE[latestScore.grade] || GRADE_STYLE["C"]}`}>
               <Activity size={14} />
-              Grade {latestScore.grade} \u00b7 {latestScore.score}/100
+              Grade {latestScore.grade}{'\u00b7'}{latestScore.score}/100
             </div>
           )}
         </div>

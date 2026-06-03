@@ -1,7 +1,3 @@
-<![CDATA[<div align="center">
-
-<img src="client/src/assets/hero.png" alt="PaisaMind Logo" width="80" />
-
 # PaisaMind
 
 ### AI-Powered Finance OS for Indian Freelancers
@@ -10,10 +6,46 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18-339933?style=flat-square&logo=nodedotjs)](https://nodejs.org)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb)](https://mongodb.com)
 [![Firebase](https://img.shields.io/badge/Firebase-Auth-FFCA28?style=flat-square&logo=firebase)](https://firebase.google.com)
-[![Groq](https://img.shields.io/badge/Groq-LLaMA_3.3-F55036?style=flat-square)](https://console.groq.com)
 [![License](https://img.shields.io/badge/License-MIT-8B5CF6?style=flat-square)](LICENSE)
 
-**Track income · Manage invoices · Get AI insights · Plan taxes · Forecast cash flow**
+---
+
+### Problem Statement
+
+Freelancers and small businesses in India often manage their finances across multiple disconnected platforms such as UPI apps, spreadsheets, freelance marketplaces, invoices, and bank statements. This creates major challenges in tracking income, monitoring expenses, planning taxes, and maintaining healthy cash flow.
+
+Most existing finance tools are either:
+* too basic, offering only simple expense tracking
+* too complex, designed for large businesses and accountants
+
+As a result, freelancers struggle with:
+* scattered financial data
+* irregular cash flow visibility
+* GST and tax confusion
+* missed invoice payments
+* poor savings planning
+* lack of financial insights
+
+Managing finances becomes stressful, manual, and time-consuming.
+
+---
+
+### Our Solution
+
+**PaisaMind** is an AI-powered financial intelligence platform built specifically for Indian freelancers, creators, solopreneurs, and small businesses.
+
+The platform transforms raw financial data into clear insights, actionable recommendations, and simplified financial planning.
+
+PaisaMind helps users:
+* track income and expenses in one place
+* manage invoices and payment reminders
+* monitor GST thresholds and compare tax regimes
+* forecast future cash flow
+* receive AI-powered financial insights
+* improve financial health through smart recommendations
+
+The goal is to simplify financial management, reduce tax confusion, improve financial awareness, and help users make smarter money decisions through intelligent automation and analytics.
+
 
 [Live Demo](https://paisamind.netlify.app) · [Report Bug](https://github.com/AkshatKardak/PaisaMind/issues) · [Request Feature](https://github.com/AkshatKardak/PaisaMind/issues)
 
@@ -66,26 +98,22 @@
 ## 🛠 Tech Stack
 
 ### Frontend
-- **React 18** + Vite
-- **Tailwind CSS** — dark-themed design system
-- **Recharts** — interactive financial charts
-- **TanStack Query** — server state management
-- **Lucide React** — icon library
-- **Firebase SDK** — Google & Email/Password auth
+- **React** + Vite
+- **Tailwind CSS** 
+- **Lucide React** 
+- **Firebase SDK**
 
 ### Backend
 - **Node.js + Express**
-- **MongoDB Atlas** + Mongoose
-- **Firebase Admin SDK** — token verification
-- **Groq SDK (LLaMA 3.3 70B)** — AI insights, reports, tax assistant
-- **Razorpay** — invoice payment links + webhook
-- **Resend** — transactional email (reminders, welcome)
+- **MongoDB Atlas**
+- **Firebase Admin SDK** 
+- **Groq SDK (LLaMA 3.3 70B)**
+- **Razorpay** 
+- **Resend** 
 
 ### Deployment
 - **Frontend** → Netlify
 - **Backend** → Render
-- **Database** → MongoDB Atlas (M0 Free Tier)
-
 ---
 
 ## 🚀 Getting Started
@@ -125,7 +153,6 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY----
 
 GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxx
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxx
-EMAIL_FROM=noreply@yourdomain.com
 
 RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxx
 RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxxxxx
@@ -227,4 +254,3 @@ MIT © [Akshat Kardak](https://github.com/AkshatKardak)
 <div align="center">
 Built with ❤️ for Indian freelancers who deserve better financial tools.
 </div>
-]]>
