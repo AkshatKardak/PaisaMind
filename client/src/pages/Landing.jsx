@@ -142,7 +142,7 @@ const featureGrid = [
   ["Income Tracker", "Multi-source revenue", TrendingUp, "sky"],
   ["Expense Control", "Categories and leaks", TrendingDown, "red"],
   ["Invoice Generator", "GST-ready billing", FileText, "amber"],
-  ["Online Payments", "Stripe checkout links", CreditCard, "green"],
+  ["Online Payments", "Razorpay checkout links", CreditCard, "green"],
   ["Tax Planner", "Old vs new regime", Calculator, "amber"],
   ["Goal Tracker", "Savings milestones", Target, "purple"],
   ["AI Reports", "Monthly intelligence", Bot, "purple"],
@@ -927,7 +927,7 @@ function Landing() {
           <div>
             <div className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--text-muted)]">Trust</div>
             <div className="mt-4 flex flex-wrap gap-2">
-              {["React", "Node.js", "MongoDB", "Express", "Groq AI", "Stripe", "Resend", "Tailwind"].map((item) => (
+              {["React", "Node.js", "MongoDB", "Express", "Groq AI", "RazorPay", "Resend", "Tailwind"].map((item) => (
                 <span key={item} className="rounded-lg border border-white/6 bg-white/[0.035] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)]">{item}</span>
               ))}
             </div>
