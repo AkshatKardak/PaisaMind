@@ -10,7 +10,7 @@ import * as expenseService from "../services/expenseService";
 import * as invoiceService from "../services/invoiceService";
 import { showToast } from "../components/ui/Toast";
 import { useTheme } from "../context/ThemeContext";
-import { useAuth } from "../hooks/useAuth";
+import useAuth from "../hooks/useAuth";
 
 const MONTHS = [
   "January","February","March","April","May","June",
@@ -294,7 +294,7 @@ function Reports() {
             <button
               className="pm-button pm-button-primary flex items-center gap-2 text-sm"
               onClick={() => {
-                downloadPDF(report, history, user?.name || "User", month, year);
+                downloadPDF(report, history, user?.name || user?.displayName || "User", month, year);
                 showToast({ type: "success", title: "PDF Ready", message: "Click \u2018Save as PDF\u2019 in the print dialog." });
               }}
             >
