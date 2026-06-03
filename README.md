@@ -1,3 +1,16 @@
+<p align="center">
+  <img src="https://paisamind.netlify.app/Favicon.png" alt="PaisaMind Logo" width="100"/>
+</p>
+
+<p align="center">
+  <a href="https://paisamind.netlify.app">
+    <img src="https://img.shields.io/badge/Frontend-Netlify-00C7B7?style=for-the-badge&logo=netlify" />
+  </a>
+  <a href="https://paisamind-backend-92ig.onrender.com">
+    <img src="https://img.shields.io/badge/Backend-Render-46E3B7?style=for-the-badge&logo=render" />
+</p>
+
+
 # PaisaMind
 
 ### AI-Powered Finance OS for Indian Freelancers
