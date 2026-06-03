@@ -1,6 +1,7 @@
 const express = require("express");
-const router = express.Router();
+const router  = express.Router();
 const {
+  getMonthlyReport,
   getAIInsights,
   getHealthScoreExplanation,
   getTaxSavingSuggestions,
@@ -8,20 +9,25 @@ const {
 } = require("../controllers/aiController");
 const { protect } = require("../middleware/authMiddleware");
 
+// Monthly report — dedicated handler (accepts month + year in body or query)
+router.post("/monthly-report",    protect, getMonthlyReport);
+router.get("/monthly-report",     protect, getMonthlyReport);
+
+// Dashboard insights
 router.post("/insights",          protect, getAIInsights);
+
+// Health score
 router.get("/health-score",        protect, getHealthScoreExplanation);
 
-// canonical name
+// Tax
 router.get("/tax-suggestions",     protect, getTaxSavingSuggestions);
-// alias used by client aiService.js → GET /ai/tax-saving
 router.get("/tax-saving",          protect, getTaxSavingSuggestions);
 
-// canonical name
+// Cash flow
 router.get("/cashflow-forecast",   protect, getCashFlowForecast);
-// alias used by client aiService.js → GET /ai/cash-flow-forecast
 router.get("/cash-flow-forecast",  protect, getCashFlowForecast);
 
-router.post("/monthly-report",     protect, require("../controllers/aiController").getAIInsights);
-router.post("/invoice-reminder",   protect, require("../controllers/aiController").getAIInsights);
+// Legacy invoice-reminder alias (kept for backwards compat)
+router.post("/invoice-reminder",   protect, getAIInsights);
 
 module.exports = router;
