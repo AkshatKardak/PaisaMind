@@ -39,6 +39,9 @@ app.get("/", (req, res) => {
   res.json({ message: "PaisaMind API running" });
 });
 
+// Lightweight health check for cron-job ping (no response body)
+app.get("/health", (req, res) => res.sendStatus(200));
+
 app.use("/api/auth",     authRoutes);
 app.use("/api/income",   incomeRoutes);
 app.use("/api/expenses", expenseRoutes);
