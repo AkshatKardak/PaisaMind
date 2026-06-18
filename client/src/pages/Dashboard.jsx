@@ -16,12 +16,13 @@ import { showToast } from "../components/ui/Toast";
 import { useTheme } from "../context/ThemeContext";
 import { formatINR } from "../utils/formatCurrency";
 import { calculateHealthScore } from "../utils/healthScore";
-import * as aiService from "../services/aiService";
-import * as incomeService from "../services/incomeService";
+import * as aiService      from "../services/aiService";
+import * as incomeService  from "../services/incomeService";
 import * as expenseService from "../services/expenseService";
 import * as invoiceService from "../services/invoiceService";
 
 const CHART_COLORS = ["#0891b2", "#6366f1", "#059669", "#ea580c", "#7c3aed", "#db2777"];
+const GST_THRESHOLD = 2000000;
 
 /* ── KPI Card ── */
 function KPI({ title, value, icon: Icon, accent }) {
@@ -43,16 +44,10 @@ function KPI({ title, value, icon: Icon, accent }) {
         </div>
       </div>
       <div>
-        <p
-          className="text-xs font-semibold uppercase tracking-widest"
-          style={{ color: "var(--text-muted)", letterSpacing: "0.12em" }}
-        >
+        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)", letterSpacing: "0.12em" }}>
           {title}
         </p>
-        <p
-          className="mt-1 text-2xl font-extrabold tracking-tight tabular-nums"
-          style={{ color: accent }}
-        >
+        <p className="mt-1 text-2xl font-extrabold tracking-tight tabular-nums" style={{ color: accent }}>
           {value}
         </p>
       </div>
@@ -65,16 +60,9 @@ function SectionLabel({ children, color }) {
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest"
-      style={{
-        background: `${color}15`,
-        color: color,
-        border: `1px solid ${color}25`,
-      }}
+      style={{ background: `${color}15`, color, border: `1px solid ${color}25` }}
     >
-      <span
-        className="h-1.5 w-1.5 rounded-full"
-        style={{ background: color }}
-      />
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
       {children}
     </span>
   );
@@ -100,60 +88,121 @@ function Card({ children, className = "", accentGlow }) {
 
 /* ── AI Insight Card ── */
 function AIInsightCard({ insight, type, onDismiss }) {
-  const map = {
-    warning: { color: "#d97706" },
-    danger: { color: "#dc2626" },
-    success: { color: "#059669" },
-  };
+  const map = { warning: { color: "#d97706" }, danger: { color: "#dc2626" }, success: { color: "#059669" } };
   const { color } = map[type] || map.success;
   return (
     <div
       className="relative overflow-hidden rounded-xl px-4 py-3 text-xs leading-relaxed"
-      style={{
-        background: `${color}0c`,
-        border: `1px solid ${color}22`,
-      }}
+      style={{ background: `${color}0c`, border: `1px solid ${color}22` }}
     >
-      <div
-        className="absolute left-0 top-0 h-full w-[3px] rounded-l-xl"
-        style={{ background: color }}
-      />
+      <div className="absolute left-0 top-0 h-full w-[3px] rounded-l-xl" style={{ background: color }} />
       <div className="flex items-start justify-between gap-3 pl-1">
         <p style={{ color: "var(--text-primary)" }}>{insight}</p>
-        <button
-          onClick={onDismiss}
-          className="shrink-0 transition-opacity hover:opacity-60"
-          style={{ color: "var(--text-muted)" }}
-        >
-          x
-        </button>
+        <button onClick={onDismiss} className="shrink-0 transition-opacity hover:opacity-60" style={{ color: "var(--text-muted)" }}>x</button>
       </div>
     </div>
   );
 }
 
+/* ── GST Threshold Widget ── */
+function GSTWidget({ gstData }) {
+  if (!gstData) return null;
+
+  const { annualRevenue, threshold, percentage, fyLabel, warning, registered } = gstData;
+  const barColor   = registered ? "#dc2626" : warning ? "#d97706" : "#059669";
+  const labelColor = registered ? "#dc2626" : warning ? "#d97706" : "#64748b";
+
+  return (
+    <Card accentGlow={warning || registered ? barColor : undefined}>
+      <div className="mb-4 flex items-start justify-between">
+        <div>
+          <SectionLabel color={barColor}>GST Tracker</SectionLabel>
+          <h3 className="mt-2 text-base font-bold" style={{ color: "var(--text-primary)" }}>
+            Annual Revenue vs Threshold
+          </h3>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>{fyLabel} · Limit ₹20,00,000</p>
+        </div>
+        {registered && (
+          <span className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase" style={{ background: "#dc262615", color: "#dc2626", border: "1px solid #dc262625" }}>
+            GST Required
+          </span>
+        )}
+        {!registered && warning && (
+          <span className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase" style={{ background: "#d9780615", color: "#d97706", border: "1px solid #d9780625" }}>
+            ⚠ 80% Crossed
+          </span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-5">
+        <div>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Annual Revenue</p>
+          <p className="text-xl font-extrabold tabular-nums mt-0.5" style={{ color: "var(--text-primary)" }}>{formatINR(annualRevenue)}</p>
+        </div>
+        <div>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>Remaining Headroom</p>
+          <p className="text-xl font-extrabold tabular-nums mt-0.5" style={{ color: barColor }}>
+            {formatINR(Math.max(0, threshold - annualRevenue))}
+          </p>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="relative h-3 w-full overflow-hidden rounded-full" style={{ background: "var(--bg-elevated)" }}>
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{ width: `${percentage}%`, background: barColor }}
+        />
+        {/* 80% warning marker */}
+        <div
+          className="absolute top-0 h-full w-px"
+          style={{ left: "80%", background: "#d97706", opacity: 0.7 }}
+        />
+      </div>
+      <div className="mt-2 flex justify-between text-xs" style={{ color: "var(--text-muted)" }}>
+        <span>₹0</span>
+        <span style={{ color: labelColor, fontWeight: 700 }}>{percentage}% used</span>
+        <span>₹20L</span>
+      </div>
+
+      {registered && (
+        <p className="mt-3 text-xs rounded-xl px-3 py-2" style={{ background: "#dc262610", color: "#dc2626" }}>
+          You have crossed ₹20L. You must register for GST. Consult a CA immediately.
+        </p>
+      )}
+      {!registered && warning && (
+        <p className="mt-3 text-xs rounded-xl px-3 py-2" style={{ background: "#d9780610", color: "#d97706" }}>
+          You are above 80% of the GST threshold. Consider speaking to a CA about registration.
+        </p>
+      )}
+    </Card>
+  );
+}
+
 /* ═════════════════ DASHBOARD ═════════════════ */
 export default function Dashboard() {
-  const { user } = useAuth();
-  const { isDark } = useTheme();
+  const { user }    = useAuth();
+  const { isDark }  = useTheme();
   const [dismissed, setDismissed] = useState([]);
   const financialData = useFinancialData();
 
-  const incomeQuery   = useQuery({ queryKey: ["dashboard-income"],   queryFn: () => incomeService.getIncome({}) });
-  const expenseQuery  = useQuery({ queryKey: ["dashboard-expenses"], queryFn: () => expenseService.getExpenses({}) });
-  const invoiceQuery  = useQuery({ queryKey: ["dashboard-invoices"], queryFn: invoiceService.getInvoices });
-  const insightsQuery = useQuery({ queryKey: ["dashboard-insights"], queryFn: () => aiService.getInsights({}) });
+  const incomeQuery   = useQuery({ queryKey: ["dashboard-income"],    queryFn: () => incomeService.getIncome({}) });
+  const expenseQuery  = useQuery({ queryKey: ["dashboard-expenses"],  queryFn: () => expenseService.getExpenses({}) });
+  const invoiceQuery  = useQuery({ queryKey: ["dashboard-invoices"],  queryFn: invoiceService.getInvoices });
+  const insightsQuery = useQuery({ queryKey: ["dashboard-insights"],  queryFn: () => aiService.getInsights({}) });
+  const gstQuery      = useQuery({ queryKey: ["dashboard-gst"],       queryFn: incomeService.getGSTStatus });
 
   const reportMutation = useMutation({
     mutationFn: () => aiService.getMonthlyReport({}),
     onSuccess: () => showToast({ type: "success", title: "AI report generated", message: "Fresh insights are ready in Reports." }),
-    onError: (e) => showToast({ type: "error", title: "Could not generate", message: e.response?.data?.message || "Please try again." }),
+    onError:   (e) => showToast({ type: "error",   title: "Could not generate",  message: e.response?.data?.message || "Please try again." }),
   });
 
   const incomeItems    = Array.isArray(incomeQuery.data?.data)  ? incomeQuery.data.data  : [];
   const expenseItems   = Array.isArray(expenseQuery.data?.data) ? expenseQuery.data.data : [];
   const invoiceItems   = Array.isArray(invoiceQuery.data?.data) ? invoiceQuery.data.data : [];
   const expenseSummary = Array.isArray(financialData.expenseSummary) ? financialData.expenseSummary : [];
+  const gstData        = gstQuery.data?.data ?? null;
 
   const monthlyExpenseMap = expenseItems.reduce((map, item) => {
     const key = new Date(item.date).toLocaleString("en-IN", { month: "short" });
@@ -182,18 +231,18 @@ export default function Dashboard() {
   ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const alertBanners = useMemo(() => {
-    const overdueCount = invoiceItems.filter((inv) => inv.status === "overdue").length;
+    const overdueCount = invoiceItems.filter((inv) => inv.status === "Overdue").length;
     const cashRunway   = totalExpenses > 0 ? totalIncome / totalExpenses : 0;
     return [
-      cashRunway > 0 && cashRunway < 1 ? { type: "warning", text: "Cash runway is under one month. Tighten expenses or accelerate collections." } : null,
-      totalIncome > 1800000            ? { type: "danger",  text: "GST threshold warning: approaching ₹20,00,000 in annual income." } : null,
-      overdueCount > 0                 ? { type: "warning", text: `${overdueCount} invoice${overdueCount > 1 ? "s are" : " is"} overdue and needs follow-up.` } : null,
+      cashRunway > 0 && cashRunway < 1  ? { type: "warning", text: "Cash runway is under one month. Tighten expenses or accelerate collections." } : null,
+      gstData?.warning && !gstData?.registered ? { type: "warning", text: `GST warning: You've used ${gstData.percentage}% of the ₹20L threshold this financial year.` } : null,
+      gstData?.registered                 ? { type: "danger",  text: "You have crossed the ₹20,00,000 GST threshold. Register for GST immediately." } : null,
+      overdueCount > 0                   ? { type: "warning", text: `${overdueCount} invoice${overdueCount > 1 ? "s are" : " is"} overdue and needs follow-up.` } : null,
     ].filter(Boolean);
-  }, [invoiceItems, totalExpenses, totalIncome]);
+  }, [invoiceItems, totalExpenses, totalIncome, gstData]);
 
   const scoreColor = health.score >= 70 ? "#059669" : health.score >= 50 ? "#d97706" : "#dc2626";
 
-  // Derive user's first name — prefer the name field from backend, fallback to email prefix
   const firstName = useMemo(() => {
     const name = user?.name || user?.displayName || "";
     if (name && name !== "PaisaMind User") return name.split(" ")[0];
@@ -201,17 +250,16 @@ export default function Dashboard() {
     return "there";
   }, [user]);
 
-  // Chart tooltip style — adapts to theme
   const tooltipStyle = {
-    background: isDark ? "#1e293b" : "#ffffff",
-    border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e2e8f0",
+    background:   isDark ? "#1e293b" : "#ffffff",
+    border:       isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e2e8f0",
     borderRadius: "12px",
-    color: isDark ? "#e2e8f0" : "#1e293b",
-    fontSize: 12,
-    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+    color:        isDark ? "#e2e8f0" : "#1e293b",
+    fontSize:     12,
+    boxShadow:    "0 8px 24px rgba(0,0,0,0.12)",
   };
   const axisTickColor = isDark ? "#64748b" : "#94a3b8";
-  const gridStroke = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)";
+  const gridStroke    = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)";
 
   return (
     <div className="space-y-5 pb-12">
@@ -223,8 +271,8 @@ export default function Dashboard() {
           className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm"
           style={{
             background: b.type === "danger" ? "var(--danger-soft)" : "var(--warning-soft)",
-            border: b.type === "danger" ? "1px solid var(--danger-border)" : "1px solid var(--warning-border)",
-            color: b.type === "danger" ? "var(--danger)" : "var(--warning)",
+            border:     b.type === "danger" ? "1px solid var(--danger-border)" : "1px solid var(--warning-border)",
+            color:      b.type === "danger" ? "var(--danger)" : "var(--warning)",
           }}
         >
           <AlertTriangle size={15} className="shrink-0" />
@@ -236,22 +284,11 @@ export default function Dashboard() {
       <Card>
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div>
-            <p
-              className="text-xs font-semibold uppercase tracking-widest"
-              style={{ color: "var(--primary)", letterSpacing: "0.14em" }}
-            >
-              Welcome back
-            </p>
-            <h1
-              className="mt-2 text-2xl font-extrabold tracking-tight"
-              style={{ color: "var(--text-primary)" }}
-            >
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--primary)", letterSpacing: "0.14em" }}>Welcome back</p>
+            <h1 className="mt-2 text-2xl font-extrabold tracking-tight" style={{ color: "var(--text-primary)" }}>
               Hey, <span style={{ color: "var(--primary)" }}>{firstName}</span>
             </h1>
-            <p
-              className="mt-1.5 max-w-lg text-sm leading-relaxed"
-              style={{ color: "var(--text-muted)" }}
-            >
+            <p className="mt-1.5 max-w-lg text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
               Your financial overview is ready. Stay on top of cash flow, expenses, and tax in one place.
             </p>
           </div>
@@ -267,7 +304,7 @@ export default function Dashboard() {
         </div>
       </Card>
 
-      {/* ── KPI row — no fake change badges, show real data only ── */}
+      {/* ── KPI row ── */}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <KPI title="Total Income"   value={formatINR(totalIncome)}   icon={TrendingUp}   accent="#0891b2" />
         <KPI title="Total Expenses" value={formatINR(totalExpenses)} icon={TrendingDown} accent="#dc2626" />
@@ -275,20 +312,17 @@ export default function Dashboard() {
         <KPI title="Health Score"   value={`${health.score} / 100`} icon={Activity}     accent={scoreColor} />
       </div>
 
+      {/* ── GST Widget — only renders when data is available ── */}
+      {gstData && <GSTWidget gstData={gstData} />}
+
       {/* ── Charts ── */}
       <div className="grid gap-5 xl:grid-cols-5">
-
-        {/* Bar chart */}
         <Card className="xl:col-span-3">
           <div className="mb-5 flex items-start justify-between">
             <div>
               <SectionLabel color="#0891b2">Cash Flow</SectionLabel>
-              <h3 className="mt-2 text-base font-bold" style={{ color: "var(--text-primary)" }}>
-                Income vs Expenses
-              </h3>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Monthly comparison — last 6 months
-              </p>
+              <h3 className="mt-2 text-base font-bold" style={{ color: "var(--text-primary)" }}>Income vs Expenses</h3>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Monthly comparison — last 6 months</p>
             </div>
           </div>
           <div className="h-64">
@@ -305,7 +339,6 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* Pie chart */}
         <Card className="xl:col-span-2">
           <div className="mb-5">
             <SectionLabel color="#6366f1">Breakdown</SectionLabel>
