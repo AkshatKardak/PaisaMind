@@ -10,6 +10,7 @@ import Invoices from "./pages/Invoices";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Recurring from "./pages/Recurring";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import TaxPlanner from "./pages/TaxPlanner";
@@ -91,6 +92,7 @@ function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/tax-assistant" element={<TaxAssistant />} />
             <Route path="/cash-flow" element={<CashFlowForecaster />} />
+            <Route path="/recurring" element={<Recurring />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

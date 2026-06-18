@@ -1,6 +1,9 @@
 const cron    = require("node-cron");
 const Invoice = require("../models/Invoice");
 const Goal    = require("../models/Goal");
+const Income               = require("../models/Income");
+const Expense              = require("../models/Expense");
+const RecurringTransaction = require("../models/RecurringTransaction");
 const { Resend } = require("resend");
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -8,9 +11,6 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const startCronJobs = () => {
 
   // ─── 1. Auto-flip Unpaid invoices to Overdue every midnight ─────────────────
-  // Runs daily at 00:05 IST. Finds all Unpaid invoices whose dueDate has passed
-  // and bulk-updates them to Overdue so the frontend always shows correct status
-  // without the user having to manually change anything.
   cron.schedule("5 0 * * *", async () => {
     try {
       const result = await Invoice.updateMany(
@@ -68,6 +68,54 @@ const startCronJobs = () => {
       }
     } catch (err) {
       console.error("[cron] Goal check job failed:", err.message);
+    }
+  });
+
+  // ─── 4. Process recurring transactions — every hour ─────────────────────────
+  // Finds all active recurring transactions whose nextRunAt has passed,
+  // creates the real Income/Expense entry, then advances nextRunAt.
+  cron.schedule("0 * * * *", async () => {
+    try {
+      const now = new Date();
+      const due = await RecurringTransaction.find({ active: true, nextRunAt: { $lte: now } });
+
+      for (const rec of due) {
+        try {
+          if (rec.type === "income") {
+            await Income.create({
+              userId:   rec.userId,
+              source:   rec.title,
+              category: rec.category,
+              amount:   rec.amount,
+              date:     now,
+              notes:    `Auto-created from recurring: ${rec.title}`,
+            });
+          } else {
+            await Expense.create({
+              userId:      rec.userId,
+              title:       rec.title,
+              category:    rec.category,
+              amount:      rec.amount,
+              date:        now,
+              isRecurring: true,
+              notes:       `Auto-created from recurring: ${rec.title}`,
+            });
+          }
+
+          // Advance nextRunAt
+          const next = new Date(rec.nextRunAt);
+          if      (rec.frequency === "daily")   next.setDate(next.getDate() + 1);
+          else if (rec.frequency === "weekly")  next.setDate(next.getDate() + 7);
+          else                                  next.setMonth(next.getMonth() + 1);
+
+          await RecurringTransaction.findByIdAndUpdate(rec._id, { nextRunAt: next });
+          console.log(`[cron] Processed recurring: ${rec.title} (${rec.type}), next: ${next.toISOString()}`);
+        } catch (entryErr) {
+          console.error(`[cron] Recurring entry failed for ${rec.title}:`, entryErr.message);
+        }
+      }
+    } catch (err) {
+      console.error("[cron] Recurring processor failed:", err.message);
     }
   });
 

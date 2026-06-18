@@ -33,4 +33,16 @@ export const createPaymentLink = async (id) => {
   return { ...response, data: response.data || { url: response.url } };
 };
 
-export default { getInvoices, createInvoice, updateInvoice, deleteInvoice, updateStatus, getSummary, createPaymentLink };
+export const downloadPDF = (id) =>
+  api.get(`/invoices/${id}/pdf`, { responseType: "blob" }).then((r) => {
+    const url  = window.URL.createObjectURL(new Blob([r.data], { type: "application/pdf" }));
+    const link = document.createElement("a");
+    link.href  = url;
+    link.setAttribute("download", `invoice-${id}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  });
+
+export default { getInvoices, createInvoice, updateInvoice, deleteInvoice, updateStatus, getSummary, createPaymentLink, downloadPDF };

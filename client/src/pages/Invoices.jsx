@@ -1,4 +1,4 @@
-import { Copy, Link as LinkIcon, MessageCircle, Plus, Receipt, Send, X, BarChart2, List } from "lucide-react";
+import { Copy, Download, Link as LinkIcon, MessageCircle, Plus, Receipt, Send, X, BarChart2, List } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
@@ -37,14 +37,12 @@ function InvoiceAnalytics({ invoices, isDark }) {
   const axisColor = isDark ? "#64748b" : "#94a3b8";
   const gridColor = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)";
 
-  // ── Status distribution
   const statusCounts = invoices.reduce((acc, inv) => {
     acc[inv.status] = (acc[inv.status] || 0) + 1;
     return acc;
   }, {});
   const statusPie = Object.entries(statusCounts).map(([name, value]) => ({ name, value }));
 
-  // ── Average days to payment (only Paid invoices with paidAt)
   const paidWithDates = invoices.filter((inv) => inv.status === "Paid" && inv.paidAt && inv.createdAt);
   const avgDays = paidWithDates.length > 0
     ? Math.round(paidWithDates.reduce((sum, inv) => {
@@ -52,7 +50,6 @@ function InvoiceAnalytics({ invoices, isDark }) {
       }, 0) / paidWithDates.length)
     : null;
 
-  // ── Monthly invoice volume (last 6 months)
   const monthlyMap = {};
   invoices.forEach((inv) => {
     const key = new Date(inv.createdAt).toLocaleString("en-IN", { month: "short", year: "2-digit" });
@@ -63,7 +60,6 @@ function InvoiceAnalytics({ invoices, isDark }) {
   });
   const monthlyData = Object.values(monthlyMap).slice(-6);
 
-  // ── Summary stats
   const totalSent    = invoices.length;
   const totalPaid    = invoices.filter((i) => i.status === "Paid").length;
   const totalPending = invoices.filter((i) => i.status === "Unpaid").length;
@@ -72,8 +68,6 @@ function InvoiceAnalytics({ invoices, isDark }) {
 
   return (
     <div className="space-y-5">
-
-      {/* ── Summary stat row ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
           { label: "Total Sent",    value: totalSent,    color: "#0891b2" },
@@ -89,8 +83,6 @@ function InvoiceAnalytics({ invoices, isDark }) {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-
-        {/* ── Status pie ── */}
         <div className="rounded-2xl p-6" style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)" }}>
           <p className="mb-4 text-sm font-bold" style={{ color: "var(--text-primary)" }}>Status Distribution</p>
           <div className="h-48">
@@ -107,7 +99,6 @@ function InvoiceAnalytics({ invoices, isDark }) {
           </div>
         </div>
 
-        {/* ── Monthly volume bar ── */}
         <div className="rounded-2xl p-6" style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)" }}>
           <p className="mb-4 text-sm font-bold" style={{ color: "var(--text-primary)" }}>Monthly Volume</p>
           <div className="h-48">
@@ -125,7 +116,6 @@ function InvoiceAnalytics({ invoices, isDark }) {
         </div>
       </div>
 
-      {/* ── Key metrics ── */}
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-2xl p-5" style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)" }}>
           <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Recovery Rate</p>
@@ -150,7 +140,7 @@ function InvoiceAnalytics({ invoices, isDark }) {
 function Invoices() {
   const queryClient = useQueryClient();
   const [params]    = useSearchParams();
-  const [view, setView]               = useState("list");  // "list" | "analytics"
+  const [view, setView]               = useState("list");
   const [modalOpen, setModalOpen]     = useState(false);
   const [form, setForm]               = useState(getInitialForm);
   const [deleting, setDeleting]       = useState(null);
@@ -190,6 +180,12 @@ function Invoices() {
     onError:    (error) => showToast({ type: "error", title: "Could not delete invoice", message: error.message }),
   });
 
+  const pdfMutation = useMutation({
+    mutationFn: invoiceService.downloadPDF,
+    onSuccess:  () => showToast({ type: "success", title: "PDF downloaded" }),
+    onError:    () => showToast({ type: "error",   title: "Could not generate PDF" }),
+  });
+
   useEffect(() => {
     if (params.get("payment") === "success") {
       showToast({ type: "success", title: "Payment received!", message: "Invoice marked paid successfully." });
@@ -210,7 +206,6 @@ function Invoices() {
           <p className="text-sm text-[var(--text-secondary)]">Track billed work, nudge clients, and collect payments online.</p>
         </div>
         <div className="flex items-center gap-2">
-          {/* View toggle */}
           <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: "var(--border-default)" }}>
             <button
               onClick={() => setView("list")}
@@ -245,7 +240,6 @@ function Invoices() {
         <KPICard title="Pending"  value={formatINR(summary.totalPending  || 0)} icon={Receipt} color="bg-amber-500/15 text-amber-400" />
       </div>
 
-      {/* ── Conditional view ── */}
       {view === "analytics" ? (
         <InvoiceAnalytics invoices={invoices} isDark={false} />
       ) : (
@@ -278,6 +272,13 @@ function Invoices() {
                         <button className="pm-button pm-button-success !px-3 !py-2 text-xs" onClick={() => statusMutation.mutate({ id: invoice._id, status: "paid" })}>Mark Paid</button>
                         <button className="pm-button pm-button-ghost !px-3 !py-2 text-xs"   onClick={() => setReminderTarget(invoice)}>Send Reminder</button>
                         <button className="pm-button pm-button-primary !px-3 !py-2 text-xs" onClick={() => { setPaymentTarget(invoice); paymentMutation.mutate(invoice._id); }}>Get Paid Online</button>
+                        <button
+                          className="pm-button pm-button-ghost !px-3 !py-2 text-xs flex items-center gap-1"
+                          onClick={() => pdfMutation.mutate(invoice._id)}
+                          disabled={pdfMutation.isPending}
+                        >
+                          <Download size={12} /> PDF
+                        </button>
                         <button className="pm-button pm-button-danger !px-3 !py-2 text-xs"  onClick={() => setDeleting(invoice)}>Delete</button>
                       </div>
                     </td>

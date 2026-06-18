@@ -3,6 +3,7 @@ import {
   Calculator,
   FileText,
   LayoutDashboard,
+  RefreshCw,
   Settings2,
   Sparkles,
   Target,
@@ -14,16 +15,17 @@ import { NavLink } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
 
 const navItems = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/income", label: "Income", icon: TrendingUp },
-  { to: "/expenses", label: "Expenses", icon: TrendingDown },
-  { to: "/invoices", label: "Invoices", icon: FileText },
-  { to: "/tax", label: "Tax Planner", icon: Calculator },
-  { to: "/tax-assistant", label: "AI Tax Assistant", icon: Sparkles },
-  { to: "/cash-flow", label: "Cash Flow", icon: Waves },
-  { to: "/goals", label: "Goals", icon: Target },
-  { to: "/reports", label: "Reports", icon: BarChart2 },
-  { to: "/settings", label: "Settings", icon: Settings2 },
+  { to: "/dashboard",    label: "Dashboard",      icon: LayoutDashboard },
+  { to: "/income",       label: "Income",          icon: TrendingUp },
+  { to: "/expenses",     label: "Expenses",        icon: TrendingDown },
+  { to: "/invoices",     label: "Invoices",        icon: FileText },
+  { to: "/recurring",    label: "Recurring",       icon: RefreshCw },
+  { to: "/tax",          label: "Tax Planner",     icon: Calculator },
+  { to: "/tax-assistant",label: "AI Tax Assistant",icon: Sparkles },
+  { to: "/cash-flow",    label: "Cash Flow",       icon: Waves },
+  { to: "/goals",        label: "Goals",           icon: Target },
+  { to: "/reports",      label: "Reports",         icon: BarChart2 },
+  { to: "/settings",     label: "Settings",        icon: Settings2 },
 ];
 
 function Sidebar() {
@@ -93,7 +95,6 @@ function Sidebar() {
                 }}
                 onMouseLeave={(e) => {
                   const link = e.currentTarget;
-                  // restore based on active state via data attribute
                   const isActive = link.getAttribute("data-active") === "true";
                   if (!isActive) {
                     link.style.background = "transparent";

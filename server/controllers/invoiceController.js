@@ -3,10 +3,10 @@ const Invoice = require("../models/Invoice");
 const User    = require("../models/User");
 const { Resend } = require("resend");
 const { createInvoicePaymentLink, verifyWebhookSignature } = require("../utils/razorpayService");
+const PDFDocument = require("pdfkit");
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Whitelisted fields callers are allowed to update via updateInvoice
 const ALLOWED_UPDATE_FIELDS = [
   "clientName", "clientEmail", "clientPhone",
   "serviceDescription", "amount", "totalAmount",
@@ -38,7 +38,6 @@ const createInvoice = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: "Client name and amount are required" });
   }
 
-  // Fix: use atomic $inc on invoiceSeq to prevent duplicate invoice numbers when invoices are deleted
   const updatedUser = await User.findByIdAndUpdate(
     req.user._id,
     { $inc: { invoiceSeq: 1 } },
@@ -70,7 +69,6 @@ const createInvoice = asyncHandler(async (req, res) => {
 });
 
 const updateInvoice = asyncHandler(async (req, res) => {
-  // Fix: only allow whitelisted fields — prevents overwriting userId, status, paymentLink etc.
   const safeUpdate = {};
   ALLOWED_UPDATE_FIELDS.forEach((field) => {
     if (req.body[field] !== undefined) safeUpdate[field] = req.body[field];
@@ -99,7 +97,6 @@ const updateStatus = asyncHandler(async (req, res) => {
     ? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()
     : "Paid";
 
-  // Fix: record exact timestamp when invoice is marked Paid for accurate monthly reports
   const update = { status: normalized };
   if (normalized === "Paid") update.paidAt = new Date();
 
@@ -180,13 +177,103 @@ const handleWebhook = (req, res) => {
     if (invoiceId) {
       Invoice.findByIdAndUpdate(invoiceId, {
         status: "Paid",
-        paidAt: new Date(),   // Fix: also stamp paidAt on webhook-triggered payments
+        paidAt: new Date(),
       }).catch(console.error);
     }
   }
 
   res.status(200).json({ received: true });
 };
+
+const downloadPDF = asyncHandler(async (req, res) => {
+  const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.user._id })
+    .populate("userId", "name email");
+  if (!invoice) return res.status(404).json({ success: false, message: "Invoice not found" });
+
+  const user = invoice.userId;
+
+  res.setHeader("Content-Type",        "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${invoice.invoiceNumber}.pdf"`);
+
+  const doc = new PDFDocument({ margin: 50, size: "A4" });
+  doc.pipe(res);
+
+  const PRIMARY  = "#0891b2";
+  const DARK     = "#0f172a";
+  const MUTED    = "#64748b";
+  const LIGHT_BG = "#f8fafc";
+
+  // Header band
+  doc.rect(0, 0, doc.page.width, 90).fill(PRIMARY);
+  doc.fillColor("#ffffff").fontSize(24).font("Helvetica-Bold").text("PaisaMind", 50, 28);
+  doc.fontSize(9).font("Helvetica").text("Finance OS for Freelancers", 50, 56);
+  doc.fontSize(20).font("Helvetica-Bold").text("INVOICE", 0, 34, { align: "right", width: doc.page.width - 50 });
+  doc.fontSize(10).font("Helvetica").text(invoice.invoiceNumber, 0, 58, { align: "right", width: doc.page.width - 50 });
+
+  // Metadata block
+  doc.fillColor(DARK).fontSize(10).font("Helvetica-Bold").text("Billed To", 50, 110);
+  doc.font("Helvetica").fillColor(DARK).fontSize(10).text(invoice.clientName, 50, 126);
+  if (invoice.clientEmail) doc.fillColor(MUTED).text(invoice.clientEmail, 50, 141);
+
+  const rightX = 350;
+  const pairs  = [
+    ["Issue Date", new Date(invoice.issueDate).toLocaleDateString("en-IN")],
+    ["Due Date",   new Date(invoice.dueDate).toLocaleDateString("en-IN")],
+    ["Status",     invoice.status],
+  ];
+  let ry = 110;
+  pairs.forEach(([label, val]) => {
+    doc.fillColor(MUTED).font("Helvetica").fontSize(9).text(label, rightX, ry);
+    doc.fillColor(DARK).font("Helvetica-Bold").fontSize(10).text(val, rightX + 90, ry);
+    ry += 18;
+  });
+
+  // Divider
+  doc.moveTo(50, 185).lineTo(doc.page.width - 50, 185).strokeColor("#e2e8f0").stroke();
+
+  // Service Description
+  if (invoice.serviceDescription) {
+    doc.fillColor(DARK).font("Helvetica-Bold").fontSize(10).text("Description", 50, 198);
+    doc.font("Helvetica").fillColor(MUTED).fontSize(10)
+      .text(invoice.serviceDescription, 50, 214, { width: doc.page.width - 100 });
+  }
+
+  // Amounts table
+  const tableY = invoice.serviceDescription ? 260 : 210;
+  doc.rect(50, tableY, doc.page.width - 100, 28).fill(LIGHT_BG);
+
+  const colW = (doc.page.width - 100) / 2;
+  doc.fillColor(MUTED).font("Helvetica").fontSize(9)
+    .text("Item",   60,        tableY + 9)
+    .text("Amount", 60 + colW, tableY + 9, { width: colW - 10, align: "right" });
+
+  let rowY = tableY + 28;
+  const addRow = (label, value, bold = false) => {
+    doc.fillColor(DARK).font(bold ? "Helvetica-Bold" : "Helvetica").fontSize(10)
+      .text(label, 60, rowY)
+      .text(value, 60 + colW, rowY, { width: colW - 10, align: "right" });
+    rowY += 24;
+  };
+
+  addRow("Base Amount", `\u20b9${invoice.amount.toLocaleString("en-IN")}`);
+  if (invoice.gstApplicable) {
+    const gst = invoice.totalAmount - invoice.amount;
+    addRow("GST (18%)", `\u20b9${gst.toLocaleString("en-IN")}`);
+  }
+  doc.moveTo(50, rowY).lineTo(doc.page.width - 50, rowY).strokeColor("#e2e8f0").stroke();
+  rowY += 10;
+  addRow("Total", `\u20b9${(invoice.totalAmount || invoice.amount).toLocaleString("en-IN")}`, true);
+
+  // Footer
+  const footerY = doc.page.height - 70;
+  doc.moveTo(50, footerY).lineTo(doc.page.width - 50, footerY).strokeColor("#e2e8f0").stroke();
+  doc.fillColor(MUTED).font("Helvetica").fontSize(8)
+    .text(`Generated by PaisaMind  ·  ${user?.name || ""}  ·  ${user?.email || ""}`, 50, footerY + 12, {
+      align: "center", width: doc.page.width - 100,
+    });
+
+  doc.end();
+});
 
 module.exports = {
   getInvoices,
@@ -198,4 +285,5 @@ module.exports = {
   sendReminder,
   createCheckoutSession,
   handleWebhook,
+  downloadPDF,
 };
