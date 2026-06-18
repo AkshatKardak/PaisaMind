@@ -1,15 +1,15 @@
 const asyncHandler = require("express-async-handler");
 const { Groq } = require("groq-sdk");
-const Income = require("../models/Income");
+const Income  = require("../models/Income");
 const Expense = require("../models/Expense");
 const Invoice = require("../models/Invoice");
-const Goal = require("../models/Goal");
-const User = require("../models/User");
+const Goal    = require("../models/Goal");
+const User    = require("../models/User");
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const getCurrentMonthRange = () => {
-  const now = new Date();
+  const now   = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
   const end   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
   return { start, end };
@@ -26,14 +26,10 @@ const monthKey = (date) =>
   new Date(date).toLocaleString("en-IN", { month: "short", year: "numeric" });
 
 // ─── Monthly Report ───────────────────────────────────────────────────────────
-// Accepts ?month=5&year=2026 (or POST body).
-// Aggregates Income collection + Paid/Partially Paid invoices for the period.
-// Returns: { sections: { incomeSummary, expenseAnalysis, taxStatus, savingsProgress, keyActionItems } }
 const getMonthlyReport = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const user   = await User.findById(userId);
 
-  // Accept month/year from both query string (GET) and body (POST)
   const month = Number(req.body?.month || req.query?.month || new Date().getMonth() + 1);
   const year  = Number(req.body?.year  || req.query?.year  || new Date().getFullYear());
 
@@ -45,38 +41,28 @@ const getMonthlyReport = asyncHandler(async (req, res) => {
   const [incomes, expenses, invoices, goals] = await Promise.all([
     Income.find({ userId, date: { $gte: start, $lte: end } }).sort({ date: -1 }),
     Expense.find({ userId, date: { $gte: start, $lte: end } }).sort({ date: -1 }),
-    // Pull ALL invoices for the user — we'll filter by due/paid date below
     Invoice.find({ userId }).sort({ createdAt: -1 }),
     Goal.find({ userId }),
   ]);
 
-  // ── Invoice income: count paid/partially-paid invoices whose dueDate falls in this month
+  // Fix: use paidAt (when money actually arrived) instead of dueDate for income realisation
   const paidInvoicesThisMonth = invoices.filter((inv) => {
     if (!["Paid", "Partially Paid"].includes(inv.status)) return false;
-    // Use dueDate OR createdAt as the "income realisation" date
-    const ref = inv.dueDate ? new Date(inv.dueDate) : new Date(inv.createdAt);
+    const ref = inv.paidAt ? new Date(inv.paidAt) : (inv.dueDate ? new Date(inv.dueDate) : new Date(inv.createdAt));
     return ref >= start && ref <= end;
   });
 
-  const invoiceIncome = paidInvoicesThisMonth.reduce(
-    (sum, inv) => sum + Number(inv.amount || inv.total || 0), 0
-  );
+  const invoiceIncome  = paidInvoicesThisMonth.reduce((sum, inv) => sum + Number(inv.amount || inv.total || 0), 0);
+  const directIncome   = incomes.reduce((sum, i) => sum + Number(i.amount || 0), 0);
+  const totalIncome    = directIncome + invoiceIncome;
+  const totalExpense   = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const netSavings     = totalIncome - totalExpense;
+  const savingsRate    = totalIncome > 0 ? Math.round((netSavings / totalIncome) * 100) : 0;
 
-  // ── Direct income entries
-  const directIncome = incomes.reduce((sum, i) => sum + Number(i.amount || 0), 0);
+  const overdueCount   = invoices.filter((i) => i.status === "Overdue").length;
+  const unpaidCount    = invoices.filter((i) => i.status === "Unpaid").length;
+  const totalPaidCount = invoices.filter((i) => i.status === "Paid").length;
 
-  // ── Combined totals
-  const totalIncome  = directIncome + invoiceIncome;
-  const totalExpense = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-  const netSavings   = totalIncome - totalExpense;
-  const savingsRate  = totalIncome > 0 ? Math.round((netSavings / totalIncome) * 100) : 0;
-
-  // ── Invoice stats
-  const overdueCount    = invoices.filter((i) => i.status === "Overdue").length;
-  const unpaidCount     = invoices.filter((i) => i.status === "Unpaid").length;
-  const totalPaidCount  = invoices.filter((i) => i.status === "Paid").length;
-
-  // ── Top expense categories
   const categoryMap = {};
   expenses.forEach((e) => {
     const cat = e.category || "Other";
@@ -85,31 +71,28 @@ const getMonthlyReport = asyncHandler(async (req, res) => {
   const topCategories = Object.entries(categoryMap)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
-    .map(([cat, amt]) => `${cat} (₹${amt.toLocaleString("en-IN")})`)
+    .map(([cat, amt]) => `${cat} (\u20b9${amt.toLocaleString("en-IN")})`)
     .join(", ");
 
-  // ── Goals summary
   const activeGoals = goals.length;
 
-  // ── If truly zero data, return empty sections immediately (don't waste Groq tokens)
   if (totalIncome === 0 && totalExpense === 0) {
     return res.status(200).json({
       success: true,
       data: {
-        month,
-        year,
+        month, year,
         sections: {
-          incomeSummary:    null,
-          expenseAnalysis:  null,
-          taxStatus:        null,
-          savingsProgress:  null,
-          keyActionItems:   [],
+          incomeSummary:   null,
+          expenseAnalysis: null,
+          taxStatus:       null,
+          savingsProgress: null,
+          keyActionItems:  [],
         },
       },
     });
   }
 
-  const fmt = (n) => `₹${Number(n).toLocaleString("en-IN")}`;
+  const fmt = (n) => `\u20b9${Number(n).toLocaleString("en-IN")}`;
 
   const prompt = `You are a financial advisor for Indian freelancers.
 Write a concise, friendly narrative monthly report for ${monthName}.
@@ -147,16 +130,13 @@ Respond ONLY with valid JSON — no markdown, no code fences:
     });
 
     let raw = response.choices?.[0]?.message?.content || "{}";
-    // Strip any accidental markdown code fences
     raw = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
-
     const parsed = JSON.parse(raw);
 
     return res.status(200).json({
       success: true,
       data: {
-        month,
-        year,
+        month, year,
         sections: {
           incomeSummary:   parsed.incomeSummary   || null,
           expenseAnalysis: parsed.expenseAnalysis || null,
@@ -168,18 +148,16 @@ Respond ONLY with valid JSON — no markdown, no code fences:
     });
   } catch (err) {
     console.error("[getMonthlyReport] Groq error:", err.message);
-    // Fallback: return plain-text sections so the page still shows something
     return res.status(200).json({
       success: true,
       data: {
-        month,
-        year,
+        month, year,
         sections: {
           incomeSummary:   `You earned ${fmt(totalIncome)} in ${monthName} (${fmt(invoiceIncome)} from invoices, ${fmt(directIncome)} from direct entries).`,
           expenseAnalysis: totalExpense > 0
             ? `Your total expenses were ${fmt(totalExpense)}. Top categories: ${topCategories || "N/A"}.`
             : "No expenses recorded for this month.",
-          taxStatus:       user?.taxRegime
+          taxStatus: user?.taxRegime
             ? `You are on the ${user.taxRegime} tax regime. 80C invested: ${fmt(user.investments80C || 0)}.`
             : "Tax regime not set. Go to Settings to configure it for better tax insights.",
           savingsProgress: `You saved ${fmt(Math.max(netSavings, 0))} this month — a ${savingsRate}% savings rate.`,
@@ -207,9 +185,9 @@ const getAIInsights = asyncHandler(async (req, res) => {
     Goal.find({ userId }).sort({ createdAt: -1 }),
   ]);
 
-  const totalIncome  = incomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const totalExpense = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const profit = totalIncome - totalExpense;
+  const totalIncome    = incomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalExpense   = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const profit         = totalIncome - totalExpense;
   const overdueInvoices = invoices.filter((inv) => inv.status === "Overdue");
   const unpaidInvoices  = invoices.filter((inv) => inv.status === "Unpaid");
 
@@ -274,11 +252,18 @@ const getHealthScoreExplanation = asyncHandler(async (req, res) => {
   const paidInvoices = invoices.filter((inv) => inv.status === "Paid").length;
   const invoiceScore = invoices.length > 0 ? paidInvoices / invoices.length : 0;
 
+  // Fix: removed the hardcoded '+ 25' bonus that inflated every score by 25 points for free.
+  // Score is now purely derived from real data across 3 equal dimensions (max 100).
+  // savingsComponent: up to 40 pts — rewards saving >20% of income
+  // expenseComponent: up to 30 pts — rewards keeping expenses below 80% of income
+  // invoiceComponent: up to 30 pts — rewards collecting payment on all invoices
+  const savingsComponent = Math.min(savingsRatio / 0.4, 1) * 40;
+  const expenseRatio      = totalIncome > 0 ? totalExpense / totalIncome : 1;
+  const expenseComponent  = Math.max(0, (1 - expenseRatio / 0.8)) * 30;
+  const invoiceComponent  = invoiceScore * 30;
+
   const score = Math.max(0, Math.min(100, Math.round(
-    savingsRatio * 25 +
-    (1 - Math.min(totalExpense / (totalIncome || 1), 1)) * 25 +
-    invoiceScore * 25 +
-    25
+    savingsComponent + expenseComponent + invoiceComponent
   )));
 
   const prompt = `
