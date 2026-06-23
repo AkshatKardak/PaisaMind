@@ -679,13 +679,13 @@ function Landing() {
             <div className="reveal visible">
               <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/15 bg-sky-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
                 <Sparkles size={14} />
-                AI-Powered Finance OS India
+                AI-Powered Freelance Finance OS
               </div>
-              <h1 className="mt-7 max-w-4xl font-display text-[42px] font-extrabold leading-[0.98] tracking-[-0.06em] text-[var(--text-primary)] sm:text-6xl lg:text-[72px]">
-                The financial <span className="lp-highlight">intelligence</span> platform built for Indian freelancers.
+              <h1 className="mt-7 max-w-4xl font-display text-[42px] font-extrabold leading-[0.98] tracking-[-0.06em] text-[var(--text-primary)] sm:text-5xl lg:text-[64px]">
+                Your freelance finances, invoices, budgets, and tax decisions — <span className="lp-highlight">in one place</span>.
               </h1>
               <p className="mt-7 max-w-2xl text-[17px] leading-8 text-[var(--text-secondary)] md:text-lg">
-                PaisaMind is an AI-powered finance platform for income tracking, Indian tax planning software, invoice automation, GST tracker alerts, cash flow forecasting, and smart financial intelligence in one calm dashboard.
+                PaisaMind helps Indian freelancers track multi-stream income and expenses, generate and manage professional invoices, automate recurring transactions, monitor category budget limits, compare and plan taxes, and forecast future cash flow in one unified operating system.
               </p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link to="/register" className="lp-cta-btn-lg inline-flex items-center justify-center gap-2 rounded-2xl px-7 py-4 text-base font-bold text-white">
@@ -741,7 +741,7 @@ function Landing() {
                   align="left"
                   eyebrow="Problem Statement"
                   title="Freelancer finances are more chaotic than they should be."
-                  body="Freelancers do not struggle because they are careless. They struggle because modern independent work creates scattered income, irregular cash flow, tax uncertainty, and invisible operating costs."
+                  body="Managing independent work across UPI apps, spreadsheets, manual invoices, freelance platforms, and bank statements leads to scattered data. PaisaMind unifies these fragmented financial workflows, turning chaos into clear, actionable business insights."
                 />
                 <div className="mt-8 grid gap-4 sm:grid-cols-2">
                   {problems.map((problem) => {
@@ -791,6 +791,62 @@ function Landing() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </section>
+
+        {/* Why PaisaMind is Different Section */}
+        <section id="beyond-tracking" className="lp-section border-b border-white/6 bg-[var(--bg-primary)]">
+          <div className="mx-auto max-w-7xl px-5">
+            <div className="reveal text-center">
+              <div className="lp-section-label">Beyond Tracking</div>
+              <h2 className="mt-4 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.04em] text-[var(--text-primary)] md:text-5xl">
+                Why PaisaMind is different
+              </h2>
+              <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-[var(--text-secondary)] md:text-lg">
+                Traditional expense trackers only answer "where did my money go?" PaisaMind is a complete financial workspace that answers what lies ahead.
+              </p>
+            </div>
+
+            <div className="reveal mt-14 grid gap-6 md:grid-cols-3">
+              <div className="lp-card p-6 flex flex-col justify-between">
+                <div>
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl border border-sky-400/15 bg-sky-500/10 text-sky-300">
+                    <FileText size={21} />
+                  </div>
+                  <h3 className="mt-6 font-display text-xl font-bold text-[var(--text-primary)]">1. Beyond tracking</h3>
+                  <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
+                    Expense trackers only show past spending. PaisaMind gives you control over pending invoices, client receivables, automated recurring entries, and category budget limits in one workflow.
+                  </p>
+                </div>
+                <div className="mt-6 text-xs font-semibold text-sky-400">Track invoices & budgets →</div>
+              </div>
+
+              <div className="lp-card p-6 flex flex-col justify-between">
+                <div>
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl border border-emerald-400/15 bg-emerald-500/10 text-emerald-300">
+                    <IndianRupee size={21} />
+                  </div>
+                  <h3 className="mt-6 font-display text-xl font-bold text-[var(--text-primary)]">2. Built for India</h3>
+                  <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
+                    Engineered for Indian freelancers. Active GST threshold risk indicators, old vs. new tax regime comparisons, quarterly advance tax planning, and Razorpay client checkouts.
+                  </p>
+                </div>
+                <div className="mt-6 text-xs font-semibold text-emerald-400">Indian compliance & payments →</div>
+              </div>
+
+              <div className="lp-card p-6 flex flex-col justify-between">
+                <div>
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl border border-purple-400/15 bg-purple-500/10 text-purple-300">
+                    <Brain size={21} />
+                  </div>
+                  <h3 className="mt-6 font-display text-xl font-bold text-[var(--text-primary)]">3. Forward-looking</h3>
+                  <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
+                    Stop guessing your runway. Get predictive cash flow models, an aggregate financial health score, and contextual AI reports that tell you what decision to make next.
+                  </p>
+                </div>
+                <div className="mt-6 text-xs font-semibold text-purple-400">Predict cash flow & plan taxes →</div>
+              </div>
             </div>
           </div>
         </section>

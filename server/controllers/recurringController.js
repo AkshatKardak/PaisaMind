@@ -13,12 +13,15 @@ const createRecurring = async (req, res, next) => {
     const nextRunAt = startDate && new Date(startDate) > new Date()
       ? new Date(startDate)
       : new Date();
+    const activeVal = req.body.active !== undefined ? req.body.active : true;
     const item = await RecurringTransaction.create({
       userId: req.user._id,
       type, title, category,
       amount: Number(amount),
       frequency: frequency || "monthly",
       nextRunAt,
+      active: activeVal,
+      isActive: activeVal,
       notes: notes || "",
     });
     res.status(201).json({ success: true, data: item });
@@ -27,6 +30,11 @@ const createRecurring = async (req, res, next) => {
 
 const updateRecurring = async (req, res, next) => {
   try {
+    if (req.body.active !== undefined) {
+      req.body.isActive = req.body.active;
+    } else if (req.body.isActive !== undefined) {
+      req.body.active = req.body.isActive;
+    }
     const item = await RecurringTransaction.findOneAndUpdate(
       { _id: req.params.id, userId: req.user._id },
       req.body,

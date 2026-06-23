@@ -10,6 +10,8 @@ const recurringSchema = new mongoose.Schema(
     frequency: { type: String, enum: ["daily", "weekly", "monthly"], default: "monthly" },
     nextRunAt: { type: Date, required: true },
     active:    { type: Boolean, default: true },
+    isActive:  { type: Boolean, default: true },
+    lastRunAt: { type: Date },
     notes:     { type: String, default: "" },
   },
   { timestamps: true }

@@ -20,9 +20,17 @@ const taxRoutes        = require("./routes/taxRoutes");
 const aiRoutes         = require("./routes/aiRoutes");
 const budgetRoutes     = require("./routes/budgetRoutes");
 const recurringRoutes  = require("./routes/recurringRoutes");
+const startCronJobs    = require("./jobs/cronJobs");
 
 connectDB();
+startCronJobs();
+
 const app = express();
+
+// Lightweight health route for Render health checks (bypasses DB/dependencies)
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
 
 const ALLOWED_ORIGINS = [
   process.env.CLIENT_URL,
@@ -61,8 +69,6 @@ const aiLimiter = rateLimit({
 app.get("/", (req, res) => {
   res.json({ message: "PaisaMind API running" });
 });
-
-app.get("/health", (req, res) => res.sendStatus(200));
 
 app.use("/api/auth",       authRoutes);
 app.use("/api/income",     incomeRoutes);

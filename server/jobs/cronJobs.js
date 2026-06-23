@@ -71,48 +71,88 @@ const startCronJobs = () => {
     }
   });
 
-  // ─── 4. Process recurring transactions — every hour ─────────────────────────
-  // Finds all active recurring transactions whose nextRunAt has passed,
-  // creates the real Income/Expense entry, then advances nextRunAt.
+  // ─── 4. Process recurring transactions — every hour (UTC-safe schedule) ──────
+  // Finds all active recurring transactions whose nextRunAt has passed (in UTC),
+  // creates the real Income/Expense entry, then advances nextRunAt, updating lastRunAt.
   cron.schedule("0 * * * *", async () => {
+    const now = new Date();
     try {
-      const now = new Date();
-      const due = await RecurringTransaction.find({ active: true, nextRunAt: { $lte: now } });
+      // Find where active or isActive is true, and nextRunAt is in the past or present
+      const due = await RecurringTransaction.find({
+        $or: [{ active: true }, { isActive: true }],
+        nextRunAt: { $lte: now }
+      });
+
+      let createdCount = 0;
+      let skippedCount = 0;
 
       for (const rec of due) {
         try {
+          const runDateStr = rec.nextRunAt.toISOString();
+          const signature = `[Ref: ${rec._id}] [Cycle: ${runDateStr}]`;
+          const runNotes = `${rec.notes ? rec.notes + " | " : ""}Auto-created from recurring: ${rec.title} ${signature}`;
+
+          let alreadyExists = false;
           if (rec.type === "income") {
-            await Income.create({
-              userId:   rec.userId,
-              source:   rec.title,
-              category: rec.category,
-              amount:   rec.amount,
-              date:     now,
-              notes:    `Auto-created from recurring: ${rec.title}`,
+            alreadyExists = await Income.exists({
+              userId: rec.userId,
+              notes: { $regex: new RegExp("\\[Ref: " + rec._id + "\\] \\[Cycle: " + runDateStr.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + "\\]") }
             });
           } else {
-            await Expense.create({
-              userId:      rec.userId,
-              title:       rec.title,
-              category:    rec.category,
-              amount:      rec.amount,
-              date:        now,
-              isRecurring: true,
-              notes:       `Auto-created from recurring: ${rec.title}`,
+            alreadyExists = await Expense.exists({
+              userId: rec.userId,
+              notes: { $regex: new RegExp("\\[Ref: " + rec._id + "\\] \\[Cycle: " + runDateStr.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + "\\]") }
             });
           }
 
-          // Advance nextRunAt
-          const next = new Date(rec.nextRunAt);
-          if      (rec.frequency === "daily")   next.setDate(next.getDate() + 1);
-          else if (rec.frequency === "weekly")  next.setDate(next.getDate() + 7);
-          else                                  next.setMonth(next.getMonth() + 1);
+          if (alreadyExists) {
+            skippedCount++;
+          } else {
+            if (rec.type === "income") {
+              await Income.create({
+                userId:   rec.userId,
+                source:   rec.title,
+                category: rec.category,
+                amount:   rec.amount,
+                date:     rec.nextRunAt, // Use the scheduled date for historical accuracy
+                notes:    runNotes,
+              });
+            } else {
+              await Expense.create({
+                userId:      rec.userId,
+                title:       rec.title,
+                category:    rec.category,
+                amount:      rec.amount,
+                date:        rec.nextRunAt, // Use the scheduled date for historical accuracy
+                isRecurring: true,
+                notes:       runNotes,
+              });
+            }
+            createdCount++;
+          }
 
-          await RecurringTransaction.findByIdAndUpdate(rec._id, { nextRunAt: next });
-          console.log(`[cron] Processed recurring: ${rec.title} (${rec.type}), next: ${next.toISOString()}`);
+          // Advance nextRunAt using UTC-safe methods (Render operates in UTC)
+          const next = new Date(rec.nextRunAt);
+          if (rec.frequency === "daily") {
+            next.setUTCDate(next.getUTCDate() + 1);
+          } else if (rec.frequency === "weekly") {
+            next.setUTCDate(next.getUTCDate() + 7);
+          } else {
+            next.setUTCMonth(next.getUTCMonth() + 1); // defaults to monthly
+          }
+
+          // Save next run date and mark lastRunAt
+          await RecurringTransaction.findByIdAndUpdate(rec._id, {
+            nextRunAt: next,
+            lastRunAt: now
+          });
         } catch (entryErr) {
           console.error(`[cron] Recurring entry failed for ${rec.title}:`, entryErr.message);
         }
+      }
+
+      if (due.length > 0) {
+        console.log(`[cron] Recurring Sync Summary | Total Due: ${due.length} | Created: ${createdCount} | Skipped: ${skippedCount} | Timestamp: ${now.toISOString()}`);
       }
     } catch (err) {
       console.error("[cron] Recurring processor failed:", err.message);
