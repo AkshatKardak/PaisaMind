@@ -5,18 +5,15 @@ const {
   compareTaxRegimes,
   getGSTProgress,
   getAdvanceTax,
+  getTaxReserveEstimate,
 } = require("../controllers/taxController");
 const { protect } = require("../middleware/authMiddleware");
 
 router.get("/overview",      protect, getTaxOverview);
 router.post("/compare",      protect, compareTaxRegimes);
-
-// canonical name
 router.get("/gst-progress",  protect, getGSTProgress);
-// alias used by client → GET /tax/gst-status
 router.get("/gst-status",    protect, getGSTProgress);
-
-// new endpoint used by client → GET /tax/advance-tax
 router.get("/advance-tax",   protect, getAdvanceTax);
+router.get("/reserve",       protect, getTaxReserveEstimate);
 
 module.exports = router;

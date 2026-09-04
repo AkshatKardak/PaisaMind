@@ -87,7 +87,7 @@ const getExpenseSummary = async (req, res, next) => {
       { $sort: { total: -1 } },
     ]);
 
-    res.json({ success: true, summary });
+    res.json({ success: true, data: summary, summary });
   } catch (error) {
     next(error);
   }

@@ -1,4 +1,5 @@
-import { Plus, ReceiptIndianRupee, X } from "lucide-react";
+import { Plus, ReceiptIndianRupee, X, FileSpreadsheet, AlertTriangle } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import EmptyState from "../components/ui/EmptyState";
@@ -127,10 +128,26 @@ function Expenses() {
           <h1 className="page-title">Expenses</h1>
           <p className="text-sm text-[var(--text-secondary)]">See what you spend, what repeats, and what quietly leaks cash.</p>
         </div>
-        <button className="pm-button pm-button-primary flex items-center gap-2" onClick={() => setDrawerOpen(true)}>
-          <Plus size={18} />
-          Add Expense
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            to="/statement-import"
+            className="pm-button flex items-center gap-1.5 border border-[var(--border)] text-xs font-semibold hover:bg-[var(--bg-hover)]"
+          >
+            <FileSpreadsheet size={15} className="text-indigo-500" />
+            <span>Import Statement</span>
+          </Link>
+          <Link
+            to="/anomalies"
+            className="pm-button flex items-center gap-1.5 border border-[var(--border)] text-xs font-semibold hover:bg-[var(--bg-hover)]"
+          >
+            <AlertTriangle size={15} className="text-amber-500" />
+            <span>Scan Duplicates</span>
+          </Link>
+          <button className="pm-button pm-button-primary flex items-center gap-2" onClick={() => setDrawerOpen(true)}>
+            <Plus size={18} />
+            Add Expense
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">

@@ -11,6 +11,8 @@ const {
   createCheckoutSession,
   handleWebhook,
   downloadPDF,
+  getRecoveryDraft,
+  recordTDS,
 } = require("../controllers/invoiceController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -24,6 +26,8 @@ router.delete("/:id", protect, deleteInvoice);
 router.post("/:id/reminder", protect, sendReminder);
 router.post("/:id/checkout", protect, createCheckoutSession);
 router.get("/:id/pdf", protect, downloadPDF);
+router.get("/:id/recovery-draft", protect, getRecoveryDraft);
+router.post("/:id/record-tds", protect, recordTDS);
 
 // Razorpay webhook — public, no JWT auth
 router.post("/webhook/razorpay", handleWebhook);

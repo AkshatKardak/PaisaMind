@@ -1,1013 +1,853 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
+  BarChart2,
   BarChart3,
-  Bell,
   Bot,
   Brain,
   Calculator,
-  CheckCircle,
+  CheckCircle2,
+  ChevronRight,
   CreditCard,
+  FileSpreadsheet,
   FileText,
-  Globe,
+  HelpCircle,
   IndianRupee,
-  Lightbulb,
+  Layers,
   Menu,
+  MessageCircle,
+  Percent,
+  QrCode,
+  Receipt,
+  RefreshCw,
   Shield,
+  ShieldCheck,
+  Sliders,
   Sparkles,
   Target,
   TrendingDown,
   TrendingUp,
-  Upload,
-  UserPlus,
   Wallet,
+  Wand2,
   X,
   Zap,
 } from "lucide-react";
 import ThemeToggle from "../components/ui/ThemeToggle";
+import { formatINR } from "../utils/formatCurrency";
 
-const flowSteps = [
-  {
-    title: "Track",
-    body: "Capture freelance income, expenses, invoices, and goals without spreadsheet drag.",
-    icon: Wallet,
-  },
-  {
-    title: "Analyze",
-    body: "AI reviews spending, tax exposure, recurring costs, and invoice health in context.",
-    icon: Brain,
-  },
-  {
-    title: "Predict",
-    body: "Forecast cash flow, GST threshold risk, advance tax needs, and savings runway.",
-    icon: BarChart3,
-  },
-  {
-    title: "Optimize",
-    body: "Turn insights into better pricing, cleaner collections, and smarter tax decisions.",
-    icon: Zap,
-  },
-];
-
-const problems = [
-  {
-    title: "Income arrives everywhere",
-    body: "UPI, clients, platforms, retainers, and one-off projects rarely land in a neat monthly rhythm.",
-    icon: TrendingUp,
-  },
-  {
-    title: "Taxes stay unclear",
-    body: "GST thresholds, advance tax, old vs new regime, and deductions become last-minute pressure.",
-    icon: Calculator,
-  },
-  {
-    title: "Subscriptions quietly leak money",
-    body: "Tools, SaaS apps, domains, and marketing spends keep running long after they stop helping.",
-    icon: TrendingDown,
-  },
-  {
-    title: "Invoices need chasing",
-    body: "Unpaid invoices distort cash flow and force awkward follow-ups when work should move forward.",
-    icon: FileText,
-  },
-];
-
-const features = [
-  {
-    eyebrow: "Income Tracking",
-    title: "See every rupee you earn in one clean system.",
-    body: "Log client payments, UPI collections, freelance marketplace income, and side-project revenue with category-level reporting.",
-    icon: TrendingUp,
-    accent: "sky",
-  },
-  {
-    eyebrow: "Expense Control",
-    title: "Spot spend patterns before they become habits.",
-    body: "Track tools, internet, travel, marketing, and recurring costs with subscription leak detection built in.",
-    icon: TrendingDown,
-    accent: "red",
-  },
-  {
-    eyebrow: "Invoice Automation",
-    title: "Create GST-ready invoices and get paid faster.",
-    body: "Generate invoices, monitor paid and overdue status, draft reminders, and create online payment links.",
-    icon: FileText,
-    accent: "amber",
-  },
-  {
-    eyebrow: "Cash Flow Forecasting",
-    title: "Plan the next month before it surprises you.",
-    body: "Model expected income, upcoming expenses, tax payments, and savings goals from your actual financial activity.",
-    icon: BarChart3,
-    accent: "purple",
-  },
-];
-
-const testimonials = [
-  {
-    name: "Aarav Mehta",
-    role: "Product designer",
-    city: "Bengaluru",
-    quote:
-      "PaisaMind gave me one place to understand client income, tax estimates, and unpaid invoices. It feels calm instead of accounting-heavy.",
-    initials: "AM",
-  },
-  {
-    name: "Riya Shah",
-    role: "Content creator",
-    city: "Mumbai",
-    quote:
-      "The GST threshold view is the thing I check most. I finally know when revenue is good news and when it needs tax planning.",
-    initials: "RS",
-  },
-  {
-    name: "Kabir Sethi",
-    role: "Indie consultant",
-    city: "Pune",
-    quote:
-      "The monthly AI report helps me make decisions without spending Sunday night inside a spreadsheet.",
-    initials: "KS",
-  },
-];
-
-const healthMetrics = [
-  ["Savings ratio", 78, "green"],
-  ["Expense control", 64, "amber"],
-  ["Income stability", 71, "sky"],
-  ["Invoice collection", 88, "green"],
-];
-
-const featureGrid = [
-  ["Income Tracker", "Multi-source revenue", TrendingUp, "sky"],
-  ["Expense Control", "Categories and leaks", TrendingDown, "red"],
-  ["Invoice Generator", "GST-ready billing", FileText, "amber"],
-  ["Online Payments", "Razorpay checkout links", CreditCard, "green"],
-  ["Tax Planner", "Old vs new regime", Calculator, "amber"],
-  ["Goal Tracker", "Savings milestones", Target, "purple"],
-  ["AI Reports", "Monthly intelligence", Bot, "purple"],
-  ["Smart Alerts", "Tax and invoices", Bell, "sky"],
-];
-
-function SectionHeader({ eyebrow, title, body, align = "center" }) {
-  return (
-    <div className={`mx-auto max-w-3xl ${align === "center" ? "text-center" : ""}`}>
-      <div className="lp-section-label">{eyebrow}</div>
-      <h2 className="mt-4 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.04em] text-[var(--text-primary)] md:text-5xl">
-        {title}
-      </h2>
-      {body && <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-[var(--text-secondary)] md:text-lg">{body}</p>}
-    </div>
-  );
-}
-
-function MiniBarChart() {
-  const values = [34, 52, 42, 68, 58, 82, 74, 94];
-
-  return (
-    <div className="flex h-28 items-end gap-2 rounded-2xl border border-white/5 bg-black/15 p-4">
-      {values.map((value, index) => (
-        <div key={value} className="flex flex-1 items-end">
-          <div
-            className="lp-bar w-full rounded-t-md bg-gradient-to-t from-sky-600 to-sky-300"
-            style={{ "--bar-height": `${value}%`, animationDelay: `${index * 90}ms` }}
-          />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function DashboardPreview() {
-  const activity = [
-    ["Design retainer", "+ Rs. 58,000", "Client paid"],
-    ["Software tools", "- Rs. 8,200", "Recurring"],
-    ["Invoice PM-342", "Rs. 25,000", "Overdue"],
-  ];
-
-  return (
-    <div className="lp-dashboard lp-floating relative mx-auto w-full max-w-[620px] lg:px-10">
-      <div className="lp-floating-card lp-floating-card-left absolute left-0 top-24 hidden rounded-2xl px-4 py-3 text-sm shadow-2xl backdrop-blur-xl lg:block">
-        <div className="text-[11px] uppercase tracking-[0.18em] text-sky-300">Insight</div>
-        <div className="mt-1 font-semibold">Income increased 14% this month</div>
-      </div>
-      <div className="lp-floating-card lp-floating-card-right absolute bottom-28 right-0 hidden rounded-2xl px-4 py-3 text-sm shadow-2xl backdrop-blur-xl lg:block">
-        <div className="text-[11px] uppercase tracking-[0.18em] text-amber-300">Reminder</div>
-        <div className="mt-1 font-semibold">Quarterly tax due in 8 days</div>
-      </div>
-
-      <div className="lp-glass-panel overflow-hidden rounded-[28px] p-4 shadow-2xl md:p-5">
-        <div className="mb-5 flex items-center justify-between border-b border-white/5 pb-4">
-          <div>
-            <div className="text-xs uppercase tracking-[0.22em] text-[var(--text-muted)]">PaisaMind cockpit</div>
-            <div className="mt-1 font-display text-xl font-bold text-[var(--text-primary)]">June finances</div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[
-            ["Income", "Rs. 8.55L", "+14%", "sky"],
-            ["Profit", "Rs. 5.14L", "+9%", "green"],
-            ["Health", "82/100", "Good", "purple"],
-          ].map(([label, value, change, accent]) => (
-            <div key={label} className={`lp-mini-card lp-accent-${accent}`}>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">{label}</div>
-              <div className="mt-2 text-lg font-extrabold text-[var(--text-primary)]">{value}</div>
-              <div className="mt-1 text-xs text-[var(--text-secondary)]">{change}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1.35fr_0.9fr]">
-          <div className="lp-mini-card">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <div className="text-xs font-semibold text-[var(--text-primary)]">Income analytics</div>
-                <div className="text-[11px] text-[var(--text-muted)]">Six month trend</div>
-              </div>
-              <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-300">Healthy</span>
-            </div>
-            <MiniBarChart />
-          </div>
-
-          <div className="lp-mini-card">
-            <div className="mb-3 text-xs font-semibold text-[var(--text-primary)]">Expense split</div>
-            <div className="mx-auto grid h-32 w-32 place-items-center rounded-full" style={{ background: "conic-gradient(#0EA5E9 0 38%, #8B5CF6 38% 62%, #F59E0B 62% 81%, #10B981 81% 100%)" }}>
-              <div className="grid h-20 w-20 place-items-center rounded-full bg-[var(--bg-surface)] text-center">
-                <span className="text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">Spend</span>
-                <span className="-mt-3 text-sm font-bold text-[var(--text-primary)]">Rs. 1.9L</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="lp-mini-card">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-semibold text-[var(--text-primary)]">GST threshold</span>
-              <span className="text-xs font-bold text-amber-300">82%</span>
-            </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-white/6">
-              <div className="h-full w-[82%] rounded-full bg-gradient-to-r from-amber-400 to-red-500" />
-            </div>
-            <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">Rs. 16.4L used of Rs. 20L annual threshold.</p>
-          </div>
-
-          <div className="lp-mini-card">
-            <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-purple-300">
-              <Sparkles size={14} />
-              AI insight cards
-            </div>
-            <div className="space-y-2">
-              <div className="rounded-xl border border-sky-400/10 bg-sky-500/8 px-3 py-2 text-xs text-[var(--text-secondary)]">Cash runway improved by 11 days after lower travel spend.</div>
-              <div className="rounded-xl border border-red-400/10 bg-red-500/8 px-3 py-2 text-xs text-[var(--text-secondary)]">Invoice PM-342 is overdue and affects June cash flow.</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 lp-mini-card">
-          <div className="mb-3 text-xs font-semibold text-[var(--text-primary)]">Transaction activity</div>
-          <div className="space-y-2">
-            {activity.map(([title, amount, meta]) => (
-              <div key={title} className="flex items-center justify-between rounded-xl bg-white/[0.03] px-3 py-2">
-                <div>
-                  <div className="text-xs font-semibold text-[var(--text-primary)]">{title}</div>
-                  <div className="text-[11px] text-[var(--text-muted)]">{meta}</div>
-                </div>
-                <div className="text-xs font-bold text-[var(--text-primary)]">{amount}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ChaosVisual() {
-  const rows = [
-    ["Client A", "UPI received", "Rs. 42,000"],
-    ["SaaS renewal", "Auto debit", "Rs. 6,499"],
-    ["GST", "Threshold risk", "82%"],
-    ["Invoice", "Needs follow-up", "PM-342"],
-    ["Tax", "Advance due", "8 days"],
-  ];
-
-  return (
-    <div className="lp-glass-panel relative overflow-hidden rounded-[28px] p-5">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(239,68,68,0.14),transparent_34%),radial-gradient(circle_at_20%_80%,rgba(245,158,11,0.12),transparent_35%)]" />
-      <div className="relative">
-        <div className="mb-5 flex items-center justify-between">
-          <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">Financial noise</div>
-            <div className="mt-1 font-display text-xl font-bold text-[var(--text-primary)]">Before PaisaMind</div>
-          </div>
-          <div className="rounded-full border border-red-400/20 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-300">High friction</div>
-        </div>
-        <div className="space-y-3">
-          {rows.map(([title, meta, value], index) => (
-            <div
-              key={title}
-              className="rounded-2xl border border-white/6 bg-white/[0.035] p-4 backdrop-blur-xl"
-              style={{ transform: `translateX(${index % 2 === 0 ? 0 : 16}px)` }}
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-sm font-semibold text-[var(--text-primary)]">{title}</div>
-                  <div className="text-xs text-[var(--text-muted)]">{meta}</div>
-                </div>
-                <div className="text-sm font-bold text-[var(--text-secondary)]">{value}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FeatureSpotlight({ feature, index }) {
-  const Icon = feature.icon;
-  const reverse = index % 2 === 1;
-
-  return (
-    <div className={`reveal grid items-center gap-8 lg:grid-cols-2 ${reverse ? "lg:[&>*:first-child]:order-2" : ""}`}>
-      <div>
-        <div className={`lp-feature-badge lp-accent-${feature.accent}`}>
-          <Icon size={15} />
-          {feature.eyebrow}
-        </div>
-        <h3 className="mt-5 max-w-xl font-display text-3xl font-extrabold leading-tight tracking-[-0.03em] text-[var(--text-primary)] md:text-4xl">
-          {feature.title}
-        </h3>
-        <p className="mt-4 max-w-xl text-base leading-8 text-[var(--text-secondary)]">{feature.body}</p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          {["Realtime visibility", "AI context", "Indian workflows"].map((item) => (
-            <span key={item} className="rounded-full border border-white/6 bg-white/[0.035] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)]">
-              {item}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="lp-glass-panel rounded-[28px] p-5">
-        <div className="rounded-3xl border border-white/6 bg-black/15 p-5">
-          <div className="mb-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`grid h-11 w-11 place-items-center rounded-2xl lp-icon-bg-${feature.accent}`}>
-                <Icon size={20} />
-              </div>
-              <div>
-                <div className="text-sm font-bold text-[var(--text-primary)]">{feature.eyebrow}</div>
-                <div className="text-xs text-[var(--text-muted)]">Live module preview</div>
-              </div>
-            </div>
-            <span className="lp-live-dot" />
-          </div>
-
-          <div className="space-y-3">
-            {[88, 64, 72].map((value, rowIndex) => (
-              <div key={value} className="rounded-2xl bg-white/[0.035] p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-secondary)]">{["This month", "Forecast", "Risk score"][rowIndex]}</span>
-                  <span className="text-xs font-bold text-[var(--text-primary)]">{value}%</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-white/6">
-                  <div className={`h-full rounded-full lp-progress-${feature.accent}`} style={{ width: `${value}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function HealthScoreSection() {
-  return (
-    <section id="health-score" className="lp-section">
-      <div className="mx-auto max-w-7xl px-5">
-        <div className="reveal grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="lp-glass-panel rounded-[32px] p-6 md:p-8">
-            <div className="relative mx-auto grid aspect-square max-w-[360px] place-items-center rounded-full bg-[radial-gradient(circle,rgba(14,165,233,0.18),transparent_62%)]">
-              <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 220 220" aria-hidden="true">
-                <circle cx="110" cy="110" r="86" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="18" />
-                <circle
-                  cx="110"
-                  cy="110"
-                  r="86"
-                  fill="none"
-                  stroke="url(#healthGradient)"
-                  strokeLinecap="round"
-                  strokeWidth="18"
-                  strokeDasharray="540"
-                  strokeDashoffset="98"
-                />
-                <defs>
-                  <linearGradient id="healthGradient" x1="0" x2="1" y1="0" y2="1">
-                    <stop stopColor="#0EA5E9" />
-                    <stop offset="1" stopColor="#10B981" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="relative text-center">
-                <div className="font-display text-7xl font-black tracking-[-0.08em] text-[var(--text-primary)]">82</div>
-                <div className="mt-1 text-xs font-bold uppercase tracking-[0.3em] text-sky-300">Strong</div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="lp-section-label">Financial Health Score</div>
-            <h2 className="mt-4 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.04em] text-[var(--text-primary)] md:text-5xl">
-              Know your financial score before your CA does.
-            </h2>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--text-secondary)] md:text-lg">
-              PaisaMind converts income consistency, expense control, savings ratio, and invoice collection into one fintech-grade score you can act on.
-            </p>
-
-            <div className="mt-8 space-y-4">
-              {healthMetrics.map(([label, value, tone]) => (
-                <div key={label} className="rounded-2xl border border-white/6 bg-white/[0.035] p-4">
-                  <div className="mb-3 flex items-center justify-between text-sm">
-                    <span className="font-semibold text-[var(--text-primary)]">{label}</span>
-                    <span className="font-bold text-[var(--text-secondary)]">{value}%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-white/6">
-                    <div className={`h-full rounded-full lp-progress-${tone}`} style={{ width: `${value}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function TaxSection() {
-  return (
-    <section id="tax" className="lp-section border-y border-white/6 bg-[var(--bg-surface)]">
-      <div className="mx-auto max-w-7xl px-5">
-        <div className="reveal grid items-center gap-10 lg:grid-cols-2">
-          <div>
-            <div className="lp-section-label">Indian tax planning software</div>
-            <h2 className="mt-4 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.04em] text-[var(--text-primary)] md:text-5xl">
-              GST alerts. Advance tax. Regime comparison.
-            </h2>
-            <p className="mt-5 text-base leading-8 text-[var(--text-secondary)] md:text-lg">
-              Built for Indian freelancers who need a GST tracker, quarterly tax reminders, and a clear old vs new regime comparison without decoding tax jargon every month.
-            </p>
-            <div className="mt-7 grid gap-3">
-              {[
-                "Realtime GST threshold tracker with warning states",
-                "Quarterly advance tax payment schedule and countdowns",
-                "Old vs new regime comparison with tax-saving recommendations",
-                "AI summaries that explain the next best action",
-              ].map((item) => (
-                <div key={item} className="flex items-center gap-3 text-sm text-[var(--text-secondary)]">
-                  <CheckCircle className="text-emerald-400" size={17} />
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="lp-glass-panel rounded-[32px] p-5 md:p-7">
-            <div className="rounded-3xl border border-white/6 bg-black/15 p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <div className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">GST threshold monitor</div>
-                  <div className="mt-1 font-display text-2xl font-bold text-[var(--text-primary)]">Rs. 16,40,000 used</div>
-                </div>
-                <span className="rounded-full border border-amber-400/20 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-300">82%</span>
-              </div>
-              <div className="h-3 overflow-hidden rounded-full bg-white/6">
-                <div className="h-full w-[82%] rounded-full bg-gradient-to-r from-amber-400 to-red-500" />
-              </div>
-
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/6 bg-white/[0.035] p-4">
-                  <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Old regime</div>
-                  <div className="mt-2 font-display text-2xl font-bold text-[var(--text-primary)]">Rs. 1,24,800</div>
-                  <div className="mt-1 text-xs text-[var(--text-secondary)]">Estimated tax</div>
-                </div>
-                <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4">
-                  <div className="text-xs uppercase tracking-[0.18em] text-emerald-300">New regime</div>
-                  <div className="mt-2 font-display text-2xl font-bold text-emerald-300">Rs. 94,200</div>
-                  <div className="mt-1 text-xs text-emerald-200/80">Save Rs. 30,600</div>
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-sky-400/15 bg-sky-500/10 p-4">
-                <div className="flex items-start gap-3">
-                  <Lightbulb className="mt-0.5 text-sky-300" size={18} />
-                  <p className="text-sm leading-6 text-[var(--text-secondary)]">
-                    Recommendation: keep the new regime selected unless deductions exceed Rs. 2.7L this year.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function AiCopilotSection() {
-  return (
-    <section id="ai-copilot" className="lp-section">
-      <div className="mx-auto max-w-7xl px-5">
-        <div className="reveal grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="lp-glass-panel rounded-[32px] p-5 md:p-7">
-            <div className="mb-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-purple-500/10 text-purple-300">
-                  <Sparkles size={20} />
-                </div>
-                <div>
-                  <div className="font-display text-xl font-bold text-[var(--text-primary)]">AI finance copilot</div>
-                  <div className="text-xs text-[var(--text-muted)]">Contextual insights from your data</div>
-                </div>
-              </div>
-              <span className="rounded-full border border-purple-400/20 bg-purple-500/10 px-3 py-1 text-xs font-semibold text-purple-300">Live</span>
-            </div>
-            <div className="space-y-3">
-              {[
-                ["Food spending increased 34% compared with last month.", "warning"],
-                ["Your savings rate dropped from 31% to 24% this month.", "sky"],
-                ["You can reduce tax liability through planned 80C investments.", "green"],
-                ["Rs. 45,000 in invoices are overdue and need follow-up.", "danger"],
-              ].map(([text, tone]) => (
-                <div key={text} className={`rounded-2xl border bg-white/[0.035] p-4 text-sm leading-6 text-[var(--text-secondary)] lp-insight-${tone}`}>
-                  {text}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className="lp-section-label">AI-powered finance platform</div>
-            <h2 className="mt-4 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.04em] text-[var(--text-primary)] md:text-5xl">
-              Your AI finance co-pilot, on demand.
-            </h2>
-            <p className="mt-5 text-base leading-8 text-[var(--text-secondary)] md:text-lg">
-              PaisaMind turns raw records into monthly reports, risk alerts, invoice reminder drafts, and plain-English recommendations for freelancer finance management.
-            </p>
-            <div className="mt-8 rounded-3xl border border-white/6 bg-white/[0.035] p-5">
-              <div className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">Monthly report preview</div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {["Income summary", "Expense analysis", "Tax status", "Key action items"].map((item) => (
-                  <div key={item} className="rounded-2xl bg-black/15 px-4 py-3 text-sm font-semibold text-[var(--text-primary)]">{item}</div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Landing() {
+export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [calcIncome, setCalcIncome] = useState(2400000);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) entry.target.classList.add("visible");
-        });
-      },
-      { threshold: 0.12 }
-    );
+  // Month calculation
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+  const currentMonthName = monthNames[new Date().getMonth()];
 
-    document.querySelectorAll(".reveal").forEach((element) => observer.observe(element));
-
-    const nav = document.getElementById("lp-navbar");
-    const onScroll = () => {
-      nav?.classList.toggle("lp-nav-scrolled", window.scrollY > 60);
-    };
-
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, []);
+  // Interactive 44ADA Calculator preview
+  const deemedProfit = Math.round(calcIncome * 0.5);
+  const normalTax = Math.round(
+    calcIncome > 1500000
+      ? 150000 + (calcIncome - 1500000) * 0.3
+      : calcIncome * 0.15
+  );
+  const adaTax = Math.round(
+    deemedProfit > 1200000
+      ? 60000 + (deemedProfit - 1200000) * 0.15
+      : Math.max(0, (deemedProfit - 700000) * 0.1)
+  );
+  const estimatedSavings = Math.max(0, normalTax - adaTax);
 
   return (
-    <div className="lp-shell relative min-h-screen overflow-x-hidden text-[var(--text-primary)]">
-      <header id="lp-navbar" className="lp-navbar fixed left-0 right-0 top-0 z-50 h-16">
-        <nav className="mx-auto flex h-full max-w-7xl items-center justify-between px-5">
-          <Link to="/" className="flex items-center gap-3" aria-label="PaisaMind home">
-            <img src="/logo.png" alt="PaisaMind logo" className="h-9 w-9 rounded-xl object-cover" />
-            <div>
-              <div className="font-display text-lg font-bold tracking-[-0.03em] text-[var(--text-primary)]">PaisaMind</div>
-              <div className="hidden text-[11px] font-medium text-[var(--text-muted)] sm:block">Finance OS for Indian Freelancers</div>
-            </div>
+    <div className="min-h-screen bg-[#070b14] text-slate-100 font-sans selection:bg-cyan-500 selection:text-black">
+      {/* ── Navbar ── */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#070b14]/90 border-b border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          {/* Logo with NO word "PaisaMind", showing just the official logo image */}
+          <Link to="/" className="flex items-center gap-3">
+            <img src="/logo.png" alt="Logo" className="h-9 w-auto object-contain" />
           </Link>
 
-          <div className="hidden items-center gap-8 text-sm font-medium text-[var(--text-secondary)] lg:flex">
-            <a href="#problem" className="transition hover:text-[var(--text-primary)]">Problem</a>
-            <a href="#features" className="transition hover:text-[var(--text-primary)]">Features</a>
-            <a href="#tax" className="transition hover:text-[var(--text-primary)]">Tax</a>
-            <a href="#testimonials" className="transition hover:text-[var(--text-primary)]">Customers</a>
-          </div>
+          {/* Desktop Nav Links */}
+          <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-slate-400">
+            <a href="#problems" className="hover:text-cyan-400 transition-colors">Problem</a>
+            <a href="#features" className="hover:text-cyan-400 transition-colors">Features</a>
+            <a href="#tax-engine" className="hover:text-cyan-400 transition-colors">Tax</a>
+            <a href="#comparison" className="hover:text-cyan-400 transition-colors">Comparison</a>
+            <a href="#faq" className="hover:text-cyan-400 transition-colors">FAQ</a>
+          </nav>
 
-          <div className="hidden items-center gap-3 md:flex">
+          {/* Right Action Buttons */}
+          <div className="hidden md:flex items-center gap-4">
             <ThemeToggle />
-            <Link to="/login" className="rounded-xl border border-white/8 px-5 py-2 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-white/20 hover:text-[var(--text-primary)]">
+            <Link
+              to="/login"
+              className="text-xs font-semibold text-slate-300 hover:text-white transition-colors"
+            >
               Sign In
             </Link>
-            <Link to="/register" className="lp-cta-btn inline-flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-bold text-white">
-              Start For Free
-              <ArrowRight size={15} />
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 text-xs font-bold shadow-lg shadow-cyan-500/20 transition-all hover:scale-105 active:scale-95"
+            >
+              <span>Start For Free</span>
+              <ArrowRight size={13} />
             </Link>
           </div>
 
+          {/* Mobile hamburger */}
           <div className="flex items-center gap-2 md:hidden">
             <ThemeToggle />
             <button
-              type="button"
-              aria-label="Open menu"
-              onClick={() => setMobileMenuOpen((value) => !value)}
-              className="grid h-10 w-10 place-items-center rounded-xl border border-white/8 bg-white/[0.04] text-[var(--text-primary)]"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-slate-400 hover:text-white"
             >
-              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
-        </nav>
+        </div>
 
+        {/* Mobile Dropdown */}
         {mobileMenuOpen && (
-          <div className="mx-5 rounded-2xl border border-white/8 bg-[rgba(11,17,32,0.94)] p-4 shadow-2xl backdrop-blur-2xl md:hidden">
-            <div className="grid gap-2 text-sm font-semibold text-[var(--text-secondary)]">
-              {[
-                ["Problem", "#problem"],
-                ["Features", "#features"],
-                ["Tax", "#tax"],
-                ["Customers", "#testimonials"],
-              ].map(([label, href]) => (
-                <a key={label} href={href} className="rounded-xl px-3 py-2 hover:bg-white/[0.04]" onClick={() => setMobileMenuOpen(false)}>
-                  {label}
-                </a>
-              ))}
-              <Link to="/login" className="rounded-xl px-3 py-2 hover:bg-white/[0.04]" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
-              <Link to="/register" className="lp-cta-btn mt-2 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-bold text-white" onClick={() => setMobileMenuOpen(false)}>
-                Start For Free
-                <ArrowRight size={15} />
-              </Link>
+          <div className="md:hidden border-b border-slate-800 bg-[#0c1322] p-4 space-y-3 text-sm font-semibold">
+            <a href="#problems" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-slate-300">Problem</a>
+            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-slate-300">Features</a>
+            <a href="#tax-engine" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-slate-300">Tax</a>
+            <a href="#comparison" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-slate-300">Comparison</a>
+            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-slate-300">FAQ</a>
+            <div className="pt-2 border-t border-slate-800 flex gap-2">
+              <Link to="/login" className="flex-1 py-2 text-center text-xs border border-slate-700 rounded-xl text-slate-200">Sign In</Link>
+              <Link to="/register" className="flex-1 py-2 text-center text-xs bg-cyan-400 text-slate-950 rounded-xl font-bold">Start For Free</Link>
             </div>
           </div>
         )}
       </header>
 
-      <main>
-        <section className="relative min-h-screen overflow-hidden px-5 pb-16 pt-28 md:pt-32">
-          <div className="absolute inset-0 -z-10 lp-premium-bg" />
-          <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="reveal visible">
-              <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/15 bg-sky-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
-                <Sparkles size={14} />
-                AI-Powered Freelance Finance OS
+      {/* ── Hero Section (Matching Exactly the Uploaded Cockpit Image) ── */}
+      <section className="relative pt-12 pb-24 overflow-hidden border-b border-slate-800/60 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px]">
+        {/* Glow gradients */}
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[300px] bg-cyan-500/10 blur-[140px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/3 right-1/4 w-[400px] h-[300px] bg-indigo-500/10 blur-[130px] rounded-full pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            {/* ── Left Column ── */}
+            <div className="lg:col-span-6 space-y-6 text-left">
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0c1b2f] border border-cyan-500/30 text-[11px] font-semibold tracking-wide text-cyan-400 shadow-sm">
+                <Sparkles size={13} className="text-cyan-400" />
+                <span>AI-POWERED FINANCE OS INDIA</span>
               </div>
-              <h1 className="mt-7 max-w-4xl font-display text-[42px] font-extrabold leading-[0.98] tracking-[-0.06em] text-[var(--text-primary)] sm:text-5xl lg:text-[64px]">
-                Your freelance finances, invoices, budgets, and tax decisions — <span className="lp-highlight">in one place</span>.
+
+              {/* Main Headline */}
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black font-display tracking-tight text-white leading-[1.1]">
+                The financial <br />
+                intelligence <br />
+                platform built for <br />
+                Indian freelancers.
               </h1>
-              <p className="mt-7 max-w-2xl text-[17px] leading-8 text-[var(--text-secondary)] md:text-lg">
-                PaisaMind helps Indian freelancers track multi-stream income and expenses, generate and manage professional invoices, automate recurring transactions, monitor category budget limits, compare and plan taxes, and forecast future cash flow in one unified operating system.
+
+              {/* Subtitle */}
+              <p className="text-sm sm:text-base text-slate-300 max-w-lg leading-relaxed font-normal">
+                PaisaMind is an AI-powered finance platform for income tracking, Indian tax planning software, invoice automation, GST tracker alerts, cash flow forecasting, and smart financial intelligence in one calm dashboard.
               </p>
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-                <Link to="/register" className="lp-cta-btn-lg inline-flex items-center justify-center gap-2 rounded-2xl px-7 py-4 text-base font-bold text-white">
-                  Start For Free
-                  <ArrowRight size={18} />
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-4 pt-2">
+                <Link
+                  to="/register"
+                  className="px-7 py-3.5 rounded-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-extrabold text-sm shadow-xl shadow-cyan-500/25 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                >
+                  <span>Start For Free</span>
+                  <ArrowRight size={15} />
                 </Link>
-                <a href="#features" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/8 bg-white/[0.035] px-7 py-4 text-base font-bold text-[var(--text-primary)] backdrop-blur-xl transition hover:border-sky-400/30 hover:bg-sky-500/10">
-                  See Features
-                  <BarChart3 size={18} />
+                <a
+                  href="#features"
+                  className="px-6 py-3.5 rounded-2xl bg-[#0f172a] border border-slate-700 hover:border-slate-600 text-slate-200 hover:text-white font-semibold text-sm flex items-center gap-2 transition-all"
+                >
+                  <span>See Features</span>
+                  <BarChart2 size={15} className="text-slate-400" />
                 </a>
               </div>
-              <div className="mt-8 flex flex-col gap-4 text-sm text-[var(--text-secondary)] sm:flex-row sm:items-center">
-                <div className="flex -space-x-2">
-                  {["A", "R", "S", "K", "P"].map((letter, index) => (
-                    <div key={letter} className={`grid h-9 w-9 place-items-center rounded-full border border-[var(--bg-primary)] text-xs font-bold text-white lp-avatar-${index}`}>
-                      {letter}
-                    </div>
-                  ))}
+
+              {/* Social Proof & Trust Avatars */}
+              <div className="pt-4 flex items-center gap-4">
+                <div className="flex -space-x-2 overflow-hidden">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-cyan-600 text-white font-bold text-xs ring-2 ring-[#070b14]">A</span>
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white font-bold text-xs ring-2 ring-[#070b14]">R</span>
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 text-white font-bold text-xs ring-2 ring-[#070b14]">S</span>
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-600 text-white font-bold text-xs ring-2 ring-[#070b14]">K</span>
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-pink-600 text-white font-bold text-xs ring-2 ring-[#070b14]">P</span>
                 </div>
-                <div className="h-5 w-px bg-white/10 max-sm:hidden" />
-                <div>Trusted by 2,000+ freelancers, creators, and small businesses.</div>
-                <div className="font-semibold text-[var(--text-primary)]">Rated 4.9/5</div>
-              </div>
-            </div>
-
-            <div className="reveal visible relative -mx-5 mt-4 md:mx-0 lg:mt-0">
-              <DashboardPreview />
-            </div>
-          </div>
-        </section>
-
-        <section className="lp-stats-strip py-8 backdrop-blur-xl">
-          <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-5 md:grid-cols-4">
-            {[
-              ["Rs. 2.4Cr+", "Income tracked"],
-              ["15,000+", "Invoices generated"],
-              ["94%", "Tax reminders on time"],
-              ["4.9/5", "Average rating"],
-            ].map(([value, label]) => (
-              <div key={label} className="reveal lp-stat-card rounded-2xl px-4 py-5 text-center">
-                <div className="font-display text-3xl font-extrabold tracking-[-0.04em] text-[var(--text-primary)]">{value}</div>
-                <div className="mt-1 text-xs font-medium text-[var(--text-muted)]">{label}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section id="problem" className="lp-section">
-          <div className="mx-auto max-w-7xl px-5">
-            <div className="grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
-              <div className="reveal">
-                <SectionHeader
-                  align="left"
-                  eyebrow="Problem Statement"
-                  title="Freelancer finances are more chaotic than they should be."
-                  body="Managing independent work across UPI apps, spreadsheets, manual invoices, freelance platforms, and bank statements leads to scattered data. PaisaMind unifies these fragmented financial workflows, turning chaos into clear, actionable business insights."
-                />
-                <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                  {problems.map((problem) => {
-                    const Icon = problem.icon;
-                    return (
-                      <div key={problem.title} className="lp-card p-5">
-                        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/[0.04] text-sky-300">
-                          <Icon size={20} />
-                        </div>
-                        <h3 className="mt-4 font-display text-lg font-bold text-[var(--text-primary)]">{problem.title}</h3>
-                        <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{problem.body}</p>
-                      </div>
-                    );
-                  })}
+                <div className="text-xs text-slate-400">
+                  <span className="text-slate-200 font-semibold">Trusted by 2,000+ freelancers, creators,</span> and small businesses.
+                </div>
+                <div className="pl-2 border-l border-slate-800 text-xs">
+                  <span className="text-slate-400">Rated</span> <strong className="text-white font-bold">4.9/5</strong>
                 </div>
               </div>
-              <div className="reveal">
-                <ChaosVisual />
-              </div>
             </div>
-          </div>
-        </section>
 
-        <section id="solution" className="lp-section border-y border-white/6 bg-[var(--bg-surface)]">
-          <div className="mx-auto max-w-7xl px-5">
-            <div className="reveal">
-              <SectionHeader
-                eyebrow="Solution Flow"
-                title="One platform. Complete financial clarity."
-                body="PaisaMind turns daily financial activity into decisions you can trust: track, analyze, predict, and optimize."
-              />
-            </div>
-            <div className="reveal relative mt-14 grid gap-5 lg:grid-cols-4">
-              <div className="lp-flow-line hidden lg:block" />
-              {flowSteps.map((step, index) => {
-                const Icon = step.icon;
-                return (
-                  <div key={step.title} className="lp-card relative p-6">
-                    <div className="mb-8 flex items-center justify-between">
-                      <div className="grid h-12 w-12 place-items-center rounded-2xl border border-sky-400/15 bg-sky-500/10 text-sky-300">
-                        <Icon size={21} />
-                      </div>
-                      <span className="font-display text-5xl font-black leading-none text-white/[0.04]">{String(index + 1).padStart(2, "0")}</span>
+            {/* ── Right Column: PaisaMind Cockpit Mockup ── */}
+            <div className="lg:col-span-6 relative">
+              {/* Custom CSS Keyframes for Cockpit Micro-Animations */}
+              <style>{`
+                @keyframes cockpitFloat {
+                  0%, 100% { transform: translateY(0px); }
+                  50% { transform: translateY(-7px); }
+                }
+                @keyframes cockpitFloatReverse {
+                  0%, 100% { transform: translateY(0px); }
+                  50% { transform: translateY(7px); }
+                }
+                @keyframes barPulse {
+                  0%, 100% { opacity: 0.85; filter: brightness(1); }
+                  50% { opacity: 1; filter: brightness(1.2); }
+                }
+                @keyframes shimmerGradient {
+                  0% { background-position: 100% 0; }
+                  100% { background-position: -100% 0; }
+                }
+                @keyframes spinSlow {
+                  from { transform: rotate(0deg); }
+                  to { transform: rotate(360deg); }
+                }
+                .animate-cockpit-float {
+                  animation: cockpitFloat 4.5s ease-in-out infinite;
+                }
+                .animate-cockpit-float-rev {
+                  animation: cockpitFloatReverse 5s ease-in-out infinite;
+                }
+                .animate-shimmer-bar {
+                  background: linear-gradient(90deg, #f59e0b 0%, #fb923c 50%, #f59e0b 100%);
+                  background-size: 200% 100%;
+                  animation: shimmerGradient 3s linear infinite;
+                }
+              `}</style>
+
+              {/* Floating Badge: Top Left Insight (Animated) */}
+              <div className="absolute -top-4 -left-4 z-20 px-3.5 py-2 rounded-xl bg-[#09182d]/90 border border-cyan-500/40 text-cyan-300 text-xs shadow-xl backdrop-blur-md flex flex-col items-start animate-cockpit-float transition-all hover:scale-105">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                  <span className="text-[9px] uppercase tracking-wider font-bold text-cyan-400">INSIGHT</span>
+                </div>
+                <span className="font-semibold text-[11px] text-white">Income increased 14% this month</span>
+              </div>
+
+              {/* Floating Badge: Bottom Right Reminder (Animated) */}
+              <div className="absolute -bottom-3 -right-3 z-20 px-3.5 py-2 rounded-xl bg-[#231508]/90 border border-amber-600/40 text-amber-300 text-xs shadow-xl backdrop-blur-md flex flex-col items-start animate-cockpit-float-rev transition-all hover:scale-105">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="text-[9px] uppercase tracking-wider font-bold text-amber-400">REMINDER</span>
+                </div>
+                <span className="font-semibold text-[11px] text-white">Quarterly tax due in 8 days</span>
+              </div>
+
+              {/* Main Cockpit Window Card */}
+              <div className="rounded-3xl p-6 bg-[#0c1424] border border-slate-800 shadow-2xl space-y-4 text-left relative overflow-hidden transition-all hover:border-slate-700/80">
+                {/* Subtle Ambient Back-Glow */}
+                <div className="absolute top-0 right-0 w-48 h-48 bg-cyan-500/5 blur-3xl pointer-events-none" />
+
+                {/* Cockpit Window Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                  <div>
+                    <div className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">
+                      PAISAMIND COCKPIT
                     </div>
-                    <h3 className="font-display text-xl font-bold text-[var(--text-primary)]">{step.title}</h3>
-                    <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">{step.body}</p>
+                    <div className="text-lg font-bold font-display text-white flex items-center gap-2">
+                      <span>{currentMonthName} finances</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
+                  {/* Traffic Light Window Dots */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                  </div>
+                </div>
 
-        {/* Why PaisaMind is Different Section */}
-        <section id="beyond-tracking" className="lp-section border-b border-white/6 bg-[var(--bg-primary)]">
-          <div className="mx-auto max-w-7xl px-5">
-            <div className="reveal text-center">
-              <div className="lp-section-label">Beyond Tracking</div>
-              <h2 className="mt-4 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.04em] text-[var(--text-primary)] md:text-5xl">
-                Why PaisaMind is different
-              </h2>
-              <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-[var(--text-secondary)] md:text-lg">
-                Traditional expense trackers only answer "where did my money go?" PaisaMind is a complete financial workspace that answers what lies ahead.
+                {/* Top Metrics Row */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3.5 rounded-2xl bg-[#111c30] border border-slate-800 space-y-1 transition-all hover:border-cyan-500/30">
+                    <div className="text-[10px] text-slate-400 uppercase font-semibold">PROFIT</div>
+                    <div className="text-xl font-bold font-mono text-white">Rs. 5.14L</div>
+                    <div className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                      <TrendingUp size={11} />
+                      <span>+9% vs last month</span>
+                    </div>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-[#151c33] border border-indigo-500/20 space-y-1 transition-all hover:border-indigo-500/40">
+                    <div className="text-[10px] text-slate-400 uppercase font-semibold">HEALTH</div>
+                    <div className="text-xl font-bold font-mono text-indigo-300">82<span className="text-xs text-slate-400">/100</span></div>
+                    <div className="text-[10px] text-indigo-400 font-semibold">Good &bull; Low Risk</div>
+                  </div>
+                </div>
+
+                {/* Middle Row: Income Analytics & Expense Split */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Income Trend Bars */}
+                  <div className="p-3.5 rounded-2xl bg-[#0f182a] border border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-slate-300">Income analytics</span>
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-400">Healthy</span>
+                    </div>
+                    <div className="text-[9px] text-slate-500">Six month trend</div>
+                    {/* Visual Rounded Animated Bars */}
+                    <div className="flex items-end justify-between h-14 pt-2 gap-1.5">
+                      <div className="w-full bg-cyan-500/40 rounded-t h-[45%] transition-all duration-300 hover:h-[55%] hover:bg-cyan-400 cursor-pointer" />
+                      <div className="w-full bg-cyan-500/60 rounded-t h-[60%] transition-all duration-300 hover:h-[70%] hover:bg-cyan-400 cursor-pointer" />
+                      <div className="w-full bg-cyan-500/50 rounded-t h-[52%] transition-all duration-300 hover:h-[62%] hover:bg-cyan-400 cursor-pointer" />
+                      <div className="w-full bg-cyan-500/75 rounded-t h-[78%] transition-all duration-300 hover:h-[88%] hover:bg-cyan-400 cursor-pointer" />
+                      <div className="w-full bg-cyan-500/85 rounded-t h-[86%] transition-all duration-300 hover:h-[95%] hover:bg-cyan-400 cursor-pointer" />
+                      <div className="w-full bg-cyan-400 rounded-t h-[100%] shadow-lg shadow-cyan-500/30 transition-all duration-300 hover:brightness-125 cursor-pointer" />
+                    </div>
+                  </div>
+
+                  {/* Expense Split Ring */}
+                  <div className="p-3.5 rounded-2xl bg-[#0f182a] border border-slate-800 flex flex-col items-center justify-center text-center space-y-1 relative">
+                    <span className="text-[11px] font-semibold text-slate-300 self-start">Expense split</span>
+                    <div className="relative w-20 h-20 rounded-full border-4 border-cyan-400 border-t-purple-500 border-r-pink-500 flex flex-col items-center justify-center my-1 transition-transform hover:scale-105 duration-300">
+                      <span className="text-[8px] uppercase tracking-wider text-slate-400 font-bold">SPEND</span>
+                      <span className="text-xs font-bold text-white font-mono">Rs. 1.9L</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* GST Threshold Progress */}
+                <div className="p-3.5 rounded-2xl bg-[#0f182a] border border-slate-800 space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-300 font-semibold">GST threshold</span>
+                    <span className="font-bold text-amber-400 font-mono">82%</span>
+                  </div>
+                  <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="animate-shimmer-bar h-full rounded-full" style={{ width: "82%" }} />
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    Rs. 16.4L used of Rs. 20L annual exemption threshold.
+                  </div>
+                </div>
+
+                {/* AI Insight Cards */}
+                <div className="p-3 rounded-2xl bg-[#11192b] border border-slate-800/80 space-y-2 text-xs">
+                  <div className="flex items-center gap-1.5 text-indigo-400 font-bold text-[11px]">
+                    <Sparkles size={12} />
+                    <span>AI insight cards</span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-[#0a1120] text-slate-300 text-[11px] leading-relaxed">
+                    Cash runway improved by 11 days after lower travel and tool spend.
+                  </div>
+                  <div className="p-2 rounded-xl bg-[#1c1219] text-rose-300 text-[11px] leading-relaxed">
+                    Invoice PM-342 is overdue and affects {currentMonthName} cash flow.
+                  </div>
+                </div>
+
+                {/* Transaction Activity List */}
+                <div className="space-y-1.5 pt-1 text-xs">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Transaction activity</div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-800/60 text-[11px]">
+                    <div>
+                      <div className="font-semibold text-white">Design retainer</div>
+                      <div className="text-[9px] text-slate-400">Client paid</div>
+                    </div>
+                    <span className="text-emerald-400 font-mono font-bold">+ Rs. 75,000</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-800/60 text-[11px]">
+                    <div>
+                      <div className="font-semibold text-white">Software tools</div>
+                      <div className="text-[9px] text-slate-400">Recurring</div>
+                    </div>
+                    <span className="text-slate-300 font-mono">Rs. 6,200</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 text-[11px]">
+                    <div>
+                      <div className="font-semibold text-rose-300">Invoice PM-342</div>
+                      <div className="text-[9px] text-rose-400/80">Overdue</div>
+                    </div>
+                    <span className="text-rose-400 font-mono font-bold">Rs. 25,000</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ── Problem Section ── */}
+      <section id="problems" className="py-20 bg-[#090e1a] border-b border-slate-800/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">The Problem</span>
+            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-white">
+              Why Freelance Finances Feel So Stressful
+            </h2>
+            <p className="text-sm text-slate-400">
+              Traditional spreadsheets and heavy CA accounting tools weren't made for independent Indian operators.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="p-6 rounded-3xl bg-[#0f172a] border border-slate-800 space-y-3">
+              <TrendingUp className="text-cyan-400" size={24} />
+              <h3 className="font-bold text-sm text-white">Income arrives everywhere</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                UPI, clients, international transfers, and retainers land unpredictably without a neat monthly rhythm.
               </p>
             </div>
-
-            <div className="reveal mt-14 grid gap-6 md:grid-cols-3">
-              <div className="lp-card p-6 flex flex-col justify-between">
-                <div>
-                  <div className="grid h-12 w-12 place-items-center rounded-2xl border border-sky-400/15 bg-sky-500/10 text-sky-300">
-                    <FileText size={21} />
-                  </div>
-                  <h3 className="mt-6 font-display text-xl font-bold text-[var(--text-primary)]">1. Beyond tracking</h3>
-                  <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
-                    Expense trackers only show past spending. PaisaMind gives you control over pending invoices, client receivables, automated recurring entries, and category budget limits in one workflow.
-                  </p>
-                </div>
-                <div className="mt-6 text-xs font-semibold text-sky-400">Track invoices & budgets →</div>
-              </div>
-
-              <div className="lp-card p-6 flex flex-col justify-between">
-                <div>
-                  <div className="grid h-12 w-12 place-items-center rounded-2xl border border-emerald-400/15 bg-emerald-500/10 text-emerald-300">
-                    <IndianRupee size={21} />
-                  </div>
-                  <h3 className="mt-6 font-display text-xl font-bold text-[var(--text-primary)]">2. Built for India</h3>
-                  <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
-                    Engineered for Indian freelancers. Active GST threshold risk indicators, old vs. new tax regime comparisons, quarterly advance tax planning, and Razorpay client checkouts.
-                  </p>
-                </div>
-                <div className="mt-6 text-xs font-semibold text-emerald-400">Indian compliance & payments →</div>
-              </div>
-
-              <div className="lp-card p-6 flex flex-col justify-between">
-                <div>
-                  <div className="grid h-12 w-12 place-items-center rounded-2xl border border-purple-400/15 bg-purple-500/10 text-purple-300">
-                    <Brain size={21} />
-                  </div>
-                  <h3 className="mt-6 font-display text-xl font-bold text-[var(--text-primary)]">3. Forward-looking</h3>
-                  <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
-                    Stop guessing your runway. Get predictive cash flow models, an aggregate financial health score, and contextual AI reports that tell you what decision to make next.
-                  </p>
-                </div>
-                <div className="mt-6 text-xs font-semibold text-purple-400">Predict cash flow & plan taxes →</div>
-              </div>
+            <div className="p-6 rounded-3xl bg-[#0f172a] border border-slate-800 space-y-3">
+              <Calculator className="text-amber-400" size={24} />
+              <h3 className="font-bold text-sm text-white">Taxes stay unclear</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Section 44ADA vs New Regime, Advance Tax schedules, and GST ₹20L thresholds create last-minute panic.
+              </p>
             </div>
-          </div>
-        </section>
-
-        <section id="features" className="lp-section">
-          <div className="mx-auto max-w-7xl px-5">
-            <div className="reveal">
-              <SectionHeader
-                eyebrow="Core Features"
-                title="Every critical finance workflow, without the accounting clutter."
-                body="PaisaMind combines freelancer finance management, invoice automation, GST tracker alerts, cash flow forecasting, AI reports, and goal tracking into a focused operating system."
-              />
+            <div className="p-6 rounded-3xl bg-[#0f172a] border border-slate-800 space-y-3">
+              <TrendingDown className="text-rose-400" size={24} />
+              <h3 className="font-bold text-sm text-white">Subscriptions quietly leak</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Cloud servers, design tools, and SaaS apps keep auto-debiting long after client projects wrap up.
+              </p>
             </div>
-            <div className="mt-16 space-y-20">
-              {features.map((feature, index) => (
-                <FeatureSpotlight key={feature.title} feature={feature} index={index} />
-              ))}
-            </div>
-
-            <div className="reveal mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {featureGrid.map(([title, body, Icon, tone]) => (
-                <div key={title} className="lp-card p-5">
-                  <div className={`grid h-10 w-10 place-items-center rounded-2xl lp-icon-bg-${tone}`}>
-                    <Icon size={19} />
-                  </div>
-                  <h3 className="mt-4 font-display text-base font-bold text-[var(--text-primary)]">{title}</h3>
-                  <p className="mt-1 text-sm text-[var(--text-muted)]">{body}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <HealthScoreSection />
-        <TaxSection />
-        <AiCopilotSection />
-
-        <section id="how-it-works" className="lp-section border-y border-white/6 bg-[var(--bg-surface)]">
-          <div className="mx-auto max-w-7xl px-5">
-            <div className="reveal">
-              <SectionHeader eyebrow="How It Works" title="Up and running in three focused steps." />
-            </div>
-            <div className="reveal mt-14 grid gap-6 md:grid-cols-3">
-              {[
-                ["Create your account", "Configure your preferred tax regime, PAN, GST details, and business profile.", UserPlus],
-                ["Add income and expenses", "Record transactions manually and let the dashboard shape your monthly picture.", Upload],
-                ["Get financial clarity", "Use AI insights, forecasts, reports, and reminders to make stronger decisions.", Bot],
-              ].map(([title, body, Icon], index) => (
-                <div key={title} className="lp-card relative overflow-hidden p-7">
-                  <span className="absolute right-5 top-4 font-display text-6xl font-black leading-none text-white/[0.035]">{String(index + 1).padStart(2, "0")}</span>
-                  <div className="relative grid h-12 w-12 place-items-center rounded-2xl border border-sky-400/15 bg-sky-500/10 text-sky-300">
-                    <Icon size={21} />
-                  </div>
-                  <h3 className="relative mt-8 font-display text-xl font-bold text-[var(--text-primary)]">{title}</h3>
-                  <p className="relative mt-3 text-sm leading-7 text-[var(--text-secondary)]">{body}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="testimonials" className="lp-section">
-          <div className="mx-auto max-w-7xl px-5">
-            <div className="reveal">
-              <SectionHeader
-                eyebrow="Testimonials"
-                title="Real freelancers. Real financial clarity."
-                body="PaisaMind is designed for everyday independent operators who need less confusion and more confidence."
-              />
-            </div>
-            <div className="reveal mt-14 grid gap-6 md:grid-cols-3">
-              {testimonials.map((testimonial, index) => (
-                <figure key={testimonial.name} className="lp-card p-6">
-                  <div className="flex items-center gap-3">
-                    <div className={`grid h-12 w-12 place-items-center rounded-full text-sm font-bold text-white lp-avatar-${index + 1}`}>
-                      {testimonial.initials}
-                    </div>
-                    <div>
-                      <figcaption className="font-display text-base font-bold text-[var(--text-primary)]">{testimonial.name}</figcaption>
-                      <div className="text-xs text-[var(--text-muted)]">{testimonial.role} in {testimonial.city}</div>
-                    </div>
-                  </div>
-                  <blockquote className="mt-6 text-sm leading-7 text-[var(--text-secondary)]">"{testimonial.quote}"</blockquote>
-                </figure>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="relative overflow-hidden border-y border-sky-400/10 px-5 py-24 text-center">
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_0%,rgba(14,165,233,0.18),transparent_42%),linear-gradient(135deg,rgba(14,165,233,0.08),rgba(139,92,246,0.08))]" />
-          <div className="reveal mx-auto max-w-3xl">
-            <div className="lp-section-label">Final CTA</div>
-            <h2 className="mt-4 font-display text-[34px] font-extrabold leading-[1.05] tracking-[-0.04em] text-[var(--text-primary)] md:text-5xl">
-              Start managing your freelance finances smarter.
-            </h2>
-            <p className="mx-auto mt-5 max-w-xl text-base leading-8 text-[var(--text-secondary)] md:text-lg">
-              Track income, taxes, invoices, and cash flow in one place with a finance OS for freelancers built around Indian workflows.
-            </p>
-            <Link to="/register" className="lp-cta-btn-lg mt-9 inline-flex items-center justify-center gap-2 rounded-2xl px-9 py-4 text-base font-bold text-white">
-              Get Started Free
-              <ArrowRight size={18} />
-            </Link>
-          </div>
-        </section>
-      </main>
-
-      <footer className="border-t border-white/6 bg-[var(--bg-primary)] px-5 py-12">
-        <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.2fr_0.8fr_1fr]">
-          <div>
-            <Link to="/" className="flex items-center gap-3">
-              <img src="/logo.png" alt="PaisaMind logo" className="h-9 w-9 rounded-xl object-cover" />
-              <div className="font-display text-lg font-bold text-[var(--text-primary)]">PaisaMind</div>
-            </Link>
-            <p className="mt-4 max-w-sm text-sm leading-7 text-[var(--text-muted)]">
-              Finance OS for Indian freelancers, creators, solopreneurs, and small businesses.
-            </p>
-            <div className="mt-5 flex items-center gap-3 text-[var(--text-muted)]">
-              <Globe size={18} />
-              <span className="text-sm">Built for India-first independent work.</span>
-            </div>
-          </div>
-
-          <div>
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--text-muted)]">Product</div>
-            <div className="mt-4 grid gap-3 text-sm text-[var(--text-secondary)]">
-              <a href="#features" className="hover:text-[var(--text-primary)]">Features</a>
-              <a href="#tax" className="hover:text-[var(--text-primary)]">Tax Planner</a>
-              <a href="#ai-copilot" className="hover:text-[var(--text-primary)]">AI Reports</a>
-              <a href="#health-score" className="hover:text-[var(--text-primary)]">Health Score</a>
-            </div>
-          </div>
-
-          <div>
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--text-muted)]">Trust</div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {["React", "Node.js", "MongoDB", "Express", "Groq AI", "RazorPay", "Resend", "Tailwind"].map((item) => (
-                <span key={item} className="rounded-lg border border-white/6 bg-white/[0.035] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)]">{item}</span>
-              ))}
+            <div className="p-6 rounded-3xl bg-[#0f172a] border border-slate-800 space-y-3">
+              <FileText className="text-indigo-400" size={24} />
+              <h3 className="font-bold text-sm text-white">Invoices need chasing</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Overdue payments distort cash runway and force uncomfortable follow-up conversations.
+              </p>
             </div>
           </div>
         </div>
+      </section>
 
-        <div className="mx-auto mt-10 flex max-w-7xl flex-col gap-3 border-t border-white/6 pt-6 text-xs text-[var(--text-muted)] md:flex-row md:items-center md:justify-between">
-          <div>Copyright 2026 PaisaMind. All rights reserved.</div>
-          <div className="flex gap-5">
-            <a href="#privacy" className="hover:text-[var(--text-secondary)]">Privacy</a>
-            <a href="#terms" className="hover:text-[var(--text-secondary)]">Terms</a>
-            <a href="#security" className="hover:text-[var(--text-secondary)]">Security</a>
+      {/* ── Enhanced 4-Tier System Architecture Blueprint ── */}
+      <section id="features" className="py-24 border-b border-slate-800/60 bg-[#070c17]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          <div className="text-center space-y-4 max-w-3xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">System Architecture</span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black font-display tracking-tight text-white">
+              Four-Tier Financial Intelligence Architecture
+            </h2>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              PaisaMind separates data ingestion, mathematical computation, AI tool orchestration, and financial execution into four deterministic layers. No hallucinated figures, no guesswork.
+            </p>
+          </div>
+
+          {/* Architecture Flow Stack */}
+          <div className="space-y-8">
+
+            {/* Layer 1: Ingestion & Ledger */}
+            <div className="p-8 rounded-3xl bg-[#0b1220] border border-slate-800 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-mono font-bold text-sm">
+                    01
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Layer 1: Multi-Source Data Ingestion & Ledger Pipeline</h3>
+                    <p className="text-xs text-slate-400">Captures every rupee across bank statements, passbook scans, and client invoices</p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[11px] font-mono font-semibold w-fit">
+                  ETL & OCR Engine
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 rounded-2xl bg-[#070b14] border border-slate-800/80 space-y-2">
+                  <div className="flex items-center gap-2 text-cyan-400 text-xs font-bold">
+                    <FileSpreadsheet size={16} />
+                    <span>Bank Statement Parser</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Auto-ingests CSV, Excel, and text-based PDFs from HDFC, ICICI, SBI, and Axis with heuristic column detection.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#070b14] border border-slate-800/80 space-y-2">
+                  <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold">
+                    <Brain size={16} />
+                    <span>Vision OCR Pipeline</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Processes photographed physical passbooks and scanned receipts via Groq Vision when zero selectable text is found.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#070b14] border border-slate-800/80 space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
+                    <QrCode size={16} />
+                    <span>Zero-Fee UPI Invoicing</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Generates native UPI intent QR codes on invoices for instant zero-deduction transfers directly into your bank account.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#070b14] border border-slate-800/80 space-y-2">
+                  <div className="flex items-center gap-2 text-amber-400 text-xs font-bold">
+                    <Receipt size={16} />
+                    <span>Form 26AS TDS Ledger</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Reconciles Section 194J and 194C client tax deductions to ensure no withholding credit goes unclaimed.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Layer 2: Deterministic Calculation Engines */}
+            <div className="p-8 rounded-3xl bg-[#0b1220] border border-slate-800 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-mono font-bold text-sm">
+                    02
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Layer 2: Deterministic Financial Intelligence Engines</h3>
+                    <p className="text-xs text-slate-400">Pure server-side algorithms governed by Indian tax law and financial mathematics</p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-mono font-semibold w-fit">
+                  Zero Hallucination
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 rounded-2xl bg-[#070b14] border border-slate-800/80 space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
+                    <Calculator size={16} />
+                    <span>Section 44ADA Optimizer</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Evaluates the 50% presumptive profit rule against the New Tax Regime, computing exact advance tax schedules.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#070b14] border border-slate-800/80 space-y-2">
+                  <div className="flex items-center gap-2 text-cyan-400 text-xs font-bold">
+                    <BarChart3 size={16} />
+                    <span>95% Runway Forecaster</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Calculates historical burn rate, baseline recurring costs, and project payment timing to project business runway.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#070b14] border border-slate-800/80 space-y-2">
+                  <div className="flex items-center gap-2 text-purple-400 text-xs font-bold">
+                    <Target size={16} />
+                    <span>Scope Creep Sentinel</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Monitors project unit economics, alerting whenever client revisions cause effective hourly earnings to crater.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#070b14] border border-slate-800/80 space-y-2">
+                  <div className="flex items-center gap-2 text-rose-400 text-xs font-bold">
+                    <ShieldCheck size={16} />
+                    <span>Z-Score Anomaly Filter</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Flags double-charged vendor transactions, unexpected price hikes on tools, and statistically unusual spending spikes.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Layer 3 & Layer 4 Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+              {/* Layer 3: AI Copilot Orchestration */}
+              <div className="p-8 rounded-3xl bg-[#0b1220] border border-slate-800 space-y-6">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-mono font-bold text-sm">
+                      03
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-white">Layer 3: AI Copilot Orchestration</h3>
+                      <p className="text-[11px] text-slate-400">Groq LLaMA-3.3 with 20 Verified Tool Engines</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-[10px] font-mono font-bold">
+                    Tool Calling
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Instead of generating free-form numbers, the LLM acts as an orchestrator. When you ask "Can I afford a laptop?", it executes verified backend calculation tools to check your bank balances, projected runway, and tax liabilities before formulating advice.
+                </p>
+
+                <div className="p-3.5 rounded-2xl bg-[#070b14] border border-slate-800/80 font-mono text-[11px] text-indigo-300 space-y-1">
+                  <div>&gt; verifyAffordability(item: "MacBook", cost: 75000)</div>
+                  <div className="text-emerald-400">&gt; calculateRunway(postPurchaseBuffer: 3.4 months)</div>
+                  <div className="text-cyan-400">&gt; verdict: "Affordable with 3+ months runway preserved"</div>
+                </div>
+              </div>
+
+              {/* Layer 4: Action & Execution */}
+              <div className="p-8 rounded-3xl bg-[#0b1220] border border-slate-800 space-y-6">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-mono font-bold text-sm">
+                      04
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-white">Layer 4: Execution & Recovery Automation</h3>
+                      <p className="text-[11px] text-slate-400">Turns financial data into immediate actions</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-mono font-bold">
+                    Automations
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  PaisaMind converts financial insights directly into tangible steps: 3-stage WhatsApp reminder drafts for overdue invoices, print-ready CA audit statements, and automated background health monitoring keep-alives.
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div className="p-3 rounded-xl bg-[#070b14] border border-slate-800/80 text-xs space-y-1">
+                    <div className="font-bold text-white">WhatsApp Recovery</div>
+                    <p className="text-[10px] text-slate-400">Gentle, Firm, and Final legal follow-up drafts with 1-click delivery.</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[#070b14] border border-slate-800/80 text-xs space-y-1">
+                    <div className="font-bold text-white">Clean PDF Exports</div>
+                    <p className="text-[10px] text-slate-400">Monochrome, print-friendly monthly statements ready for your CA.</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ── Interactive 44ADA Calculator Section ── */}
+      <section id="tax-engine" className="py-20 bg-[#090e1a] border-b border-slate-800/60">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="text-center space-y-3 max-w-xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">Indian Taxation</span>
+            <h2 className="text-3xl font-black font-display text-white">
+              Interactive Section 44ADA Savings Preview
+            </h2>
+            <p className="text-xs text-slate-400">
+              Indian freelancers under ₹75L gross receipts can legally declare 50% profits without maintaining extensive books.
+            </p>
+          </div>
+
+          <div className="p-6 sm:p-8 rounded-3xl bg-[#0c1424] border border-slate-800 space-y-6">
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-semibold">
+                <span className="text-slate-300">Annual Gross Freelance Receipts:</span>
+                <span className="text-cyan-400 font-bold font-mono text-sm">{formatINR(calcIncome)}</span>
+              </div>
+              <input
+                type="range"
+                min={600000}
+                max={7500000}
+                step={100000}
+                value={calcIncome}
+                onChange={(e) => setCalcIncome(Number(e.target.value))}
+                className="w-full accent-cyan-400 cursor-pointer"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div className="p-4 rounded-2xl bg-[#070b14] border border-slate-800 space-y-1">
+                <div className="text-[10px] text-slate-400 uppercase font-semibold">Deemed Profit (50%)</div>
+                <div className="text-base font-bold font-mono text-white">{formatINR(deemedProfit)}</div>
+              </div>
+              <div className="p-4 rounded-2xl bg-[#070b14] border border-slate-800 space-y-1">
+                <div className="text-[10px] text-slate-400 uppercase font-semibold">Tax under Sec 44ADA</div>
+                <div className="text-base font-bold font-mono text-cyan-400">{formatINR(adaTax)}</div>
+              </div>
+              <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 space-y-1">
+                <div className="text-[10px] text-emerald-400 uppercase font-bold">Estimated Legal Savings</div>
+                <div className="text-xl font-black font-mono text-emerald-400">{formatINR(estimatedSavings)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Comparison Table ── */}
+      <section id="comparison" className="py-20 border-b border-slate-800/60">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <div className="text-center space-y-3">
+            <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">The Edge</span>
+            <h2 className="text-3xl font-black font-display text-white">Why PaisaMind Outperforms Alternatives</h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs bg-[#0c1424] rounded-3xl border border-slate-800 overflow-hidden">
+              <thead>
+                <tr className="border-b border-slate-800 text-slate-200">
+                  <th className="p-4 sm:p-5">Capability</th>
+                  <th className="p-4 sm:p-5 text-cyan-400 font-extrabold text-sm">PaisaMind</th>
+                  <th className="p-4 sm:p-5 text-slate-400">Excel / Google Sheets</th>
+                  <th className="p-4 sm:p-5 text-slate-400">Traditional Software</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                <tr>
+                  <td className="p-4 sm:p-5 font-semibold">Indian Section 44ADA Presumptive Tax</td>
+                  <td className="p-4 sm:p-5 text-emerald-400 font-bold">Automated & Optimized</td>
+                  <td className="p-4 sm:p-5 text-slate-400">Manual formulas</td>
+                  <td className="p-4 sm:p-5 text-amber-400">Requires manual CA setup</td>
+                </tr>
+                <tr>
+                  <td className="p-4 sm:p-5 font-semibold">Grounded AI Copilot with Tool Calling</td>
+                  <td className="p-4 sm:p-5 text-emerald-400 font-bold">20 Deterministic Engines</td>
+                  <td className="p-4 sm:p-5 text-slate-400">None</td>
+                  <td className="p-4 sm:p-5 text-slate-400">None / Hallucinating chat</td>
+                </tr>
+                <tr>
+                  <td className="p-4 sm:p-5 font-semibold">Zero-Fee UPI QR Code Invoices</td>
+                  <td className="p-4 sm:p-5 text-emerald-400 font-bold">Instant GPay / PhonePe (0%)</td>
+                  <td className="p-4 sm:p-5 text-slate-400">None</td>
+                  <td className="p-4 sm:p-5 text-amber-400">Gateway fee cuts (2-3%)</td>
+                </tr>
+                <tr>
+                  <td className="p-4 sm:p-5 font-semibold">Real Effective Hourly Rate & Scope Creep</td>
+                  <td className="p-4 sm:p-5 text-emerald-400 font-bold">Automated Sentinel</td>
+                  <td className="p-4 sm:p-5 text-slate-400">Manual tracking</td>
+                  <td className="p-4 sm:p-5 text-slate-400">Not supported</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ Section ── */}
+      <section id="faq" className="py-20 bg-[#090e1a] border-b border-slate-800/60">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <div className="text-center space-y-3">
+            <h2 className="text-3xl font-black font-display text-white">Frequently Asked Questions</h2>
+            <p className="text-xs text-slate-400">Clear answers on taxation, tool calling, and security.</p>
+          </div>
+
+          <div className="space-y-4 text-xs">
+            <div className="p-5 rounded-2xl bg-[#0c1424] border border-slate-800 space-y-1.5">
+              <h4 className="font-bold text-sm text-white">Can any freelancer use Section 44ADA?</h4>
+              <p className="text-slate-400 leading-relaxed">
+                Eligible professions include software development, UI/UX design, IT consulting, writing, legal, medical, accounting, and technical consulting with gross receipts under ₹75 Lakhs per financial year.
+              </p>
+            </div>
+            <div className="p-5 rounded-2xl bg-[#0c1424] border border-slate-800 space-y-1.5">
+              <h4 className="font-bold text-sm text-white">Does the AI Copilot ever make up financial numbers?</h4>
+              <p className="text-slate-400 leading-relaxed">
+                Never. The LLM acts solely as an orchestrator that calls backend verification tools. All balances, runway predictions, tax brackets, and debt ratios are calculated by deterministic JavaScript engines.
+              </p>
+            </div>
+            <div className="p-5 rounded-2xl bg-[#0c1424] border border-slate-800 space-y-1.5">
+              <h4 className="font-bold text-sm text-white">Are UPI QR Code payments really zero-fee?</h4>
+              <p className="text-slate-400 leading-relaxed">
+                Yes. PaisaMind creates standard `upi://pay` intent QR codes. Clients scan and transfer funds directly into your verified bank account without payment gateway deductions.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Call To Action ── */}
+      <section className="py-20 text-center space-y-6">
+        <h2 className="text-3xl sm:text-4xl font-black font-display text-white">
+          Ready for Calm Financial Clarity?
+        </h2>
+        <p className="text-sm text-slate-400 max-w-md mx-auto">
+          Start tracking income, optimizing taxes, and forecasting cash runway in minutes.
+        </p>
+        <Link
+          to="/register"
+          className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-sm shadow-xl shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
+        >
+          <span>Launch Your Workspace</span>
+          <ArrowRight size={16} />
+        </Link>
+      </section>
+
+      {/* ── Comprehensive Enterprise Footer ── */}
+      <footer className="pt-16 pb-12 border-t border-slate-800/80 bg-[#060a12] text-xs text-slate-400">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+            
+            {/* Column 1: Brand & Identity */}
+            <div className="lg:col-span-2 space-y-4">
+              <Link to="/" className="inline-block">
+                <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain" />
+              </Link>
+              <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
+                The financial intelligence operating system engineered for Indian freelancers, consultants, and independent agencies. Combining deterministic tax computation with grounded AI decision support.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1 text-[10px] font-mono">
+                <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-cyan-400">
+                  Section 44ADA Ready
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-emerald-400">
+                  0% Gateway Fees
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-indigo-400">
+                  Grounded AI Tools
+                </span>
+              </div>
+            </div>
+
+            {/* Column 2: Platform Modules */}
+            <div className="space-y-3">
+              <div className="font-bold text-white text-xs uppercase tracking-wider">Platform Modules</div>
+              <ul className="space-y-2 text-xs">
+                <li><a href="#features" className="hover:text-cyan-400 transition-colors">Four-Tier Architecture</a></li>
+                <li><a href="#tax-engine" className="hover:text-cyan-400 transition-colors">Section 44ADA Optimizer</a></li>
+                <li><a href="#comparison" className="hover:text-cyan-400 transition-colors">PaisaMind vs Traditional</a></li>
+                <li><a href="#problems" className="hover:text-cyan-400 transition-colors">Freelance Financial Pains</a></li>
+                <li><a href="#faq" className="hover:text-cyan-400 transition-colors">Tax & Tool FAQ</a></li>
+              </ul>
+            </div>
+
+            {/* Column 3: Indian Tax Framework */}
+            <div className="space-y-3">
+              <div className="font-bold text-white text-xs uppercase tracking-wider">Tax & Compliance</div>
+              <ul className="space-y-2 text-xs">
+                <li><span className="text-slate-300">Section 44ADA:</span> 50% Deemed Profit</li>
+                <li><span className="text-slate-300">Section 194J:</span> Professional TDS (10%/2%)</li>
+                <li><span className="text-slate-300">Section 194C:</span> Contractor TDS (1%)</li>
+                <li><span className="text-slate-300">GST Exemption:</span> Rs. 20 Lakh Threshold</li>
+                <li><span className="text-slate-300">Advance Tax:</span> 15th Jun / Sep / Dec / Mar</li>
+              </ul>
+            </div>
+
+            {/* Column 4: Regulatory Disclaimer */}
+            <div className="space-y-3">
+              <div className="font-bold text-white text-xs uppercase tracking-wider">Statutory Notice</div>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                PaisaMind is an analytical productivity software platform built according to the provisions of the Indian Income-tax Act, 1961. Content and mathematical tools are provided for financial planning and decision support. For statutory tax return submissions, consult your certified Chartered Accountant.
+              </p>
+            </div>
+
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="pt-8 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
+            <div>
+              &copy; {new Date().getFullYear()} PaisaMind Platform. Built for Indian Freelancers & Small Businesses.
+            </div>
+            <div className="flex items-center gap-6">
+              <Link to="/login" className="hover:text-slate-300 transition-colors">Sign In</Link>
+              <Link to="/register" className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">Start Free Workspace</Link>
+            </div>
           </div>
         </div>
       </footer>
-
-      <div className="fixed bottom-4 left-4 right-4 z-40 md:hidden">
-        <Link to="/register" className="lp-cta-btn flex items-center justify-center gap-2 rounded-2xl px-5 py-4 text-sm font-bold text-white shadow-2xl">
-          Start For Free
-          <ArrowRight size={16} />
-        </Link>
-      </div>
     </div>
   );
 }
-
-export default Landing;

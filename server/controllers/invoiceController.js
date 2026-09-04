@@ -275,6 +275,57 @@ const downloadPDF = asyncHandler(async (req, res) => {
   doc.end();
 });
 
+const { generateRecoveryDrafts, generateUpiPayload } = require("../services/recoveryDrafterService");
+
+const getRecoveryDraft = asyncHandler(async (req, res) => {
+  const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.user._id });
+  if (!invoice) return res.status(404).json({ success: false, message: "Invoice not found" });
+
+  const user = await User.findById(req.user._id);
+  const drafts = generateRecoveryDrafts({ invoice, user });
+  return res.status(200).json({ success: true, data: drafts });
+});
+
+const recordTDS = asyncHandler(async (req, res) => {
+  const { tdsSection, customTdsAmount, status = "Paid", notes } = req.body;
+  const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.user._id });
+  if (!invoice) return res.status(404).json({ success: false, message: "Invoice not found" });
+
+  const baseAmt = invoice.amount || 0;
+  let rate = 0;
+  let tdsAmount = 0;
+
+  if (tdsSection === "194J_10") {
+    rate = 10;
+    tdsAmount = Math.round(baseAmt * 0.10);
+  } else if (tdsSection === "194J_2") {
+    rate = 2;
+    tdsAmount = Math.round(baseAmt * 0.02);
+  } else if (tdsSection === "194C_1") {
+    rate = 1;
+    tdsAmount = Math.round(baseAmt * 0.01);
+  } else if (tdsSection === "Custom") {
+    tdsAmount = Math.max(0, Number(customTdsAmount || 0));
+    rate = baseAmt > 0 ? Number(((tdsAmount / baseAmt) * 100).toFixed(1)) : 0;
+  }
+
+  invoice.tdsSection = tdsSection || "None";
+  invoice.tdsRate = rate;
+  invoice.tdsDeductedAmount = tdsAmount;
+  invoice.netAmountReceived = Math.max(0, (invoice.totalAmount || invoice.amount) - tdsAmount);
+  invoice.status = status;
+  invoice.paidAt = new Date();
+  if (notes) invoice.notes = notes;
+
+  await invoice.save();
+
+  return res.status(200).json({
+    success: true,
+    data: invoice,
+    message: `TDS of ₹${tdsAmount.toLocaleString("en-IN")} (${rate}%) recorded under Form 26AS credit. Net received: ₹${invoice.netAmountReceived.toLocaleString("en-IN")}.`,
+  });
+});
+
 module.exports = {
   getInvoices,
   getSummary,
@@ -286,4 +337,6 @@ module.exports = {
   createCheckoutSession,
   handleWebhook,
   downloadPDF,
+  getRecoveryDraft,
+  recordTDS,
 };

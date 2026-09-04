@@ -44,12 +44,8 @@ export default function Login() {
   return (
     <div className="pm-auth-shell px-4">
       <div className="pm-auth-card w-full max-w-[430px]">
-        <div className="mb-8 flex items-center gap-3">
-          <img src="/favicon.png" alt="PaisaMind" className="h-9 w-9 rounded-xl" />
-          <div>
-            <div className="font-display text-lg font-bold text-[var(--text-primary)]">PaisaMind</div>
-            <div className="pm-auth-brand-subtitle text-xs">Finance OS for Freelancers</div>
-          </div>
+        <div className="mb-8 flex items-center justify-center">
+          <img src="/logo.png" alt="Logo" className="h-10 w-auto object-contain" />
         </div>
 
         <h1 className="mb-1 font-display text-2xl font-bold text-[var(--text-primary)]">Welcome back</h1>

@@ -67,7 +67,7 @@ const getIncomeSummary = async (req, res, next) => {
       { $group: { _id: { year: { $year: "$date" }, month: { $month: "$date" } }, total: { $sum: "$amount" } } },
       { $sort: { "_id.year": 1, "_id.month": 1 } },
     ]);
-    res.json({ success: true, summary });
+    res.json({ success: true, data: summary, summary });
   } catch (error) {
     next(error);
   }

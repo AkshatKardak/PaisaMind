@@ -11,7 +11,7 @@ const invoiceItemSchema = new mongoose.Schema(
 
 const invoiceSchema = new mongoose.Schema(
   {
-    userId:             { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    userId:             { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
     invoiceNumber:      { type: String, required: true, unique: true },
     clientName:         { type: String, required: true },
     clientEmail:        { type: String, default: "" },
@@ -25,16 +25,28 @@ const invoiceSchema = new mongoose.Schema(
     items:              [invoiceItemSchema],
     notes:              { type: String, default: "" },
     status:             { type: String, enum: ["Paid", "Unpaid", "Overdue", "Partially Paid"], default: "Unpaid" },
-    // Fix: track when invoice was actually paid for accurate monthly reports
     paidAt:             { type: Date, default: null },
     paymentLink:        { type: String, default: "" },
     stripePaymentUrl:   { type: String, default: "" },
+    upiId:              { type: String, default: "" },
+    tdsSection:         { type: String, enum: ["None", "194J_10", "194J_2", "194C_1", "Custom"], default: "None" },
+    tdsRate:            { type: Number, default: 0 },
+    tdsDeductedAmount:  { type: Number, default: 0 },
+    netAmountReceived:  { type: Number, default: 0 },
+    allocatedProjectId: { type: mongoose.Schema.Types.ObjectId, ref: "Project" },
   },
   { timestamps: true }
 );
 
 invoiceSchema.pre("save", async function () {
   if (this.totalAmount == null) this.totalAmount = this.amount;
+  if (this.netAmountReceived == null || this.netAmountReceived === 0) {
+    this.netAmountReceived = (this.totalAmount || this.amount) - (this.tdsDeductedAmount || 0);
+  }
 });
 
+invoiceSchema.index({ userId: 1, status: 1, dueDate: 1 });
+invoiceSchema.index({ userId: 1, dueDate: 1 });
+
 module.exports = mongoose.model("Invoice", invoiceSchema);
+

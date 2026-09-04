@@ -79,86 +79,101 @@ function downloadPDF(report, history, userName, month, year) {
   const grade       = scoreItem?.grade ?? "\u2014";
 
   const actionItems = (report?.keyActionItems || []).length
-    ? report.keyActionItems.map((a) => `<li style="margin-bottom:6px;">\u2726 ${a}</li>`).join("")
-    : `<li style="color:#94a3b8;">No actions yet \u2014 add financial data for personalised recommendations.</li>`;
+    ? report.keyActionItems.map((a) => `<li style="margin-bottom:8px;padding-left:4px;color:#334155;">• ${a}</li>`).join("")
+    : `<li style="color:#64748b;">No actions recorded \u2014 maintain regular transaction entries for ongoing recommendations.</li>`;
 
   const sectionHTML = SECTION_META.map((m) => {
-    const content = report?.[m.key] || "No data available for this section yet.";
+    const content = report?.[m.key] || "No data available for this section.";
     return `
-      <div style="margin-bottom:20px;padding:16px;border-radius:12px;background:#1e293b;border:1px solid #334155;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;margin-bottom:8px;">${m.label}</div>
-        <p style="margin:0;font-size:13px;line-height:1.7;color:#e2e8f0;">${content}</p>
+      <div style="margin-bottom:16px;padding:14px 16px;border-radius:8px;background:#ffffff;border:1px solid #e2e8f0;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#475569;margin-bottom:6px;">${m.label} Analysis</div>
+        <p style="margin:0;font-size:12.5px;line-height:1.6;color:#1e293b;">${content}</p>
       </div>`;
   }).join("");
 
   const historyRows = history.length
     ? history.map((h) => `
-        <tr>
-          <td style="padding:8px 12px;color:#e2e8f0;">${h.month}</td>
-          <td style="padding:8px 12px;color:#e2e8f0;text-align:center;">${h.score}</td>
-          <td style="padding:8px 12px;text-align:center;">
-            <span style="padding:2px 10px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(139,92,246,0.2);color:#a78bfa;">${h.grade}</span>
+        <tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:10px 14px;color:#1e293b;font-weight:500;">${h.month}</td>
+          <td style="padding:10px 14px;color:#1e293b;text-align:center;font-family:monospace;font-weight:600;">${h.score}</td>
+          <td style="padding:10px 14px;text-align:center;">
+            <span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:#f1f5f9;color:#0f172a;border:1px solid #cbd5e1;">Grade ${h.grade}</span>
           </td>
         </tr>`).join("")
-    : `<tr><td colspan="3" style="padding:12px;color:#64748b;text-align:center;">No history yet</td></tr>`;
+    : `<tr><td colspan="3" style="padding:14px;color:#94a3b8;text-align:center;">No historical records found</td></tr>`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>PaisaMind Report \u2014 ${monthName} ${year}</title>
+  <title>Financial Report \u2014 ${monthName} ${year}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; padding: 40px; line-height: 1.5; }
-    @media print { body { background: #0f172a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #ffffff; color: #0f172a; padding: 48px; line-height: 1.5; font-size: 13px; }
+    @media print {
+      body { background: #ffffff !important; color: #0f172a !important; padding: 24px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-break { page-break-inside: avoid; }
+    }
   </style>
 </head>
 <body>
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid #1e293b;">
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #0f172a;">
     <div>
-      <div style="font-size:22px;font-weight:700;color:#a78bfa;margin-bottom:4px;">PaisaMind</div>
-      <div style="font-size:13px;color:#64748b;">Finance OS for Indian Freelancers</div>
+      <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;color:#0f172a;margin-bottom:3px;">FINANCIAL REPORT</div>
+      <div style="font-size:12px;color:#475569;">Monthly Financial Audit & Performance Summary</div>
     </div>
     <div style="text-align:right;">
-      <div style="font-size:18px;font-weight:600;color:#f8fafc;">${monthName} ${year} Report</div>
-      <div style="font-size:12px;color:#64748b;margin-top:4px;">Prepared for: ${userName}</div>
-      <div style="font-size:12px;color:#64748b;">Generated: ${new Date().toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" })}</div>
+      <div style="font-size:15px;font-weight:700;color:#0f172a;">${monthName} ${year}</div>
+      <div style="font-size:11.5px;color:#64748b;margin-top:2px;">Account: <strong>${userName}</strong></div>
+      <div style="font-size:11.5px;color:#64748b;">Generated: ${new Date().toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" })}</div>
     </div>
   </div>
-  <div style="background:linear-gradient(135deg,#1e1b4b,#1e293b);border:1px solid #4338ca;border-radius:16px;padding:20px 24px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:center;">
+
+  <!-- Health Scorecard Overview -->
+  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px 24px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;">
     <div>
-      <div style="font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#818cf8;margin-bottom:6px;">Financial Health Score</div>
-      <div style="font-size:36px;font-weight:700;color:#f8fafc;">${score}<span style="font-size:18px;color:#94a3b8;font-weight:400;"> / 100</span></div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#475569;margin-bottom:4px;">Financial Health Index</div>
+      <div style="font-size:32px;font-weight:800;color:#0f172a;font-family:monospace;">${score}<span style="font-size:16px;color:#64748b;font-weight:400;"> / 100</span></div>
     </div>
-    <div style="text-align:center;">
-      <div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">Grade</div>
-      <div style="font-size:40px;font-weight:700;color:#a78bfa;">${grade}</div>
+    <div style="text-align:right;">
+      <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Assessment</div>
+      <div style="font-size:22px;font-weight:800;color:#0f172a;border:1.5px solid #0f172a;padding:2px 14px;border-radius:6px;display:inline-block;">${grade}</div>
     </div>
   </div>
-  <div style="margin-bottom:28px;">
-    <div style="font-size:15px;font-weight:700;color:#f8fafc;margin-bottom:16px;">AI Monthly Analysis</div>
+
+  <!-- Financial Analysis Sections -->
+  <div style="margin-bottom:24px;">
+    <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#0f172a;margin-bottom:12px;">Monthly Financial Insights</div>
     ${sectionHTML}
   </div>
-  <div style="background:#1e293b;border:1px solid #10b981;border-radius:12px;padding:20px;margin-bottom:28px;">
-    <div style="font-size:14px;font-weight:600;color:#34d399;margin-bottom:12px;">Key Actions</div>
-    <ul style="list-style:none;font-size:13px;color:#e2e8f0;line-height:1.8;">${actionItems}</ul>
+
+  <!-- Key Recommendations -->
+  <div class="no-break" style="background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:18px 20px;margin-bottom:24px;">
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#0f172a;margin-bottom:10px;">Recommended Action Items</div>
+    <ul style="list-style:none;font-size:12.5px;color:#334155;line-height:1.7;">${actionItems}</ul>
   </div>
-  <div>
-    <div style="font-size:15px;font-weight:700;color:#f8fafc;margin-bottom:16px;">Health Score History</div>
-    <table style="width:100%;border-collapse:collapse;background:#1e293b;border-radius:12px;overflow:hidden;">
+
+  <!-- History Table -->
+  <div class="no-break" style="margin-bottom:32px;">
+    <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#0f172a;margin-bottom:10px;">Scorecard Trajectory</div>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;font-size:12px;">
       <thead>
-        <tr style="background:#0f172a;">
-          <th style="padding:10px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:600;letter-spacing:0.05em;">MONTH</th>
-          <th style="padding:10px 12px;text-align:center;font-size:11px;color:#64748b;font-weight:600;letter-spacing:0.05em;">SCORE</th>
-          <th style="padding:10px 12px;text-align:center;font-size:11px;color:#64748b;font-weight:600;letter-spacing:0.05em;">GRADE</th>
+        <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+          <th style="padding:8px 14px;text-align:left;font-weight:600;color:#475569;">MONTH</th>
+          <th style="padding:8px 14px;text-align:center;font-weight:600;color:#475569;">SCORE</th>
+          <th style="padding:8px 14px;text-align:center;font-weight:600;color:#475569;">RATING</th>
         </tr>
       </thead>
       <tbody>${historyRows}</tbody>
     </table>
   </div>
-  <div style="margin-top:40px;padding-top:16px;border-top:1px solid #1e293b;font-size:11px;color:#475569;text-align:center;">
-    Generated by PaisaMind \u00b7 AI-powered Finance OS for Indian Freelancers \u00b7 paisamind.netlify.app
+
+  <!-- Footer -->
+  <div style="margin-top:40px;padding-top:14px;border-top:1px solid #e2e8f0;font-size:11px;color:#64748b;display:flex;justify-content:space-between;">
+    <div>CONFIDENTIAL &bull; FOR ACCOUNT HOLDER USE ONLY</div>
+    <div>Page 1 of 1</div>
   </div>
 </body>
 </html>`;

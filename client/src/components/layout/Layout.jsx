@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
+import FloatingCopilotWidget from "../copilot/FloatingCopilotWidget";
 
 function Layout() {
   return (
@@ -14,6 +15,7 @@ function Layout() {
           </main>
         </div>
       </div>
+      <FloatingCopilotWidget />
     </div>
   );
 }

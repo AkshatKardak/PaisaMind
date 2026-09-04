@@ -27,10 +27,19 @@ export const getSummary = async () => {
   return { ...response, data: response.data || response.summary || {} };
 };
 
-// Fix: route is /:id/checkout on the server, not /:id/payment-link
 export const createPaymentLink = async (id) => {
   const response = (await api.post(`/invoices/${id}/checkout`)).data;
   return { ...response, data: response.data || { url: response.url } };
+};
+
+export const getRecoveryDraft = async (id) => {
+  const response = (await api.get(`/invoices/${id}/recovery-draft`)).data;
+  return response.data;
+};
+
+export const recordTDS = async ({ id, ...payload }) => {
+  const response = (await api.post(`/invoices/${id}/record-tds`, payload)).data;
+  return response;
 };
 
 export const downloadPDF = (id) =>
@@ -45,4 +54,15 @@ export const downloadPDF = (id) =>
     window.URL.revokeObjectURL(url);
   });
 
-export default { getInvoices, createInvoice, updateInvoice, deleteInvoice, updateStatus, getSummary, createPaymentLink, downloadPDF };
+export default {
+  getInvoices,
+  createInvoice,
+  updateInvoice,
+  deleteInvoice,
+  updateStatus,
+  getSummary,
+  createPaymentLink,
+  getRecoveryDraft,
+  recordTDS,
+  downloadPDF,
+};

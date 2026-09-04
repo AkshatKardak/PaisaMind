@@ -20,7 +20,7 @@ function Navbar() {
   const location = useLocation();
   const { logout, user } = useAuth();
 
-  const pageTitle = titleMap[location.pathname] || "PaisaMind";
+  const pageTitle = titleMap[location.pathname] || "Dashboard";
 
   return (
     <header
@@ -57,10 +57,10 @@ function Navbar() {
 
         <div className="hidden items-center gap-3 rounded-2xl border px-3 py-2 sm:flex" style={{ background: "var(--bg-elevated)", borderColor: "var(--border)" }}>
           <div className="grid h-8 w-8 place-items-center rounded-full bg-sky-500/15 text-xs font-bold text-sky-300">
-            {(user?.name || user?.email || "P").charAt(0).toUpperCase()}
+            {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
           </div>
           <div className="max-w-[140px]">
-            <div className="truncate text-sm font-bold text-[var(--text-primary)]">{user?.name || "PaisaMind User"}</div>
+            <div className="truncate text-sm font-bold text-[var(--text-primary)]">{user?.name || "Workspace User"}</div>
             <div className="truncate text-xs text-[var(--text-muted)]">{user?.email || "Workspace"}</div>
           </div>
         </div>

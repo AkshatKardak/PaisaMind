@@ -1,4 +1,5 @@
-import { Plus, Wallet2, X } from "lucide-react";
+import { Plus, Wallet2, X, FileSpreadsheet } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -126,10 +127,19 @@ function Income() {
           <h1 className="page-title">Income</h1>
           <p className="text-sm text-[var(--text-secondary)]">Track every payment source and watch your revenue trend.</p>
         </div>
-        <button className="pm-button pm-button-primary flex items-center gap-2" onClick={() => setDrawerOpen(true)}>
-          <Plus size={18} />
-          Add Income
-        </button>
+        <div className="flex items-center gap-2.5">
+          <Link
+            to="/statement-import"
+            className="pm-button flex items-center gap-1.5 border border-[var(--border)] text-xs font-semibold hover:bg-[var(--bg-hover)]"
+          >
+            <FileSpreadsheet size={15} className="text-emerald-500" />
+            <span>Import Statement</span>
+          </Link>
+          <button className="pm-button pm-button-primary flex items-center gap-2" onClick={() => setDrawerOpen(true)}>
+            <Plus size={18} />
+            Add Income
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">

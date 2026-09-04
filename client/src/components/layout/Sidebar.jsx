@@ -1,11 +1,11 @@
 import {
+  Activity,
   BarChart2,
   Calculator,
   FileText,
   LayoutDashboard,
-  RefreshCw,
   Settings2,
-  Sparkles,
+  Sliders,
   Target,
   TrendingDown,
   TrendingUp,
@@ -15,17 +15,17 @@ import { NavLink } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
 
 const navItems = [
-  { to: "/dashboard",    label: "Dashboard",      icon: LayoutDashboard },
-  { to: "/income",       label: "Income",          icon: TrendingUp },
-  { to: "/expenses",     label: "Expenses",        icon: TrendingDown },
-  { to: "/invoices",     label: "Invoices",        icon: FileText },
-  { to: "/recurring",    label: "Recurring",       icon: RefreshCw },
-  { to: "/tax",          label: "Tax Planner",     icon: Calculator },
-  { to: "/tax-assistant",label: "AI Tax Assistant",icon: Sparkles },
-  { to: "/cash-flow",    label: "Cash Flow",       icon: Waves },
-  { to: "/goals",        label: "Goals",           icon: Target },
-  { to: "/reports",      label: "Reports",         icon: BarChart2 },
-  { to: "/settings",     label: "Settings",        icon: Settings2 },
+  { to: "/dashboard",     label: "Dashboard",           icon: LayoutDashboard },
+  { to: "/health",        label: "Financial Health",    icon: Activity },
+  { to: "/profitability", label: "Profitability & ROI", icon: Target },
+  { to: "/income",        label: "Income",              icon: TrendingUp },
+  { to: "/expenses",      label: "Expenses",            icon: TrendingDown },
+  { to: "/invoices",      label: "Invoices",            icon: FileText },
+  { to: "/cash-flow",     label: "Cash Flow & Runway",  icon: Waves },
+  { to: "/tax",           label: "Tax Planner (44ADA)", icon: Calculator },
+  { to: "/simulator",     label: "Scenario Simulator",  icon: Sliders },
+  { to: "/reports",       label: "Reports",             icon: BarChart2 },
+  { to: "/settings",      label: "Settings",            icon: Settings2 },
 ];
 
 function Sidebar() {
@@ -54,16 +54,10 @@ function Sidebar() {
           }}
         >
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="PaisaMind logo" className="pm-logo" />
+            <img src="/logo.png" alt="Logo" className="pm-logo h-9 w-auto object-contain" />
             <div>
-              <div
-                className="font-display text-xl font-bold"
-                style={{ color: "var(--text-primary)" }}
-              >
-                PaisaMind
-              </div>
-              <div className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                Finance OS for freelancers
+              <div className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+                Finance OS for Freelancers
               </div>
             </div>
           </div>
@@ -77,7 +71,7 @@ function Sidebar() {
               <NavLink
                 key={item.to}
                 to={item.to}
-                className="group flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all duration-200"
+                className="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-200"
                 style={({ isActive }) => ({
                   color: isActive ? "var(--primary)" : "var(--text-secondary)",
                   background: isActive ? "var(--primary-soft)" : "transparent",
@@ -86,27 +80,11 @@ function Sidebar() {
                     : "1px solid transparent",
                   boxShadow: isActive ? "var(--card-glow)" : "none",
                 })}
-                onMouseEnter={(e) => {
-                  if (!e.currentTarget.classList.contains("active")) {
-                    e.currentTarget.style.background = "var(--bg-hover)";
-                    e.currentTarget.style.borderColor = "var(--border)";
-                    e.currentTarget.style.color = "var(--text-primary)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  const link = e.currentTarget;
-                  const isActive = link.getAttribute("data-active") === "true";
-                  if (!isActive) {
-                    link.style.background = "transparent";
-                    link.style.borderColor = "transparent";
-                    link.style.color = "var(--text-secondary)";
-                  }
-                }}
               >
                 {({ isActive }) => (
                   <>
                     <span
-                      className="flex h-9 w-9 items-center justify-center rounded-xl transition-all"
+                      className="flex h-8 w-8 items-center justify-center rounded-xl transition-all"
                       style={{
                         background: isActive
                           ? "var(--primary-soft)"
@@ -114,7 +92,7 @@ function Sidebar() {
                         color: isActive ? "var(--primary)" : "var(--text-secondary)",
                       }}
                     >
-                      <Icon size={17} />
+                      <Icon size={16} />
                     </span>
                     <span className="tracking-tight">{item.label}</span>
                   </>
@@ -135,7 +113,7 @@ function Sidebar() {
         >
           <div className="mb-3 flex items-center gap-3">
             <div
-              className="flex h-12 w-12 items-center justify-center rounded-2xl font-bold"
+              className="flex h-11 w-11 items-center justify-center rounded-2xl font-bold"
               style={{
                 background:
                   "linear-gradient(135deg, var(--primary-soft), var(--secondary-soft))",
@@ -147,13 +125,13 @@ function Sidebar() {
             </div>
             <div className="min-w-0">
               <div
-                className="truncate font-semibold"
+                className="truncate font-semibold text-sm"
                 style={{ color: "var(--text-primary)" }}
               >
-                {user?.name || "PaisaMind User"}
+                {user?.name || "Workspace User"}
               </div>
               <div
-                className="truncate text-sm"
+                className="truncate text-xs"
                 style={{ color: "var(--text-secondary)" }}
               >
                 {user?.email}

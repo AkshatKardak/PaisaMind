@@ -5,8 +5,15 @@ const Expense = require("../models/Expense");
 const Invoice = require("../models/Invoice");
 const Goal    = require("../models/Goal");
 const User    = require("../models/User");
+const { generateCashFlowForecast } = require("../services/forecastingService");
+const { calculateCashRunway } = require("../services/runwayService");
+const { calculateDetailedHealthScore } = require("../services/healthEngineService");
+const { compareAllRegimes } = require("../services/taxIntelligenceService");
+const logger = require("../services/logger");
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== "your_groq_api_key"
+  ? new Groq({ apiKey: process.env.GROQ_API_KEY })
+  : null;
 
 const getCurrentMonthRange = () => {
   const now   = new Date();
@@ -45,14 +52,13 @@ const getMonthlyReport = asyncHandler(async (req, res) => {
     Goal.find({ userId }),
   ]);
 
-  // Fix: use paidAt (when money actually arrived) instead of dueDate for income realisation
   const paidInvoicesThisMonth = invoices.filter((inv) => {
     if (!["Paid", "Partially Paid"].includes(inv.status)) return false;
     const ref = inv.paidAt ? new Date(inv.paidAt) : (inv.dueDate ? new Date(inv.dueDate) : new Date(inv.createdAt));
     return ref >= start && ref <= end;
   });
 
-  const invoiceIncome  = paidInvoicesThisMonth.reduce((sum, inv) => sum + Number(inv.amount || inv.total || 0), 0);
+  const invoiceIncome  = paidInvoicesThisMonth.reduce((sum, inv) => sum + Number(inv.amount || inv.totalAmount || 0), 0);
   const directIncome   = incomes.reduce((sum, i) => sum + Number(i.amount || 0), 0);
   const totalIncome    = directIncome + invoiceIncome;
   const totalExpense   = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
@@ -71,7 +77,7 @@ const getMonthlyReport = asyncHandler(async (req, res) => {
   const topCategories = Object.entries(categoryMap)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
-    .map(([cat, amt]) => `${cat} (\u20b9${amt.toLocaleString("en-IN")})`)
+    .map(([cat, amt]) => `${cat} (₹${amt.toLocaleString("en-IN")})`)
     .join(", ");
 
   const activeGoals = goals.length;
@@ -92,217 +98,132 @@ const getMonthlyReport = asyncHandler(async (req, res) => {
     });
   }
 
-  const fmt = (n) => `\u20b9${Number(n).toLocaleString("en-IN")}`;
+  const fmt = (n) => `₹${Number(n).toLocaleString("en-IN")}`;
 
   const prompt = `You are a financial advisor for Indian freelancers.
 Write a concise, friendly narrative monthly report for ${monthName}.
 
 Financial data:
-- Income from invoices: ${fmt(invoiceIncome)} (${paidInvoicesThisMonth.length} paid invoices)
-- Income from direct entries: ${fmt(directIncome)}
-- TOTAL income: ${fmt(totalIncome)}
-- Total expenses: ${fmt(totalExpense)}
-- Top expense categories: ${topCategories || "None"}
-- Net savings: ${fmt(netSavings)}
-- Savings rate: ${savingsRate}%
-- Tax regime: ${user?.taxRegime || "Not set"}
-- 80C invested: ${fmt(user?.investments80C || 0)}
-- 80D invested: ${fmt(user?.investments80D || 0)}
-- Active financial goals: ${activeGoals}
-- Unpaid invoices: ${unpaidCount}
-- Overdue invoices: ${overdueCount}
-- Paid invoices (all time): ${totalPaidCount}
+- Total Income: ${fmt(totalIncome)} (Direct: ${fmt(directIncome)}, Invoices Paid: ${fmt(invoiceIncome)})
+- Total Expenses: ${fmt(totalExpense)}
+- Net Savings: ${fmt(netSavings)} (Savings Rate: ${savingsRate}%)
+- Top Expense Categories: ${topCategories || "None"}
+- Invoices: ${totalPaidCount} paid, ${unpaidCount} unpaid, ${overdueCount} overdue
+- Active Financial Goals: ${activeGoals}
+- Tax Regime: ${user?.taxRegime || "new"}
 
-Respond ONLY with valid JSON — no markdown, no code fences:
+Return ONLY a valid JSON object matching this schema:
 {
-  "incomeSummary": "2-3 sentence narrative about income this month",
-  "expenseAnalysis": "2-3 sentence narrative about expenses and categories",
-  "taxStatus": "2-3 sentence narrative about tax implications and 80C/80D status",
-  "savingsProgress": "2-3 sentence narrative about savings and goals",
-  "keyActionItems": ["action 1", "action 2", "action 3"]
+  "sections": {
+    "incomeSummary":   "2-3 sentences analyzing income performance this month",
+    "expenseAnalysis": "2-3 sentences on spending patterns and largest categories",
+    "taxStatus":       "1-2 sentences on estimated tax impact",
+    "savingsProgress": "1-2 sentences on savings rate and goal momentum",
+    "keyActionItems":  ["Action 1", "Action 2", "Action 3"]
+  }
 }`;
 
-  try {
-    const response = await groq.chat.completions.create({
-      model:       "llama-3.3-70b-versatile",
-      messages:    [{ role: "user", content: prompt }],
-      temperature: 0.5,
-    });
+  if (groq) {
+    try {
+      const response = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.3,
+      });
 
-    let raw = response.choices?.[0]?.message?.content || "{}";
-    raw = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
-    const parsed = JSON.parse(raw);
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        month, year,
-        sections: {
-          incomeSummary:   parsed.incomeSummary   || null,
-          expenseAnalysis: parsed.expenseAnalysis || null,
-          taxStatus:       parsed.taxStatus       || null,
-          savingsProgress: parsed.savingsProgress || null,
-          keyActionItems:  Array.isArray(parsed.keyActionItems) ? parsed.keyActionItems : [],
+      const parsed = JSON.parse(response.choices[0]?.message?.content || "{}");
+      return res.status(200).json({
+        success: true,
+        data: {
+          month, year,
+          metrics: { totalIncome, totalExpense, netSavings, savingsRate, overdueCount },
+          sections: parsed.sections || {},
         },
-      },
-    });
-  } catch (err) {
-    console.error("[getMonthlyReport] Groq error:", err.message);
-    return res.status(200).json({
-      success: true,
-      data: {
-        month, year,
-        sections: {
-          incomeSummary:   `You earned ${fmt(totalIncome)} in ${monthName} (${fmt(invoiceIncome)} from invoices, ${fmt(directIncome)} from direct entries).`,
-          expenseAnalysis: totalExpense > 0
-            ? `Your total expenses were ${fmt(totalExpense)}. Top categories: ${topCategories || "N/A"}.`
-            : "No expenses recorded for this month.",
-          taxStatus: user?.taxRegime
-            ? `You are on the ${user.taxRegime} tax regime. 80C invested: ${fmt(user.investments80C || 0)}.`
-            : "Tax regime not set. Go to Settings to configure it for better tax insights.",
-          savingsProgress: `You saved ${fmt(Math.max(netSavings, 0))} this month — a ${savingsRate}% savings rate.`,
-          keyActionItems: [
-            unpaidCount  > 0 ? `Follow up on ${unpaidCount} unpaid invoice${unpaidCount > 1 ? "s" : ""}.` : null,
-            overdueCount > 0 ? `${overdueCount} invoice${overdueCount > 1 ? "s are" : " is"} overdue — send reminders immediately.` : null,
-            savingsRate  < 20 ? "Aim for a 20%+ savings rate. Review your top expense categories." : null,
-            !user?.taxRegime ? "Set your tax regime in Settings to get personalised tax insights." : null,
-          ].filter(Boolean),
-        },
-      },
-    });
+      });
+    } catch (llmErr) {
+      logger.warn({ err: llmErr.message }, "[AI] Groq call failed; using deterministic fallback");
+    }
   }
+
+  // Deterministic Fallback
+  return res.status(200).json({
+    success: true,
+    data: {
+      month, year,
+      metrics: { totalIncome, totalExpense, netSavings, savingsRate, overdueCount },
+      sections: {
+        incomeSummary: `Earned ${fmt(totalIncome)} in ${monthName}. Direct earnings were ${fmt(directIncome)} alongside ${fmt(invoiceIncome)} collected through client invoices.`,
+        expenseAnalysis: `Total spending was ${fmt(totalExpense)}. Highest expense categories this month: ${topCategories || "Standard business overhead"}.`,
+        taxStatus: `Based on current YTD receipts, continue setting aside ~15-20% into your tax reserve.`,
+        savingsProgress: `Retained ${fmt(netSavings)} with a ${savingsRate}% net savings rate across ${activeGoals} active goals.`,
+        keyActionItems: [
+          overdueCount > 0 ? `Follow up on ${overdueCount} overdue invoice(s).` : "Maintain client invoicing cadence.",
+          savingsRate < 25 ? "Aim to lift savings rate above 25%." : "Great savings rate this month!",
+          "Review upcoming quarterly advance tax dates.",
+        ],
+      },
+    },
+  });
 });
 
-// ─── AI Insights (Dashboard) ─────────────────────────────────────────────────
+// ─── AI Insights ──────────────────────────────────────────────────────────────
 const getAIInsights = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const { start, end } = getCurrentMonthRange();
 
-  const [incomes, expenses, invoices, goals] = await Promise.all([
-    Income.find({ userId, date: { $gte: start, $lte: end } }).sort({ date: -1 }),
-    Expense.find({ userId, date: { $gte: start, $lte: end } }).sort({ date: -1 }),
-    Invoice.find({ userId }).sort({ createdAt: -1 }),
-    Goal.find({ userId }).sort({ createdAt: -1 }),
-  ]);
-
-  const totalIncome    = incomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const totalExpense   = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const profit         = totalIncome - totalExpense;
-  const overdueInvoices = invoices.filter((inv) => inv.status === "Overdue");
-  const unpaidInvoices  = invoices.filter((inv) => inv.status === "Unpaid");
-
-  const prompt = `
-You are a financial assistant for Indian freelancers.
-Analyze this data and return 5 short actionable insights in JSON only.
-
-Data:
-- Total income this month: ${totalIncome}
-- Total expenses this month: ${totalExpense}
-- Profit: ${profit}
-- Number of unpaid invoices: ${unpaidInvoices.length}
-- Number of overdue invoices: ${overdueInvoices.length}
-- Total goals: ${goals.length}
-
-Format:
-{
-  "insights": [
-    {
-      "title": "string",
-      "description": "string",
-      "type": "positive|warning|danger|info"
-    }
-  ]
-}
-`;
-
-  try {
-    const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.4,
-    });
-    const raw    = response.choices?.[0]?.message?.content || "{}";
-    const parsed = JSON.parse(raw);
-    return res.status(200).json({ success: true, data: parsed.insights || [] });
-  } catch (error) {
-    return res.status(200).json({
-      success: true,
-      data: [
-        { title: "Income check", description: profit >= 0 ? "Your income is ahead of expenses this month." : "Your expenses are higher than income this month.", type: profit >= 0 ? "positive" : "warning" },
-        { title: "Invoice follow-up", description: `${overdueInvoices.length} invoices are overdue and need immediate follow-up.`, type: overdueInvoices.length > 0 ? "danger" : "info" },
-      ],
-    });
-  }
-});
-
-// ─── Health Score Explanation ─────────────────────────────────────────────────
-const getHealthScoreExplanation = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-  const { start, end } = getCurrentMonthRange();
-
-  const [incomes, expenses, invoices] = await Promise.all([
+  const [incomes, expenses, invoices, health] = await Promise.all([
     Income.find({ userId, date: { $gte: start, $lte: end } }),
     Expense.find({ userId, date: { $gte: start, $lte: end } }),
     Invoice.find({ userId }),
+    calculateDetailedHealthScore(userId),
   ]);
 
-  const totalIncome  = incomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const totalExpense = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const savingsRatio = totalIncome > 0 ? (totalIncome - totalExpense) / totalIncome : 0;
-  const paidInvoices = invoices.filter((inv) => inv.status === "Paid").length;
-  const invoiceScore = invoices.length > 0 ? paidInvoices / invoices.length : 0;
+  const totalIncome = incomes.reduce((s, i) => s + Number(i.amount || 0), 0);
+  const totalExpense = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  const overdueInvoices = invoices.filter((i) => i.status === "Overdue");
 
-  // Fix: removed the hardcoded '+ 25' bonus that inflated every score by 25 points for free.
-  // Score is now purely derived from real data across 3 equal dimensions (max 100).
-  // savingsComponent: up to 40 pts — rewards saving >20% of income
-  // expenseComponent: up to 30 pts — rewards keeping expenses below 80% of income
-  // invoiceComponent: up to 30 pts — rewards collecting payment on all invoices
-  const savingsComponent = Math.min(savingsRatio / 0.4, 1) * 40;
-  const expenseRatio      = totalIncome > 0 ? totalExpense / totalIncome : 1;
-  const expenseComponent  = Math.max(0, (1 - expenseRatio / 0.8)) * 30;
-  const invoiceComponent  = invoiceScore * 30;
-
-  const score = Math.max(0, Math.min(100, Math.round(
-    savingsComponent + expenseComponent + invoiceComponent
-  )));
-
-  const prompt = `
-Explain this financial health score in plain English for an Indian freelancer.
-Score: ${score}
-Income: ${totalIncome}
-Expenses: ${totalExpense}
-Savings ratio: ${Math.round(savingsRatio * 100)}%
-Invoice payment rate: ${Math.round(invoiceScore * 100)}%
-
-Return concise JSON:
-{
-  "summary": "string",
-  "suggestions": ["string"]
-}
-`;
-
-  try {
-    const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.4,
-    });
-    const raw    = response.choices?.[0]?.message?.content || "{}";
-    const parsed = JSON.parse(raw);
-    return res.status(200).json({
-      success: true,
-      data: { score, summary: parsed.summary || "Your financial health looks stable.", suggestions: parsed.suggestions || [] },
-    });
-  } catch (error) {
-    return res.status(200).json({
-      success: true,
-      data: {
-        score,
-        summary: "Your score is based on income, expenses, and invoice collection.",
-        suggestions: ["Reduce unnecessary recurring expenses.", "Follow up on unpaid invoices.", "Increase your savings ratio this month."],
-      },
-    });
+  const insights = [];
+  if (health.totalScore < 60) {
+    insights.push({ type: "danger", insight: `Financial Health is currently ${health.totalScore}/100 (${health.grade}). ${health.improvements[0] || "Review expenses."}` });
+  } else {
+    insights.push({ type: "success", insight: `Financial Health is solid at ${health.totalScore}/100 (${health.grade}). ${health.summary}` });
   }
+
+  if (overdueInvoices.length > 0) {
+    const overdueAmt = overdueInvoices.reduce((s, i) => s + Number(i.amount || i.totalAmount || 0), 0);
+    insights.push({ type: "warning", insight: `You have ₹${overdueAmt.toLocaleString("en-IN")} in overdue client receivables across ${overdueInvoices.length} invoices.` });
+  }
+
+  if (totalIncome > 0 && totalExpense > totalIncome * 0.7) {
+    insights.push({ type: "warning", insight: `Monthly expenses are currently ${Math.round((totalExpense / totalIncome) * 100)}% of income. Target staying below 60% for healthy runway.` });
+  }
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      insights,
+      health_score: health.totalScore,
+      health_explanation: health.summary,
+      top_action: health.improvements[0] || "Maintain current income velocity.",
+    },
+  });
+});
+
+// ─── Health Score Explanation ────────────────────────────────────────────────
+const getHealthScoreExplanation = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const health = await calculateDetailedHealthScore(userId);
+  return res.status(200).json({
+    success: true,
+    data: {
+      score: health.totalScore,
+      grade: health.grade,
+      summary: health.summary,
+      breakdown: health.breakdown,
+      suggestions: health.improvements,
+    },
+  });
 });
 
 // ─── Tax Saving Suggestions ───────────────────────────────────────────────────
@@ -311,98 +232,51 @@ const getTaxSavingSuggestions = asyncHandler(async (req, res) => {
   const user   = await User.findById(userId);
   const { start, end } = getCurrentMonthRange();
 
-  const incomes  = await Income.find({ userId, date: { $gte: start, $lte: end } });
-  const expenses = await Expense.find({ userId, date: { $gte: start, $lte: end } });
+  const [incomes, expenses] = await Promise.all([
+    Income.find({ userId, date: { $gte: start, $lte: end } }),
+    Expense.find({ userId, date: { $gte: start, $lte: end } }),
+  ]);
 
   const totalIncome  = incomes.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const totalExpense = expenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
-  const prompt = `
-You are an Indian tax-saving assistant.
-Use this user profile and return ranked tax-saving recommendations in JSON only.
+  const deductions = {
+    section80C: user?.investments80C || 0,
+    section80D: user?.investments80D || 0,
+  };
 
-User:
-- Name: ${user?.name || "User"}
-- Monthly income: ${totalIncome}
-- Monthly expenses: ${totalExpense}
-- Current tax regime: ${user?.taxRegime || "Unknown"}
-- 80C invested: ${user?.investments80C || 0}
-- 80D invested: ${user?.investments80D || 0}
+  const taxComp = compareAllRegimes(totalIncome * 12, totalExpense * 12, deductions);
 
-Return:
-{
-  "recommendations": [
-    {
-      "instrument": "ELSS|PPF|NPS|Health Insurance|FD|Other",
-      "section": "80C|80D|80CCD|Other",
-      "current": number,
-      "recommended": number,
-      "taxSaving": number,
-      "deadline": "string",
-      "priority": "High|Medium|Low",
-      "reason": "string"
-    }
-  ]
-}
-`;
+  const defaultRecommendations = [
+    { instrument: "Section 44ADA Presumptive Scheme", section: "44ADA", current: 0, recommended: 0, taxSaving: taxComp.annualTaxSavings || 45000, deadline: "July 31", priority: "High", reason: "Declare 50% profits if gross professional receipts are under ₹75L." },
+    { instrument: "ELSS Mutual Funds", section: "80C", current: Number(user?.investments80C || 0), recommended: 150000, taxSaving: 46800, deadline: "March 31", priority: "High", reason: "Complete ₹1.5L limit under Old Regime with 3-year lock-in." },
+    { instrument: "Health Insurance for Self & Parents", section: "80D", current: Number(user?.investments80D || 0), recommended: 50000, taxSaving: 15600, deadline: "March 31", priority: "Medium", reason: "Deduct up to ₹25k for self/family and ₹50k for senior citizen parents." },
+    { instrument: "National Pension Scheme (NPS Tier-1)", section: "80CCD(1B)", current: 0, recommended: 50000, taxSaving: 15600, deadline: "March 31", priority: "Medium", reason: "Exclusive ₹50,000 deduction over and above Section 80C." },
+  ];
 
-  try {
-    const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.3,
-    });
-    const raw    = response.choices?.[0]?.message?.content || "{}";
-    const parsed = JSON.parse(raw);
-    return res.status(200).json({ success: true, data: parsed.recommendations || [] });
-  } catch (error) {
-    return res.status(200).json({
-      success: true,
-      data: [{ instrument: "ELSS", section: "80C", current: Number(user?.investments80C || 0), recommended: 150000, taxSaving: 0, deadline: "March 31", priority: "High", reason: "ELSS can help you complete 80C limits and save tax." }],
-    });
-  }
+  return res.status(200).json({
+    success: true,
+    data: defaultRecommendations,
+  });
 });
 
 // ─── Cash Flow Forecast ───────────────────────────────────────────────────────
 const getCashFlowForecast = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const { start, end } = getLastMonthsRange(6);
-
-  const incomes  = await Income.find({ userId, date: { $gte: start, $lte: end } }).sort({ date: 1 });
-  const invoices = await Invoice.find({ userId, status: "Unpaid" });
-
-  const monthlyData = {};
-  incomes.forEach((item) => {
-    const key = monthKey(item.date);
-    monthlyData[key] = (monthlyData[key] || 0) + Number(item.amount || 0);
-  });
-
-  const months = Object.keys(monthlyData);
-  const values = Object.values(monthlyData);
-
-  let forecast = [];
-  if (values.length > 0) {
-    const recent = values.slice(-3);
-    const avg    = recent.reduce((a, b) => a + b, 0) / recent.length;
-    const growth = values.length > 1 ? (values[values.length - 1] - values[0]) / Math.max(values[0], 1) : 0;
-    for (let i = 1; i <= 3; i++) {
-      forecast.push({
-        month: `Month ${i}`,
-        predictedIncome: Math.max(0, Math.round(avg * (1 + growth * 0.1 * i))),
-        confidence: values.length >= 4 ? "High" : values.length >= 2 ? "Medium" : "Low",
-      });
-    }
-  }
-
-  const pendingInvoiceValue = invoices.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const [forecastResult, runwayResult] = await Promise.all([
+    generateCashFlowForecast(userId),
+    calculateCashRunway(userId),
+  ]);
 
   return res.status(200).json({
     success: true,
     data: {
-      history: months.map((month, idx) => ({ month, income: values[idx] })),
-      forecast,
-      pendingInvoiceValue,
-      runway: "Estimated based on current income and expenses",
+      history: forecastResult.history,
+      forecast: forecastResult.forecast,
+      pendingInvoiceValue: forecastResult.pendingInvoiceValue,
+      runway: runwayResult.runwayDisplay,
+      confidenceLevel: forecastResult.confidenceLevel,
+      confidenceReason: forecastResult.confidenceReason,
     },
   });
 });
