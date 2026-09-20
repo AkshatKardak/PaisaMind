@@ -101,12 +101,13 @@ const detectSpendingAnomalies = async (userId, monthsBack = 6) => {
       if ((zScore >= 1.95 || (pctIncrease >= 50 && diff >= 2000)) && currentTotal > mean) {
         detectedAnomalies.push({
           type: "spending_spike",
+          label: "Unusual transaction detected",
           category: cat,
           amount: Math.round(currentTotal),
           baselineAmount: Math.round(mean),
           percentageDeviation: Math.round(pctIncrease),
           zScore: Number(zScore.toFixed(2)),
-          description: `${cat} expenses (₹${Math.round(currentTotal).toLocaleString("en-IN")}) are ${Math.round(pctIncrease)}% higher than the ${count}-month average baseline (₹${Math.round(mean).toLocaleString("en-IN")}).`,
+          description: `${cat} expenses (₹${Math.round(currentTotal).toLocaleString("en-IN")}) are ${Math.round(pctIncrease)}% higher than the ${count}-month average baseline (₹${Math.round(mean).toLocaleString("en-IN")}). (Unusual transaction detected)`,
           severity: pctIncrease > 100 || zScore > 3 ? "HIGH" : "MEDIUM",
         });
       }
@@ -123,12 +124,13 @@ const detectSpendingAnomalies = async (userId, monthsBack = 6) => {
         if (!alreadyFlagged) {
           detectedAnomalies.push({
             type: "single_transaction_outlier",
+            label: "Unusual transaction detected",
             category: outlier.category,
             amount: outlier.amount,
             zScore: outlier.outlierScore,
             transactionId: outlier.transactionId,
             title: outlier.title,
-            description: outlier.reason,
+            description: outlier.reason ? `${outlier.reason} (Unusual transaction detected)` : "Unusual transaction detected: statistical outlier.",
             severity: outlier.severity,
           });
         }

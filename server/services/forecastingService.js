@@ -2,6 +2,7 @@ const Income = require("../models/Income");
 const Expense = require("../models/Expense");
 const Invoice = require("../models/Invoice");
 const RecurringTransaction = require("../models/RecurringTransaction");
+const ModelRegistry = require("../models/ModelRegistry");
 const { analyzeInvoiceRisk } = require("./invoiceRiskService");
 const { calculateStats } = require("./anomalyService");
 const { runForecasting } = require("./mlBridgeService");
@@ -22,7 +23,7 @@ const generateCashFlowForecast = async (userId) => {
       confidenceLevel: "High",
       confidenceReason: "Simulated offline baseline forecast.",
       mlModel: "Statistical-Exponential-Smoothing",
-      backtestMetrics: { mae: 2500, rmse: 3200 },
+      backtestMetrics: { mae: 2500, rmse: 3200, mape: 4.8 },
       hasSufficientData: true,
       pendingInvoiceValue: 0,
       recurringMonthlyBurn: 20000,
@@ -161,13 +162,40 @@ const generateCashFlowForecast = async (userId) => {
     };
   });
 
+  const backtestMetrics = mlResult.backtestMetrics || { mae: 0, rmse: 0, mape: 0 };
+  const modelName = mlResult.modelName || "Statistical-Exponential-Smoothing";
+
+  // Record/update model metrics in ModelRegistry if database connected
+  if (mongoose.connection.readyState === 1 && ModelRegistry) {
+    try {
+      await ModelRegistry.findOneAndUpdate(
+        { modelName },
+        {
+          modelName,
+          modelType: "FORECAST",
+          version: "v1.0.0",
+          status: "ACTIVE",
+          datasetSize: activeMonthsWithData.length,
+          evaluationMetrics: {
+            mae: backtestMetrics.mae || 0,
+            rmse: backtestMetrics.rmse || 0,
+            mape: backtestMetrics.mape || 0,
+          },
+          hyperparameters: { alpha: 0.3, beta: 0.1, horizon: 3 },
+          deployedAt: new Date(),
+        },
+        { upsert: true, new: true }
+      );
+    } catch (e) {}
+  }
+
   return {
     history: historyArray.slice(-6),
     forecast: formattedForecast,
     confidenceLevel,
     confidenceReason,
-    mlModel: mlResult.modelName || "Statistical-Exponential-Smoothing",
-    backtestMetrics: mlResult.backtestMetrics || { mae: 0, rmse: 0 },
+    mlModel: modelName,
+    backtestMetrics,
     hasSufficientData: activeMonthsWithData.length >= 3,
     pendingInvoiceValue: Math.round(totalPendingReceivables),
     recurringMonthlyBurn: Math.round(recurringMonthlyExpense),

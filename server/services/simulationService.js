@@ -38,10 +38,28 @@ const runMonteCarloSimulation = ({
 
   endingBalances.sort((a, b) => a - b);
   const p10 = endingBalances[Math.floor(iterations * 0.10)];
+  const p25 = endingBalances[Math.floor(iterations * 0.25)];
   const p50 = endingBalances[Math.floor(iterations * 0.50)];
+  const p75 = endingBalances[Math.floor(iterations * 0.75)];
   const p90 = endingBalances[Math.floor(iterations * 0.90)];
 
-  return { p10, p50, p90, iterations };
+  const negativeCount = endingBalances.filter((b) => b < 0).length;
+  const probNegativeCash = Math.round((negativeCount / iterations) * 100);
+
+  const monthlyBurn = Math.max(1000, baseMonthlyExpense + addedMonthlyExpense);
+  const insufficientRunwayCount = endingBalances.filter((b) => (b / monthlyBurn) < 3.0).length;
+  const probInsufficientRunway = Math.round((insufficientRunwayCount / iterations) * 100);
+
+  return {
+    p10,
+    p25,
+    p50,
+    p75,
+    p90,
+    probNegativeCash,
+    probInsufficientRunway,
+    iterations,
+  };
 };
 
 /**
@@ -206,6 +224,13 @@ const simulateScenario = async (userId, params) => {
       optimisticGainFactor: Math.round(optimisticGainFactor * 100),
     },
     monteCarloProbabilities: {
+      p10: monteCarlo.p10,
+      p25: monteCarlo.p25,
+      p50: monteCarlo.p50,
+      p75: monteCarlo.p75,
+      p90: monteCarlo.p90,
+      probNegativeCash: monteCarlo.probNegativeCash,
+      probInsufficientRunway: monteCarlo.probInsufficientRunway,
       p10StressBalance: monteCarlo.p10,
       p50MedianBalance: monteCarlo.p50,
       p90OptimisticBalance: monteCarlo.p90,

@@ -96,14 +96,23 @@ const holtLinearTrendNode = (series = [], horizon = 3, alpha = 0.3, beta = 0.1) 
 };
 
 /**
- * Computes MAE and RMSE on rolling backtest
+ * Computes MAE, RMSE, and MAPE on rolling backtest
  */
 const calculateMetrics = (actuals = [], preds = []) => {
-  if (actuals.length === 0 || actuals.length !== preds.length) return { mae: 0, rmse: 0 };
+  if (actuals.length === 0 || actuals.length !== preds.length) return { mae: 0, rmse: 0, mape: 0 };
   const n = actuals.length;
   const mae = actuals.reduce((sum, a, i) => sum + Math.abs(a - preds[i]), 0) / n;
   const rmse = Math.sqrt(actuals.reduce((sum, a, i) => sum + Math.pow(a - preds[i], 2), 0) / n);
-  return { mae: Math.round(mae * 100) / 100, rmse: Math.round(rmse * 100) / 100 };
+  const nonZeroActuals = actuals.filter((a) => a > 0);
+  const mape = nonZeroActuals.length > 0
+    ? (actuals.reduce((sum, a, i) => (a > 0 ? sum + (Math.abs(a - preds[i]) / a) : sum), 0) / nonZeroActuals.length) * 100
+    : 0;
+
+  return {
+    mae: Math.round(mae * 100) / 100,
+    rmse: Math.round(rmse * 100) / 100,
+    mape: Math.round(mape * 100) / 100,
+  };
 };
 
 /**
@@ -215,6 +224,7 @@ const runForecasting = async (history = [], horizon = 3, invoiceBuckets = [0, 0,
     backtestMetrics: {
       mae,
       rmse,
+      mape,
       dataPointsUsed: history.length,
     },
     forecast: forecastResults,

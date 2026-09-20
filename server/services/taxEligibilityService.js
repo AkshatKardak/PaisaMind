@@ -14,12 +14,12 @@ const { getActiveRules } = require("./taxRuleResolver");
  *    - Up to ₹50 Lakhs if cash receipts > 5%.
  */
 const evaluate44ADAEligibility = async ({
-  grossReceipts = 0,
+  grossReceipts,
   cashReceipts = 0,
-  taxpayerType = "INDIVIDUAL", // "INDIVIDUAL" | "HUF" | "PARTNERSHIP_FIRM" | "LLP" | "COMPANY"
-  profession = "INFORMATION_TECHNOLOGY",
+  taxpayerType,
+  profession,
   financialYear = "2025-26",
-}) => {
+} = {}) => {
   const rules = await getActiveRules(financialYear);
   const config = rules.presumptive?.section44ADA;
 
@@ -27,10 +27,44 @@ const evaluate44ADAEligibility = async ({
     throw new Error(`Section 44ADA configuration not found for FY ${financialYear}`);
   }
 
+  // 0. Validate required fields for statutory determination
+  const missingFields = [];
+  if (grossReceipts === undefined || grossReceipts === null || isNaN(Number(grossReceipts))) {
+    missingFields.push("grossReceipts (annual gross professional turnover)");
+  }
+  if (!taxpayerType || typeof taxpayerType !== "string" || !taxpayerType.trim()) {
+    missingFields.push("taxpayerType (e.g. INDIVIDUAL, HUF, PARTNERSHIP_FIRM, LLP, COMPANY)");
+  }
+  if (!profession || typeof profession !== "string" || !profession.trim()) {
+    missingFields.push("profession (e.g. INFORMATION_TECHNOLOGY, TECHNICAL_CONSULTANCY, LEGAL, etc.)");
+  }
+
+  if (missingFields.length > 0) {
+    return {
+      status: "INSUFFICIENT_INFORMATION",
+      isEligible: false,
+      missingFields,
+      taxpayerType: taxpayerType || null,
+      profession: profession || null,
+      grossReceipts: grossReceipts !== undefined && grossReceipts !== null ? Number(grossReceipts) : null,
+      cashReceipts: Number(cashReceipts || 0),
+      cashPercentage: 0,
+      cashThresholdPercentage: config.cashReceiptThresholdPercentage,
+      applicableGrossLimit: config.standardGrossLimit,
+      presumptiveProfitRate: config.presumptiveProfitRate,
+      deemedProfit: 0,
+      reasons: [
+        `Cannot determine Section 44ADA statutory eligibility due to missing or indeterminate inputs: ${missingFields.join(", ")}. Please provide all required taxpayer attributes.`,
+      ],
+      ruleVersion: rules.version,
+      sourceNotification: rules.sourceNotification,
+    };
+  }
+
   const gross = Math.max(0, Number(grossReceipts || 0));
   const cash = Math.max(0, Number(cashReceipts || 0));
-  const normalizedEntity = String(taxpayerType || "INDIVIDUAL").toUpperCase().trim();
-  const normalizedProfession = String(profession || "").toUpperCase().trim();
+  const normalizedEntity = String(taxpayerType).toUpperCase().trim();
+  const normalizedProfession = String(profession).toUpperCase().trim();
 
   const reasons = [];
   let isEligible = true;
@@ -76,6 +110,7 @@ const evaluate44ADAEligibility = async ({
   const deemedProfit = Math.round(gross * config.presumptiveProfitRate);
 
   return {
+    status: isEligible ? "ELIGIBLE" : "INELIGIBLE",
     isEligible,
     taxpayerType: normalizedEntity,
     profession: normalizedProfession,

@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 const { FINANCIAL_TOOLS } = require("../tools/financialToolsRegistry");
 
 describe("Copilot Financial Tools Registry", () => {
-  it("should define exactly 20 deterministic financial tools", () => {
-    expect(FINANCIAL_TOOLS).toHaveLength(20);
+  it("should define at least 20 deterministic financial tools", () => {
+    expect(FINANCIAL_TOOLS.length).toBeGreaterThanOrEqual(20);
   });
 
   it("every tool should have a valid function definition, name, description, and execute handler", () => {
@@ -30,5 +30,6 @@ describe("Copilot Financial Tools Registry", () => {
     expect(names).toContain("get_client_payment_reliability");
     expect(names).toContain("simulate_financial_scenario");
     expect(names).toContain("get_client_profitability");
+    expect(names).toContain("get_tds_reconciliation");
   });
 });

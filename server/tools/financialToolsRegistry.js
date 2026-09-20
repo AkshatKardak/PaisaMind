@@ -506,6 +506,23 @@ const FINANCIAL_TOOLS = [
       return overview;
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "get_tds_reconciliation",
+      description: "Get 3-way TDS reconciliation report matching Invoices, Bank Receipts, and Form 26AS/AIS TDS records with discrepancy reasons and suggested actions.",
+      parameters: {
+        type: "object",
+        properties: {
+          financialYear: { type: "string", description: "Financial year, e.g. '2025-26'" },
+        },
+      },
+    },
+    execute: async (userId, args = {}) => {
+      const { run3WayTDSReconciliation } = require("../services/tdsReconciliationService");
+      return await run3WayTDSReconciliation(userId, { financialYear: args.financialYear || "2025-26" });
+    },
+  },
 ];
 
 module.exports = {

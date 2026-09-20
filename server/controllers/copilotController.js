@@ -11,14 +11,17 @@ const groq = process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== "your_groq
   : null;
 
 /**
- * Executes a tool server-side with authenticated userId
+ * Executes a tool server-side with authenticated userId (strict IDOR protection)
  */
 const executeToolByName = async (userId, toolName, args = {}) => {
   const tool = FINANCIAL_TOOLS.find((t) => t.function.name === toolName);
   if (!tool) {
     throw new Error(`Unauthorized or unknown tool: ${toolName}`);
   }
-  return await tool.execute(userId, args);
+  // Strip any caller-injected userId to enforce session owner authority
+  const sanitizedArgs = { ...args };
+  delete sanitizedArgs.userId;
+  return await tool.execute(userId, sanitizedArgs);
 };
 
 /**
@@ -112,6 +115,35 @@ ${taxRes.explanation} Section 44ADA offers substantial savings for Indian freela
 
 **Disclaimer:**
 These calculations are deterministic estimates under Indian Income Tax Act guidelines and do not constitute formal legal/CA advice.`,
+      toolCalls: toolResults,
+    };
+  }
+
+  // Match: TDS / Form 26AS Reconciliation
+  if (q.includes("tds") || q.includes("26as") || q.includes("form 16") || q.includes("reconcil")) {
+    const tdsRes = await executeToolByName(userId, "get_tds_reconciliation", {});
+    toolResults.push({ name: "get_tds_reconciliation", result: tdsRes });
+    return {
+      answer: `### 3-Way TDS Reconciliation Summary (FY ${tdsRes.financialYear})
+**Calculated Facts:**
+- Total Invoices Reconciled: **${tdsRes.totalInvoices}** (₹${tdsRes.totalInvoiceAmount.toLocaleString("en-IN")})
+- Total Expected TDS: **₹${tdsRes.totalExpectedTds.toLocaleString("en-IN")}**
+- Total TDS Deposited in Form 26AS: **₹${tdsRes.totalActualTds.toLocaleString("en-IN")}**
+- Total Bank Received: **₹${tdsRes.totalBankReceived.toLocaleString("en-IN")}**
+- Total Discrepancy: **₹${tdsRes.totalDiscrepancy.toLocaleString("en-IN")}**
+
+**Reconciliation Status Breakdown:**
+- Fully Matched: **${tdsRes.statusCounts.MATCHED}**
+- Partial / Pending: **${tdsRes.statusCounts.PARTIAL_MATCH}**
+- TDS Mismatches: **${tdsRes.statusCounts.TDS_MISMATCH}**
+- Missing Form 26AS Credits: **${tdsRes.statusCounts.MISSING_TDS}**
+- Missing Bank Payments: **${tdsRes.statusCounts.MISSING_PAYMENT}**
+
+**Recommendation:**
+${tdsRes.statusCounts.MISSING_TDS > 0 ? "Follow up with clients who deducted TDS but have not yet deposited it or filed Form 26Q." : "Your TDS credits and bank receipts are reconciled."}
+
+**Disclaimer:**
+Deterministic reconciliation under Indian Income Tax Act guidelines. Cross-verify with TRACES portal before filing ITR.`,
       toolCalls: toolResults,
     };
   }

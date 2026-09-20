@@ -225,11 +225,22 @@ const parseImageWithVision = async (buffer, mimeType = "image/jpeg") => {
 /**
  * Parses text-based PDF statements using streaming page-by-page pipeline (NO TRUNCATION)
  */
-const parsePdfStatement = async (buffer) => {
+const parsePdfStatement = async (buffer, documentId) => {
   if (!pdfParse) throw new Error("PDF parsing module is not available. Please use CSV or Excel.");
 
   // Use streaming page-by-page extraction without truncation
-  const { rows, totalPages, scannedPagesCount } = await extractPdfPagesStreaming(buffer);
+  const extraction = await extractPdfPagesStreaming(buffer, documentId);
+  const {
+    rows,
+    totalPages,
+    processedPages,
+    failedPages,
+    scannedPagesCount,
+    extractedCount,
+    rejectedCount,
+    reviewRequiredCount,
+  } = extraction;
+
   const headers = ["Date", "Description", "Debit", "Credit", "Balance"];
 
   if (rows && rows.length > 0) {
@@ -238,7 +249,13 @@ const parsePdfStatement = async (buffer) => {
       rows,
       columnMapping: detectColumnMapping(headers),
       totalPages,
+      processedPages,
+      failedPages,
       scannedPagesCount,
+      extractedCount,
+      rejectedCount,
+      reviewRequiredCount,
+      documentId: extraction.documentId,
     };
   }
 
@@ -248,10 +265,22 @@ const parsePdfStatement = async (buffer) => {
     if (visionRows && visionRows.length > 0) {
       return {
         headers,
-        rows: visionRows,
+        rows: visionRows.map((r) => ({
+          ...r,
+          documentId: extraction.documentId,
+          sourcePage: 1,
+          extractionMethod: "vision_ocr",
+          extractionConfidence: 0.85,
+        })),
         columnMapping: detectColumnMapping(headers),
         totalPages,
+        processedPages: 1,
+        failedPages: 0,
         scannedPagesCount,
+        extractedCount: visionRows.length,
+        rejectedCount: 0,
+        reviewRequiredCount: 0,
+        documentId: extraction.documentId,
       };
     }
   }
@@ -341,6 +370,7 @@ const processStagedTransactions = async (userId, rows, columnMapping) => {
       categoryOverride: category,
       reference: String(row[columnMapping.reference] || row.Reference || row.reference || ""),
       balance: parseCleanAmount(row[columnMapping.balance] || row.Balance || row.balance),
+      documentId: row.documentId || null,
       sourcePage: row.sourcePage !== undefined ? row.sourcePage : null,
       extractionMethod: row.extractionMethod || "regex_text",
       extractionConfidence: row.extractionConfidence || 0.92,

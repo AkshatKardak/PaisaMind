@@ -116,6 +116,7 @@ app.use("/api/scenarios",  scenarioRoutes);
 app.use("/api/net-worth",  netWorthRoutes);
 app.use("/api/statements", statementRoutes);
 app.use("/api/profitability", require("./routes/profitabilityRoutes"));
+app.use("/api/tds",           require("./routes/tdsRoutes"));
 app.use("/api/copilot",    copilotLimiter, copilotRoutes);
 
 app.use(notFound);

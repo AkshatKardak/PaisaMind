@@ -101,10 +101,12 @@ const parsePageWithLLM = async (pageText, pageNumber) => {
   return [];
 };
 
+const crypto = require("crypto");
+
 /**
  * Extracts transactions page-by-page from a PDF buffer without arbitrary character slicing
  */
-const extractPdfPagesStreaming = async (pdfBuffer) => {
+const extractPdfPagesStreaming = async (pdfBuffer, documentId = crypto.randomUUID()) => {
   if (!pdfParse) {
     throw new Error("PDF parsing module is not available. Please upload CSV or Excel statement.");
   }
@@ -136,32 +138,68 @@ const extractPdfPagesStreaming = async (pdfBuffer) => {
 
   const allRows = [];
   let scannedPagesCount = 0;
+  let processedPages = 0;
+  let failedPages = 0;
+  let rejectedCount = 0;
+  let reviewRequiredCount = 0;
 
   for (const page of pages) {
-    const pageText = page.text || "";
+    try {
+      const pageText = page.text || "";
 
-    // If page has virtually no selectable text, note it as scanned
-    if (pageText.length < 25) {
-      scannedPagesCount++;
-      continue;
+      // If page has virtually no selectable text, note it as scanned
+      if (pageText.length < 25) {
+        scannedPagesCount++;
+        continue;
+      }
+
+      // 1. Try standard regex pattern matching for table rows
+      let pageRows = parsePageLines(pageText, page.pageNumber);
+
+      // 2. If regex finds 0 rows but page has substantial text, use LLM page parser
+      if (pageRows.length === 0 && pageText.length >= 60) {
+        pageRows = await parsePageWithLLM(pageText, page.pageNumber);
+      }
+
+      const validatedRows = [];
+      for (const r of pageRows) {
+        // Validate date or amount presence
+        if (!r.Date && !r.Debit && !r.Credit && !r.Amount) {
+          rejectedCount++;
+          continue;
+        }
+
+        const confidence = r.extractionConfidence || 0.90;
+        if (confidence < 0.7) {
+          reviewRequiredCount++;
+        }
+
+        validatedRows.push({
+          ...r,
+          documentId,
+          sourcePage: page.pageNumber,
+          extractionMethod: r.extractionMethod || "pdf_stream_page",
+          extractionConfidence: confidence,
+        });
+      }
+
+      allRows.push(...validatedRows);
+      processedPages++;
+    } catch (pageErr) {
+      failedPages++;
     }
-
-    // 1. Try standard regex pattern matching for table rows
-    let pageRows = parsePageLines(pageText, page.pageNumber);
-
-    // 2. If regex finds 0 rows but page has substantial text, use LLM page parser
-    if (pageRows.length === 0 && pageText.length >= 60) {
-      pageRows = await parsePageWithLLM(pageText, page.pageNumber);
-    }
-
-    allRows.push(...pageRows);
   }
 
   return {
     rows: allRows,
+    documentId,
     totalPages: pages.length,
+    processedPages,
+    failedPages,
     scannedPagesCount,
-    extractedRowsCount: allRows.length,
+    extractedCount: allRows.length,
+    rejectedCount,
+    reviewRequiredCount,
   };
 };
 

@@ -13,6 +13,9 @@ const { learnCategoryCorrection } = require("../services/categorizationService")
 const { logAuditEvent } = require("../services/auditService");
 const logger = require("../services/logger");
 
+const crypto = require("crypto");
+const { validateMagicBytes } = require("../utils/secureFileUtils");
+
 /**
  * Upload and parse bank statement file
  */
@@ -25,6 +28,17 @@ const uploadAndParseStatement = asyncHandler(async (req, res) => {
 
   const filename = req.file.originalname;
   const ext = filename.split(".").pop().toLowerCase();
+  const documentId = crypto.randomUUID();
+
+  // Validate magic bytes against spoofing
+  const magicValidation = validateMagicBytes(req.file.buffer, ext);
+  if (!magicValidation.isValid) {
+    logger.warn({ err: magicValidation.error, filename, userId }, "[StatementUpload] File validation failed");
+    return res.status(400).json({
+      success: false,
+      message: magicValidation.error || "File signature does not match claimed file type.",
+    });
+  }
 
   let parseResult;
   try {
@@ -33,7 +47,7 @@ const uploadAndParseStatement = asyncHandler(async (req, res) => {
     } else if (["xlsx", "xls"].includes(ext)) {
       parseResult = parseXlsxStatement(req.file.buffer);
     } else if (ext === "pdf") {
-      parseResult = await parsePdfStatement(req.file.buffer);
+      parseResult = await parsePdfStatement(req.file.buffer, documentId);
     } else if (["png", "jpg", "jpeg"].includes(ext)) {
       parseResult = await parseImageStatement(req.file.buffer, req.file.mimetype || `image/${ext}`);
     } else {
@@ -44,7 +58,17 @@ const uploadAndParseStatement = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: `Failed to parse statement: ${parseErr.message}` });
   }
 
-  const { headers, rows, columnMapping } = parseResult;
+  const {
+    headers,
+    rows,
+    columnMapping,
+    totalPages = 1,
+    processedPages = 1,
+    failedPages = 0,
+    extractedCount = rows.length,
+    rejectedCount = 0,
+    reviewRequiredCount = 0,
+  } = parseResult;
 
   // Process rows into staged transactions
   const stagedTransactions = await processStagedTransactions(userId, rows, columnMapping);
@@ -66,9 +90,16 @@ const uploadAndParseStatement = asyncHandler(async (req, res) => {
     success: true,
     data: {
       importId: statementDoc._id,
+      documentId,
       filename,
       headers,
       columnMapping,
+      totalPages,
+      processedPages,
+      failedPages,
+      extractedCount,
+      rejectedCount,
+      reviewRequiredCount,
       totalRows: stagedTransactions.length,
       duplicateCount,
       transactions: stagedTransactions,
