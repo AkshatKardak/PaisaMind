@@ -8,6 +8,7 @@ const {
   computeAdvanceTaxSchedule,
   calculateRecommendedTaxReserve,
 } = require("../services/taxIntelligenceService");
+const { getFinancialYearFromDate } = require("../services/taxRuleResolver");
 
 const getTaxOverview = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -16,6 +17,7 @@ const getTaxOverview = asyncHandler(async (req, res) => {
   const currentYear = new Date().getFullYear();
   const fyStart = new Date(new Date().getMonth() >= 3 ? currentYear : currentYear - 1, 3, 1);
   const fyEnd = new Date(new Date().getMonth() >= 3 ? currentYear + 1 : currentYear, 2, 31, 23, 59, 59, 999);
+  const activeFy = req.query.financialYear || getFinancialYearFromDate(new Date());
 
   const [incomes, expenses] = await Promise.all([
     Income.find({ userId, date: { $gte: fyStart, $lte: fyEnd } }),
@@ -30,20 +32,28 @@ const getTaxOverview = asyncHandler(async (req, res) => {
     section80D: user?.investments80D || 0,
   };
 
-  const comparison = compareAllRegimes(totalIncome, totalExpense, deductions);
-  const advanceTax = computeAdvanceTaxSchedule(comparison.recommendedOption.tax);
-  const gst = calculateGSTStatus(totalIncome);
-  const reserve = calculateRecommendedTaxReserve({
+  const comparison = await compareAllRegimes(totalIncome, totalExpense, deductions, {
+    financialYear: activeFy,
+    taxpayerType: user?.taxpayerType || "INDIVIDUAL",
+    profession: user?.profession || "INFORMATION_TECHNOLOGY",
+  });
+
+  const advanceTax = await computeAdvanceTaxSchedule(comparison.recommendedOption.tax, 0, activeFy);
+  const gst = await calculateGSTStatus(totalIncome, user?.isGstRegistered || false, activeFy);
+  const reserve = await calculateRecommendedTaxReserve({
     ytdIncome: totalIncome,
     regime: user?.taxRegime || "new",
     use44ADA: true,
     deductions,
+    financialYear: activeFy,
   });
 
   return res.status(200).json({
     success: true,
     data: {
       user: user ? { name: user.name, email: user.email, taxRegime: user.taxRegime } : null,
+      financialYear: activeFy,
+      ruleVersion: comparison.ruleVersion,
       totalIncome: Math.round(totalIncome),
       totalExpense: Math.round(totalExpense),
       taxComparison: comparison,
@@ -55,7 +65,17 @@ const getTaxOverview = asyncHandler(async (req, res) => {
 });
 
 const compareTaxRegimes = asyncHandler(async (req, res) => {
-  const { income = 0, eligibleExpenses = 0, deductions80C = 0, deductions80D = 0, hra = 0 } = req.body;
+  const {
+    income = 0,
+    eligibleExpenses = 0,
+    deductions80C = 0,
+    deductions80D = 0,
+    hra = 0,
+    financialYear = "2025-26",
+    taxpayerType = "INDIVIDUAL",
+    profession = "INFORMATION_TECHNOLOGY",
+    cashReceipts = 0,
+  } = req.body;
 
   const deductions = {
     section80C: Number(deductions80C || 0),
@@ -63,7 +83,13 @@ const compareTaxRegimes = asyncHandler(async (req, res) => {
     hra: Number(hra || 0),
   };
 
-  const comparison = compareAllRegimes(Number(income), Number(eligibleExpenses), deductions);
+  const comparison = await compareAllRegimes(
+    Number(income),
+    Number(eligibleExpenses),
+    deductions,
+    { financialYear, taxpayerType, profession, cashReceipts: Number(cashReceipts) }
+  );
+
   return res.status(200).json({ success: true, data: comparison });
 });
 
@@ -71,10 +97,15 @@ const getGSTProgress = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const currentYear = new Date().getFullYear();
   const startOfYear = new Date(new Date().getMonth() >= 3 ? currentYear : currentYear - 1, 3, 1);
-  const incomes = await Income.find({ userId, date: { $gte: startOfYear } });
+  const activeFy = req.query.financialYear || getFinancialYearFromDate(new Date());
+
+  const [incomes, user] = await Promise.all([
+    Income.find({ userId, date: { $gte: startOfYear } }),
+    User.findById(userId),
+  ]);
 
   const totalIncome = incomes.reduce((sum, i) => sum + Number(i.amount || 0), 0);
-  const gstStatus = calculateGSTStatus(totalIncome);
+  const gstStatus = await calculateGSTStatus(totalIncome, user?.isGstRegistered || false, activeFy);
 
   return res.status(200).json({
     success: true,
@@ -86,6 +117,7 @@ const getGSTProgress = asyncHandler(async (req, res) => {
       status: gstStatus.status,
       warning: gstStatus.status === "warning" ? "yellow" : gstStatus.status === "danger" ? "red" : "green",
       alertMessage: gstStatus.alertMessage,
+      ruleVersion: gstStatus.ruleVersion,
     },
   });
 });
@@ -95,6 +127,7 @@ const getAdvanceTax = asyncHandler(async (req, res) => {
   const currentYear = new Date().getFullYear();
   const fyStart = new Date(new Date().getMonth() >= 3 ? currentYear : currentYear - 1, 3, 1);
   const fyEnd = new Date(new Date().getMonth() >= 3 ? currentYear + 1 : currentYear, 2, 31, 23, 59, 59, 999);
+  const activeFy = req.query.financialYear || getFinancialYearFromDate(new Date());
 
   const [incomes, expenses, user] = await Promise.all([
     Income.find({ userId, date: { $gte: fyStart, $lte: fyEnd } }),
@@ -110,8 +143,8 @@ const getAdvanceTax = asyncHandler(async (req, res) => {
     section80D: user?.investments80D || 0,
   };
 
-  const comparison = compareAllRegimes(totalIncome, totalExpense, deductions);
-  const advanceTax = computeAdvanceTaxSchedule(comparison.recommendedOption.tax);
+  const comparison = await compareAllRegimes(totalIncome, totalExpense, deductions, { financialYear: activeFy });
+  const advanceTax = await computeAdvanceTaxSchedule(comparison.recommendedOption.tax, 0, activeFy);
 
   return res.status(200).json({
     success: true,
@@ -121,16 +154,20 @@ const getAdvanceTax = asyncHandler(async (req, res) => {
 
 const getTaxReserveEstimate = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const { amount = 0 } = req.query;
+  const { amount = 0, financialYear } = req.query;
 
   const currentYear = new Date().getFullYear();
   const fyStart = new Date(new Date().getMonth() >= 3 ? currentYear : currentYear - 1, 3, 1);
-  const incomes = await Income.find({ userId, date: { $gte: fyStart } });
+  const activeFy = financialYear || getFinancialYearFromDate(new Date());
+
+  const [incomes, user] = await Promise.all([
+    Income.find({ userId, date: { $gte: fyStart } }),
+    User.findById(userId),
+  ]);
+
   const ytdIncome = incomes.reduce((s, i) => s + Number(i.amount || 0), 0);
 
-  const user = await User.findById(userId);
-
-  const reserve = calculateRecommendedTaxReserve({
+  const reserve = await calculateRecommendedTaxReserve({
     ytdIncome,
     newIncomeAmount: Number(amount),
     regime: user?.taxRegime || "new",
@@ -139,6 +176,7 @@ const getTaxReserveEstimate = asyncHandler(async (req, res) => {
       section80C: user?.investments80C || 0,
       section80D: user?.investments80D || 0,
     },
+    financialYear: activeFy,
   });
 
   return res.status(200).json({ success: true, data: reserve });

@@ -56,7 +56,7 @@ function Navbar() {
         </button>
 
         <div className="hidden items-center gap-3 rounded-2xl border px-3 py-2 sm:flex" style={{ background: "var(--bg-elevated)", borderColor: "var(--border)" }}>
-          <div className="grid h-8 w-8 place-items-center rounded-full bg-sky-500/15 text-xs font-bold text-sky-300">
+          <div className="grid h-8 w-8 place-items-center rounded-full bg-sky-500/15 text-xs font-bold text-sky-600 dark:text-sky-300">
             {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
           </div>
           <div className="max-w-[140px]">
@@ -68,7 +68,7 @@ function Navbar() {
         <button
           type="button"
           onClick={logout}
-          className="flex items-center gap-2 rounded-[10px] border px-3 py-3 text-sm font-semibold transition hover:border-red-400/40 hover:bg-red-500/10 hover:text-red-300 sm:px-4"
+          className="flex items-center gap-2 rounded-[10px] border px-3 py-3 text-sm font-semibold transition hover:border-red-400/40 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-300 sm:px-4"
           style={{
             background: "var(--bg-elevated)",
             borderColor: "var(--border)",

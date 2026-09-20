@@ -3,9 +3,8 @@ const xlsx = require("xlsx");
 let pdfParse;
 try {
   pdfParse = require("pdf-parse");
-} catch (e) {
-  // pdf-parse optional fallback
-}
+} catch (e) {}
+
 let Groq;
 try {
   Groq = require("groq-sdk");
@@ -20,6 +19,8 @@ const getGroqClient = () => {
 
 const { categorizeTransaction } = require("./categorizationService");
 const { normalizeMerchant } = require("./recurringIntelligenceService");
+const { extractPdfPagesStreaming } = require("./documentProcessingService");
+const { validateAndNormalizeLedger } = require("./ledgerValidationService");
 const Expense = require("../models/Expense");
 const Income = require("../models/Income");
 
@@ -137,7 +138,7 @@ const parseCsvStatement = (buffer) => {
 
   const headers = records[headerIndex];
   const rows = records.slice(headerIndex + 1).map((row) => {
-    const obj = {};
+    const obj = { extractionMethod: "csv_direct", sourcePage: null };
     headers.forEach((h, idx) => {
       obj[h] = row[idx] !== undefined ? row[idx] : "";
     });
@@ -169,7 +170,7 @@ const parseXlsxStatement = (buffer) => {
 
   const headers = (rawData[headerIndex] || []).map((h) => String(h || "").trim());
   const rows = rawData.slice(headerIndex + 1).filter((r) => r.length > 0).map((row) => {
-    const obj = {};
+    const obj = { extractionMethod: "excel_sheet", sourcePage: null };
     headers.forEach((h, idx) => {
       obj[h] = row[idx] !== undefined ? row[idx] : "";
     });
@@ -213,103 +214,51 @@ const parseImageWithVision = async (buffer, mimeType = "image/jpeg") => {
     const raw = response.choices?.[0]?.message?.content?.trim() || "";
     const cleaned = raw.replace(/^```json/i, "").replace(/^```/i, "").replace(/```$/i, "").trim();
     const parsed = JSON.parse(cleaned);
-    return Array.isArray(parsed) ? parsed : null;
+    return Array.isArray(parsed)
+      ? parsed.map((item) => ({ ...item, extractionMethod: "vision_ocr", sourcePage: 1 }))
+      : null;
   } catch (err) {
     return null;
   }
 };
 
 /**
- * Intelligent text LLM extractor for unstructured/multi-line bank PDF text
- */
-const parseUnstructuredTextWithLLM = async (rawText) => {
-  const groq = getGroqClient();
-  if (!groq) return null;
-
-  try {
-    const textChunk = rawText.slice(0, 10000);
-    const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [
-        {
-          role: "system",
-          content: "You are an Indian bank statement parsing engine. Extract all bank transactions into a strict JSON array of objects. Each object must have: 'Date', 'Description', 'Debit', 'Credit', 'Balance'. Return ONLY the valid JSON array without any markdown wrappers.",
-        },
-        {
-          role: "user",
-          content: `Extract all transaction rows from this bank statement text:\n\n${textChunk}`,
-        },
-      ],
-      temperature: 0.1,
-    });
-
-    const raw = response.choices?.[0]?.message?.content?.trim() || "";
-    const cleaned = raw.replace(/^```json/i, "").replace(/^```/i, "").replace(/```$/i, "").trim();
-    const parsed = JSON.parse(cleaned);
-    return Array.isArray(parsed) ? parsed : null;
-  } catch (err) {
-    return null;
-  }
-};
-
-/**
- * Parses text-based PDF statements with Vision OCR & LLM fallback
+ * Parses text-based PDF statements using streaming page-by-page pipeline (NO TRUNCATION)
  */
 const parsePdfStatement = async (buffer) => {
   if (!pdfParse) throw new Error("PDF parsing module is not available. Please use CSV or Excel.");
-  const data = await pdfParse(buffer);
-  const text = (data.text || "").trim();
 
-  // If text is virtually empty, it is a scanned paper passbook wrapped in PDF
-  if (text.length < 25) {
-    const visionRows = await parseImageWithVision(buffer, "application/pdf");
-    if (visionRows && visionRows.length > 0) {
-      const headers = ["Date", "Description", "Debit", "Credit", "Balance"];
-      return { headers, rows: visionRows, columnMapping: detectColumnMapping(headers) };
-    }
-
-    throw new Error(
-      "No selectable text found in this scanned PDF/passbook. For instant zero-error ingestion, please download the digital e-statement (PDF or CSV) directly from your NetBanking portal."
-    );
-  }
-
-  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-  const rows = [];
+  // Use streaming page-by-page extraction without truncation
+  const { rows, totalPages, scannedPagesCount } = await extractPdfPagesStreaming(buffer);
   const headers = ["Date", "Description", "Debit", "Credit", "Balance"];
 
-  // Pattern: Date followed by text followed by numbers
-  const lineRegex = /^(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})\s+(.+?)\s+([\d,]+\.?\d*)\s*(CR|DR)?$/i;
-
-  lines.forEach((line) => {
-    const match = line.match(lineRegex);
-    if (match) {
-      const rawDate = match[1];
-      const desc = match[2];
-      const amtStr = match[3];
-      const crDr = match[4] || "";
-      const isCredit = crDr.toUpperCase() === "CR" || desc.toLowerCase().includes("cr") || desc.toLowerCase().includes("deposit");
-
-      rows.push({
-        Date: rawDate,
-        Description: desc,
-        Debit: isCredit ? "" : amtStr,
-        Credit: isCredit ? amtStr : "",
-        Balance: "",
-      });
-    }
-  });
-
-  if (rows.length === 0) {
-    // Regex table parse yielded 0 rows due to multi-line bank formatting. Try LLM extraction fallback!
-    const llmRows = await parseUnstructuredTextWithLLM(text);
-    if (llmRows && llmRows.length > 0) {
-      return { headers, rows: llmRows, columnMapping: detectColumnMapping(headers) };
-    }
-
-    throw new Error("Could not automatically extract transaction tables from this PDF. Please export as CSV/Excel or ensure PDF is an official digital statement (not a scanned image).");
+  if (rows && rows.length > 0) {
+    return {
+      headers,
+      rows,
+      columnMapping: detectColumnMapping(headers),
+      totalPages,
+      scannedPagesCount,
+    };
   }
 
-  return { headers, rows, columnMapping: detectColumnMapping(headers) };
+  // If no rows found and all pages were scanned images, try Vision OCR fallback on entire buffer
+  if (scannedPagesCount > 0) {
+    const visionRows = await parseImageWithVision(buffer, "application/pdf");
+    if (visionRows && visionRows.length > 0) {
+      return {
+        headers,
+        rows: visionRows,
+        columnMapping: detectColumnMapping(headers),
+        totalPages,
+        scannedPagesCount,
+      };
+    }
+  }
+
+  throw new Error(
+    "Could not extract transaction tables from this PDF. Please ensure the document is a digital bank statement or export as CSV/Excel."
+  );
 };
 
 /**
@@ -328,25 +277,32 @@ const parseImageStatement = async (buffer, mimeType = "image/jpeg") => {
 };
 
 /**
- * Normalizes parsed rows into PaisaMind staged transactions
+ * Normalizes parsed rows into canonical validated ledger records
  */
 const processStagedTransactions = async (userId, rows, columnMapping) => {
-  const existingExpenses = await Expense.find({ userId }).select("title amount date");
-  const existingIncomes = await Income.find({ userId }).select("source amount date");
+  const [existingExpenses, existingIncomes] = await Promise.all([
+    Expense.find({ userId }).select("title amount date"),
+    Income.find({ userId }).select("source amount date"),
+  ]);
 
-  const staged = [];
+  const candidateDbLedger = [
+    ...existingExpenses.map((e) => ({ _id: e._id, amount: e.amount, date: e.date, title: e.title, type: "expense" })),
+    ...existingIncomes.map((i) => ({ _id: i._id, amount: i.amount, date: i.date, title: i.source, type: "income" })),
+  ];
+
+  const candidateRawList = [];
 
   for (const row of rows) {
-    const rawDate = row[columnMapping.date] || "";
+    const rawDate = row[columnMapping.date] || row.Date || "";
     const parsedDate = parseFlexibleDate(rawDate);
-    const rawDesc = String(row[columnMapping.description] || "Transaction").trim();
+    const rawDesc = String(row[columnMapping.description] || row.Description || "Transaction").trim();
     const normalizedMerchant = normalizeMerchant(rawDesc);
 
     let type = "expense";
     let amount = 0;
 
-    const debitVal = parseCleanAmount(row[columnMapping.debit]);
-    const creditVal = parseCleanAmount(row[columnMapping.credit]);
+    const debitVal = parseCleanAmount(row[columnMapping.debit] || row.Debit);
+    const creditVal = parseCleanAmount(row[columnMapping.credit] || row.Credit);
 
     if (creditVal > 0 && debitVal === 0) {
       type = "income";
@@ -355,8 +311,7 @@ const processStagedTransactions = async (userId, rows, columnMapping) => {
       type = "expense";
       amount = debitVal;
     } else {
-      // Single amount column with possible indicator
-      const amtVal = parseCleanAmount(row[columnMapping.amount]);
+      const amtVal = parseCleanAmount(row[columnMapping.amount] || row.Amount);
       amount = amtVal;
       const rowText = Object.values(row).join(" ").toLowerCase();
       if (rowText.includes("cr") || rowText.includes("credit") || rowText.includes("deposit")) {
@@ -366,46 +321,41 @@ const processStagedTransactions = async (userId, rows, columnMapping) => {
       }
     }
 
-    if (amount <= 0) continue; // skip zero/invalid amount lines
+    if (amount <= 0) continue;
 
-    // Category prediction
-    const { category, confidence } = await categorizeTransaction(userId, rawDesc, type);
+    // Automatic Category Prediction
+    const { category, confidence, source } = await categorizeTransaction(userId, rawDesc, type);
 
-    // Duplicate detection against existing database records (same amount and date within 2 days)
-    let isDuplicate = false;
-    let duplicateReason = "";
-
-    const candidateList = type === "expense" ? existingExpenses : existingIncomes;
-    const match = candidateList.find((ex) => {
-      const amtMatch = Math.abs(ex.amount - amount) < 0.01;
-      const dateDiff = Math.abs((new Date(ex.date) - parsedDate) / (1000 * 60 * 60 * 24));
-      return amtMatch && dateDiff <= 2;
-    });
-
-    if (match) {
-      isDuplicate = true;
-      duplicateReason = `Matches existing ${type} record: ₹${amount.toLocaleString("en-IN")} on ${new Date(match.date).toLocaleDateString("en-IN")}.`;
-    }
-
-    staged.push({
+    candidateRawList.push({
       rawDate: String(rawDate),
       parsedDate,
       rawDescription: rawDesc,
+      description: rawDesc,
       normalizedMerchant,
       type,
       amount: Math.round(amount * 100) / 100,
       suggestedCategory: category,
+      category,
+      categorySource: source,
       confidence,
       categoryOverride: category,
-      reference: String(row[columnMapping.reference] || ""),
-      balance: parseCleanAmount(row[columnMapping.balance]),
-      isDuplicate,
-      duplicateReason,
-      selected: !isDuplicate, // auto-uncheck duplicate rows
+      reference: String(row[columnMapping.reference] || row.Reference || row.reference || ""),
+      balance: parseCleanAmount(row[columnMapping.balance] || row.Balance || row.balance),
+      sourcePage: row.sourcePage !== undefined ? row.sourcePage : null,
+      extractionMethod: row.extractionMethod || "regex_text",
+      extractionConfidence: row.extractionConfidence || 0.92,
     });
   }
 
-  return staged;
+  // Multi-stage validation and duplicate detection
+  const validatedLedger = await validateAndNormalizeLedger(candidateRawList, candidateDbLedger);
+
+  return validatedLedger.map((tx) => ({
+    ...tx,
+    rawDate: tx.date ? new Date(tx.date).toLocaleDateString("en-IN") : "",
+    parsedDate: tx.date,
+    duplicateReason: tx.isDuplicate ? "Matches existing or concurrent record within 2 days with identical amount." : "",
+  }));
 };
 
 module.exports = {

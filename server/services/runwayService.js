@@ -5,7 +5,7 @@ const Asset = require("../models/Asset");
 const Liability = require("../models/Liability");
 const { calculateRecommendedTaxReserve } = require("./taxIntelligenceService");
 const { analyzeInvoiceRisk } = require("./invoiceRiskService");
-
+const { calculateStats } = require("./anomalyService");
 const mongoose = require("mongoose");
 
 /**
@@ -42,16 +42,28 @@ const calculateCashRunway = async (userId) => {
     Liability.find({ userId }),
   ]);
 
-  // 1. Calculate Monthly Burn Rate (average expenses over last 3 months + mandatory monthly EMIs)
+  // 1. Calculate Monthly Burn Rate & Expense Variability
+  const monthlyExpenseMap = {};
+  expenses.forEach((e) => {
+    const d = new Date(e.date);
+    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+    monthlyExpenseMap[key] = (monthlyExpenseMap[key] || 0) + Number(e.amount || 0);
+  });
+  const expenseValues = Object.values(monthlyExpenseMap);
+  const expenseStats = calculateStats(expenseValues);
+
   const totalRecentExpenses = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-  const monthlyDiscretionaryBurn = totalRecentExpenses > 0 ? totalRecentExpenses / 3 : 25000; // fallback if no data
+  const monthlyDiscretionaryBurn = totalRecentExpenses > 0 ? totalRecentExpenses / 3 : 0;
   const monthlyEmiObligations = liabilities.reduce((sum, l) => sum + Number(l.monthlyEmi || 0), 0);
   const baseMonthlyBurn = Math.max(1000, monthlyDiscretionaryBurn + monthlyEmiObligations);
+
+  // Dynamic Conservative multiplier based on expense coefficient of variation (CV)
+  const expenseCV = expenseStats.mean > 0 ? (expenseStats.stdDev / expenseStats.mean) : 0;
+  const conservativeMultiplier = Math.min(1.20, Math.max(1.05, 1.0 + (expenseCV * 0.2)));
 
   // 2. Liquid Cash Balance
   let liquidCash = liquidAssets.reduce((sum, a) => sum + Number(a.amount || 0), 0);
   if (liquidCash === 0) {
-    // If no Asset records are explicitly created, compute net cash as (all-time Income - all-time Expense)
     const allIncomes = await Income.find({ userId });
     const allExpenses = await Expense.find({ userId });
     const totalIn = allIncomes.reduce((s, i) => s + Number(i.amount || 0), 0);
@@ -59,16 +71,16 @@ const calculateCashRunway = async (userId) => {
     liquidCash = Math.max(0, totalIn - totalOut);
   }
 
-  // 3. Tax Reserve deduction estimate
+  // 3. Tax Reserve deduction estimate via dynamic tax intelligence
   const ytdIncome = incomes.reduce((sum, i) => sum + Number(i.amount || 0), 0);
-  const taxReserveEstimate = calculateRecommendedTaxReserve({
+  const taxReserveRes = await calculateRecommendedTaxReserve({
     ytdIncome,
     newIncomeAmount: 0,
     regime: "new",
     use44ADA: true,
-  }).totalAnnualTaxProjected;
-
-  const netAvailableCash = Math.max(0, liquidCash - (taxReserveEstimate * 0.5)); // deduct estimated unpaid portion
+  });
+  const taxReserveEstimate = taxReserveRes.totalAnnualTaxProjected || 0;
+  const netAvailableCash = Math.max(0, liquidCash - (taxReserveEstimate * 0.5));
 
   // 4. Receivables analysis
   const totalReceivables = invoices.reduce((sum, inv) => sum + Number(inv.amount || inv.totalAmount || 0), 0);
@@ -81,15 +93,12 @@ const calculateCashRunway = async (userId) => {
     .reduce((sum, inv) => sum + Number(inv.amount || inv.totalAmount || 0), 0);
 
   // 5. Compute the 3 Runway Tiers (in Months)
-  // Conservative: Pure liquid cash (no receivables assumed), strictly full burn + EMIs
-  const conservativeBurn = baseMonthlyBurn * 1.05;
+  const conservativeBurn = baseMonthlyBurn * conservativeMultiplier;
   const conservativeRunwayMonths = Number((netAvailableCash / conservativeBurn).toFixed(1));
 
-  // Expected: Liquid cash + 80% of high-confidence receivables / base burn
   const expectedAvailableFunds = netAvailableCash + (highConfidenceReceivables * 0.8);
   const expectedRunwayMonths = Number((expectedAvailableFunds / baseMonthlyBurn).toFixed(1));
 
-  // Optimistic: Liquid cash + 100% receivables + 15% discretionary expense reduction
   const optimisticFunds = netAvailableCash + totalReceivables;
   const optimizedBurn = Math.max(1000, (monthlyDiscretionaryBurn * 0.85) + monthlyEmiObligations);
   const optimisticRunwayMonths = Number((optimisticFunds / optimizedBurn).toFixed(1));
@@ -106,6 +115,7 @@ const calculateCashRunway = async (userId) => {
     highConfidenceReceivables: Math.round(highConfidenceReceivables),
     monthlyBurnRate: Math.round(baseMonthlyBurn),
     monthlyEmiObligations: Math.round(monthlyEmiObligations),
+    conservativeMultiplier: Number(conservativeMultiplier.toFixed(2)),
     conservativeRunwayMonths,
     expectedRunwayMonths,
     optimisticRunwayMonths,

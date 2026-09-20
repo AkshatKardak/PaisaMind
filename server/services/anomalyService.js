@@ -2,6 +2,7 @@ const Expense = require("../models/Expense");
 const Income = require("../models/Income");
 const Anomaly = require("../models/Anomaly");
 const logger = require("./logger");
+const { detectAnomalies: runMlAnomalyDetection } = require("./mlBridgeService");
 
 /**
  * Standard deviation helper
@@ -34,9 +35,9 @@ const stringSimilarity = (str1, str2) => {
     for (let i = 1; i <= s1.length; i += 1) {
       const indicator = s1[i - 1] === s2[j - 1] ? 0 : 1;
       track[j][i] = Math.min(
-        track[j][i - 1] + 1, // deletion
-        track[j - 1][i] + 1, // insertion
-        track[j - 1][i - 1] + indicator, // substitution
+        track[j][i - 1] + 1,
+        track[j - 1][i] + 1,
+        track[j - 1][i - 1] + indicator,
       );
     }
   }
@@ -97,7 +98,6 @@ const detectSpendingAnomalies = async (userId, monthsBack = 6) => {
       const pctIncrease = mean > 0 ? (diff / mean) * 100 : 100;
       const zScore = stdDev > 0 ? diff / stdDev : 0;
 
-      // Flag if: Z-Score >= 2.0 OR (pctIncrease >= 50% AND currentTotal >= 2000)
       if ((zScore >= 1.95 || (pctIncrease >= 50 && diff >= 2000)) && currentTotal > mean) {
         detectedAnomalies.push({
           type: "spending_spike",
@@ -113,29 +113,26 @@ const detectSpendingAnomalies = async (userId, monthsBack = 6) => {
     }
   }
 
-  // B. Single Outlier Transaction Detection in recent month
-  for (const tx of recentTransactions) {
-    const cat = tx.category || "Other";
-    const pastValues = categoryHistory[cat] || [];
-    if (pastValues.length >= 3) {
-      const { mean, stdDev } = calculateStats(pastValues);
-      const amt = Number(tx.amount || 0);
-      const zScore = stdDev > 0 ? (amt - mean) / stdDev : 0;
-
-      if (amt >= mean * 2.0 && amt >= 5000 && zScore >= 2.2) {
-        detectedAnomalies.push({
-          type: "spending_spike",
-          category: cat,
-          amount: amt,
-          baselineAmount: Math.round(mean),
-          percentageDeviation: Math.round(((amt - mean) / mean) * 100),
-          zScore: Number(zScore.toFixed(2)),
-          transactionId: tx._id,
-          title: tx.title,
-          description: `Unusual single purchase: "${tx.title}" of ₹${amt.toLocaleString("en-IN")} is significantly higher than typical ${cat} transactions (baseline: ₹${Math.round(mean).toLocaleString("en-IN")}).`,
-          severity: "HIGH",
-        });
-      }
+  // B. Multi-Dimensional Outlier Detection via ML Bridge (Modified Z-Score MAD)
+  if (recentTransactions.length >= 3) {
+    const mlOutliers = await runMlAnomalyDetection(recentTransactions);
+    if (mlOutliers.anomalies && mlOutliers.anomalies.length > 0) {
+      mlOutliers.anomalies.forEach((outlier) => {
+        // Prevent duplicate flagging if already captured
+        const alreadyFlagged = detectedAnomalies.some((a) => a.transactionId === outlier.transactionId);
+        if (!alreadyFlagged) {
+          detectedAnomalies.push({
+            type: "single_transaction_outlier",
+            category: outlier.category,
+            amount: outlier.amount,
+            zScore: outlier.outlierScore,
+            transactionId: outlier.transactionId,
+            title: outlier.title,
+            description: outlier.reason,
+            severity: outlier.severity,
+          });
+        }
+      });
     }
   }
 
@@ -172,7 +169,6 @@ const detectDuplicates = async (userId, daysWindow = 3) => {
       const dateDiffDays = Math.abs((new Date(a.date) - new Date(b.date)) / (1000 * 60 * 60 * 24));
       if (dateDiffDays > daysWindow) continue;
 
-      // Exact or near-exact amount check
       const amtDiff = Math.abs(a.amount - b.amount);
       const isSameAmount = amtDiff === 0 || (amtDiff / Math.max(a.amount, 1)) < 0.005;
 

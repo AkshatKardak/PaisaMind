@@ -1,0 +1,89 @@
+{
+  "version": "FY2024-25-V1",
+  "financialYear": "2024-25",
+  "assessmentYear": "2025-26",
+  "effectiveFrom": "2024-04-01",
+  "effectiveTo": "2025-03-31",
+  "status": "ACTIVE",
+  "sourceNotification": "Finance (No. 2) Act, 2024 & Income Tax Act, 1961",
+  "newRegime": {
+    "section": "115BAC",
+    "standardDeduction": 75000,
+    "rebate87ALimit": 700000,
+    "slabs": [
+      { "limit": 300000, "rate": 0.0 },
+      { "limit": 700000, "rate": 0.05 },
+      { "limit": 1000000, "rate": 0.10 },
+      { "limit": 1200000, "rate": 0.15 },
+      { "limit": 1500000, "rate": 0.20 },
+      { "limit": null, "rate": 0.30 }
+    ]
+  },
+  "oldRegime": {
+    "standardDeduction": 50000,
+    "rebate87ALimit": 500000,
+    "max80C": 150000,
+    "max80D_self": 25000,
+    "max80D_parents": 50000,
+    "max80CCD1B": 50000,
+    "slabs": [
+      { "limit": 250000, "rate": 0.0 },
+      { "limit": 500000, "rate": 0.05 },
+      { "limit": 1000000, "rate": 0.20 },
+      { "limit": null, "rate": 0.30 }
+    ]
+  },
+  "presumptive": {
+    "section44ADA": {
+      "standardGrossLimit": 5000000,
+      "enhancedGrossLimit": 7500000,
+      "cashReceiptThresholdPercentage": 5.0,
+      "presumptiveProfitRate": 0.50,
+      "eligibleEntities": ["INDIVIDUAL", "HUF", "PARTNERSHIP_FIRM"],
+      "ineligibleEntities": ["LLP", "COMPANY", "AOP", "BOI"],
+      "specifiedProfessions": [
+        "LEGAL",
+        "MEDICAL",
+        "ENGINEERING",
+        "ARCHITECTURAL",
+        "ACCOUNTANCY",
+        "TECHNICAL_CONSULTANCY",
+        "INTERIOR_DECORATION",
+        "AUTHORIZED_REPRESENTATIVE",
+        "FILM_ARTIST",
+        "COMPANY_SECRETARY",
+        "INFORMATION_TECHNOLOGY"
+      ]
+    },
+    "section44AD": {
+      "standardGrossLimit": 20000000,
+      "enhancedGrossLimit": 30000000,
+      "cashReceiptThresholdPercentage": 5.0,
+      "digitalProfitRate": 0.06,
+      "cashProfitRate": 0.08
+    }
+  },
+  "cessRate": 0.04,
+  "gst": {
+    "servicesThreshold": 2000000,
+    "goodsThreshold": 4000000,
+    "specialStatesThreshold": 1000000,
+    "warningThreshold": 1800000,
+    "dangerThreshold": 1950000
+  },
+  "tds": {
+    "section194J_technical": 0.02,
+    "section194J_professional": 0.10,
+    "section194C_individual": 0.01,
+    "section194C_company": 0.02
+  },
+  "advanceTax": {
+    "section208LiabilityThreshold": 10000,
+    "schedule": [
+      { "quarter": "Q1", "dueMonth": 5, "dueDay": 15, "label": "15th June", "cumulativePercentage": 15 },
+      { "quarter": "Q2", "dueMonth": 8, "dueDay": 15, "label": "15th September", "cumulativePercentage": 45 },
+      { "quarter": "Q3", "dueMonth": 11, "dueDay": 15, "label": "15th December", "cumulativePercentage": 75 },
+      { "quarter": "Q4", "dueMonth": 2, "dueDay": 15, "nextYear": true, "label": "15th March", "cumulativePercentage": 100 }
+    ]
+  }
+}

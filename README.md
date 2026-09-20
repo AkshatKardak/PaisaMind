@@ -51,10 +51,14 @@ Service providers in India must legally register for Goods and Services Tax (GST
 **PaisaMind** is a financial intelligence operating system engineered specifically for the Indian freelance ecosystem. Rather than offering another passive spreadsheet or a generic AI chatbot, PaisaMind unifies automated ledgering, deterministic tax calculations, zero-fee payment collection, and grounded AI decision support into a single workspace.
 
 ### Core Capabilities:
-* **Deterministic Calculation Engines:** Every financial figure (Section 44ADA liability, 95% cash runway forecast, project hourly yield, debt-to-income ratio) is computed by verified mathematical engines.
-* **Grounded AI Financial Copilot:** An intelligent assistant powered by Groq LLaMA-3.3 with 20 server-side deterministic tool engines. It never hallucinates numbers; every answer is backed by verifiable account calculations.
+* **Versioned Indian Tax Intelligence (Zero Hardcoded Logic):** Dynamic tax rule engine supporting FY 2024-25, FY 2025-26, and FY 2026-27 with official CBDT Gazette provenance, paired with a Section 44ADA legal evaluator enforcing entity compliance, specified profession codes, and digital receipt thresholds (₹75L vs ₹50L).
+* **Canonical Financial Ledger & Balance Continuity:** Standardized ledger with composite extraction and categorization confidence scoring, running balance continuity verification (`balance[i] = balance[i-1] + credit - debit`), and intra-batch/DB duplicate detection.
+* **Secure Streaming Document Pipeline:** Page-by-page table extraction handling 100+ page statements with zero character truncation, retaining `sourcePage` traceability, ephemeral file shredding, and automated Indian PII masking (PAN, Aadhaar, bank accounts).
+* **Backend-Only Machine Learning Subsystem:** Rolling backtested cash flow forecasting (MAE/RMSE tracking against Baseline and Holt-Linear Trend models) with 95% confidence bounds, Modified Z-Score (MAD) spending outlier detection, and hybrid categorization with user feedback loops.
+* **Volatility-Driven What-If Simulator & Monte Carlo:** Simulates capital purchases and revenue drops scaled by historical income volatility ($\sigma$) and 100-iteration Monte Carlo distributions (P10 stress, P50 base, P90 optimistic).
+* **Deterministic Calculation Engines:** Every financial figure (runway months, project hourly yield, debt-to-income ratio, GST alerts) is computed by verified mathematical engines with zero fake demo fallbacks.
+* **Grounded AI Financial Copilot:** Powered by Groq LLaMA-3.3 with 20 server-side deterministic tool engines. Every recommendation returns fact-checked numbers, model versions, confidence scores, and statutory disclaimers.
 * **Zero-Fee UPI Invoicing:** Invoices generate native `upi://pay` QR codes, allowing clients to pay directly via PhonePe, Google Pay, or Paytm straight into your verified bank account with 0% processing fees.
-* **Multi-Tier Statement Ingestion:** Ingests bank statements from ICICI, HDFC, SBI, Axis, and Kotak in CSV, XLSX, and text-based PDF formats, with an intelligent Vision OCR fallback for photographed physical passbooks.
 * **Project Profitability Sentinel:** Audits revenue against logged hours and direct project tooling expenses, alerting you whenever scope creep dilutes your effective hourly earnings.
 * **Contextual 3-Stage WhatsApp Recovery:** Generates professional Gentle, Firm, and Final escalation notices with 1-click WhatsApp and email delivery.
 
@@ -62,44 +66,58 @@ Service providers in India must legally register for Goods and Services Tax (GST
 
 ## Why This Project is Different
 
-| Dimension | Generic Expense Trackers (Splitwise, Wallet) | Traditional Accounting (Zoho Books, QuickBooks) | Generic AI Chatbots (ChatGPT / Claude Wrappers) | PaisaMind (Grounded AI Finance OS) |
+| Dimension | Generic Expense Trackers (Splitwise, Wallet) | Traditional Accounting (Zoho Books, QuickBooks) | Generic AI Chatbots (ChatGPT / Claude Wrappers) | PaisaMind (Enterprise ML Finance OS) |
 |---|---|---|---|---|
-| **Mathematical Accuracy** | Basic addition only | Accurate, but requires manual bookkeeper entry | Hallucinates financial estimates and tax rates | **100% Deterministic Server Computation** |
-| **Section 44ADA Optimization** | Not supported | Requires manual CA chart-of-accounts setup | Gives generic legal disclaimers without numbers | **Automated 50% Deemed Profit vs New Regime Model** |
-| **TDS Reconciliation** | Not supported | High-tier enterprise plan required | Cannot verify Form 26AS withholding | **Section 194J & 194C Deduction Ledger** |
-| **Invoice Collection Fees** | Not supported | Integrated gateways cut 2% to 3% fee | Not supported | **0% Processing Fees via Native UPI QR Codes** |
+| **Tax Rule Architecture** | Not supported | Hardcoded or manual yearly ledger setup | Hallucinates outdated tax slabs & rates | **Versioned Tax Rule Engine (FY 24-25, 25-26, 26-27) + Section 44ADA Legal Evaluator** |
+| **Document Ingestion** | Manual CSV upload | Requires bank netbanking aggregation feed | Not supported | **Streaming Page-by-Page Extraction (Zero Truncation) + PII Masking + Vision OCR** |
+| **Ledger Integrity** | Basic list view | Manual reconciliation workflow | Hallucinates transaction balances | **Canonical Ledger with Running Balance Continuity & Composite Confidence Scoring** |
+| **Cash Flow Forecasting** | Historical lookback only | Static cash-flow statement | Guesses future scenarios | **Backend ML (Holt-Linear Trend, Rolling Backtest MAE/RMSE, 95% Confidence Bounds)** |
+| **Spending Anomaly Detection** | Simple threshold alerts | Basic variance reports | No statistical rigor | **Modified Z-Score using Median Absolute Deviation (MAD) + Multi-Feature Outlier Scoring** |
+| **Scenario Stress-Testing** | Not supported | Static manual spreadsheets | Uncalibrated subjective answers | **Historical Volatility Shocks + 100-Iteration Monte Carlo Simulation (P10, P50, P90)** |
+| **Mathematical Accuracy** | Basic addition only | Accurate, but requires manual bookkeeper entry | Hallucinates financial figures | **100% Deterministic Server Computation with Zero Fake Data** |
+| **Invoice Collection Fees** | Not supported | Integrated gateways cut 2% to 3% fee | Not supported | **0% Processing Fees via Native UPI QR Codes (`upi://pay`)** |
 | **Project Unit Economics** | Not supported | Separate project time-tracking software required | Not supported | **Live Effective Hourly Rate & Scope Creep Sentinel** |
-| **Cash Runway Modeling** | Historical lookback only | Static cash-flow statement | Guesses future scenarios | **3-Track Monte Carlo Simulation (Base, Bull, Stress)** |
-| **Bank Statement Parsing** | Manual CSV upload | Requires bank netbanking aggregation feed | Not supported | **CSV, Excel, PDF Text Stream + Vision OCR Fallback** |
 
 ---
 
 ## System Architecture
 
-PaisaMind separates ingestion, deterministic calculation, AI reasoning, and execution into four distinct tiers:
+PaisaMind operates on a strict 5-tier architecture:
+`User → Auth → Ingestion → Validation + Normalization → Quality/Confidence → Canonical Ledger → Deterministic Engines → ML Intelligence Layer → AI Tool Layer → AI Explanation → User`
 
 ```
-[ Tier 1: Multi-Source Data Ingestion & Ledger Pipeline ]
-  ├── Bank Statement Parser (CSV, XLSX, PDF text streams)
+[ Tier 1: Multi-Source Data Ingestion & Security Pipeline ]
+  ├── Bank Statement Parser (Streaming page-by-page PDF, CSV, XLSX, Zero Truncation)
   ├── Vision OCR Pipeline (Photographed passbooks & scanned receipts via Groq Vision)
-  ├── Zero-Fee UPI & Razorpay Invoicing Webhooks
-  └── Form 26AS TDS Credit Ledger (Section 194J & 194C)
+  ├── Ephemeral File Manager & PII Masking Filter (Sanitizes PAN, Aadhaar, Account Numbers)
+  └── Zero-Fee UPI & Razorpay Invoicing Webhooks
                         │
                         ▼
-[ Tier 2: Deterministic Financial Intelligence Engines ]
-  ├── Section 44ADA Presumptive Tax Engine (50% rule, Old vs New regime)
-  ├── 95% Confidence Cash Flow Forecaster (Historical regression & 3-track modeling)
-  ├── Project Profitability Sentinel (Target vs actual hourly rate yield)
-  └── Z-Score Anomaly & Duplicate Transaction Detection
+[ Tier 2: Canonical Ledger & Data Validation Engine ]
+  ├── Canonical Transaction Schema (sourcePage, extractionMethod, confidence scores)
+  ├── Running Balance Continuity Sentinel (balance[i] = balance[i-1] + credit - debit)
+  ├── Multi-Factor Duplicate Detection (Intra-batch & DB matching via string similarity)
+  └── Multi-Stage Validation Status (VALIDATED, REVIEW_REQUIRED, DUPLICATE, REJECTED)
                         │
                         ▼
-[ Tier 3: AI Copilot Orchestration Layer ]
+[ Tier 3: Deterministic Financial Engines & Versioned Tax Rules ]
+  ├── Versioned Indian Tax Rule Resolver (FY 2024-25, FY 2025-26, FY 2026-27 datasets)
+  ├── Section 44ADA Legal Eligibility Evaluator (Entity check, Section 44AA professions, ₹75L cash rule)
+  ├── Expense CV-Adjusted Cash Runway Engine (Conservative, Expected, Optimistic)
+  ├── Volatility-Derived What-If Scenario Simulator with Monte Carlo Distributions
+  └── Configurable 8-Component Financial Health Score Engine (HealthConfig)
+                        │
+                        ▼
+[ Tier 4: Backend-Only Machine Learning Intelligence Layer (server/ml/) ]
+  ├── Cash Flow Forecasting with Rolling Backtesting (MAE/RMSE model evaluation)
+  ├── Modified Z-Score (MAD) Multi-Dimensional Outlier Detection
+  ├── Hybrid Transaction Categorization (User Rules → ML Classifier → LLM Fallback)
+  └── Node-Python IPC Bridge with Deterministic Statistical Fallbacks (Zero Fake Data)
+                        │
+                        ▼
+[ Tier 5: AI Copilot Orchestration & Execution Layer ]
   ├── Groq LLaMA-3.3 High-Throughput Inference Engine
-  ├── 20 Verified Backend Tool-Calling Contracts
-  └── Contextual Natural Language Memory & Decision Grounding
-                        │
-                        ▼
-[ Tier 4: Execution & Financial Action Layer ]
+  ├── 20 Verified Backend Tool-Calling Contracts with Provenance & Disclaimers
   ├── Zero-Fee Dynamic UPI Payment QR Invoices (upi://pay)
   ├── 3-Stage Contextual WhatsApp & Email Recovery Escalation Drafts
   └── Print-Ready CA Compliance Reports & P&L Statement Exports

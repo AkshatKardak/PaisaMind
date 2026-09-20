@@ -4,10 +4,11 @@ const Invoice = require("../models/Invoice");
 const RecurringTransaction = require("../models/RecurringTransaction");
 const { analyzeInvoiceRisk } = require("./invoiceRiskService");
 const { calculateStats } = require("./anomalyService");
+const { runForecasting } = require("./mlBridgeService");
 const mongoose = require("mongoose");
 
 /**
- * 30-Day, 60-Day, and 90-Day Cash Flow Forecast with 95% Confidence Intervals
+ * 30-Day, 60-Day, and 90-Day Cash Flow Forecast with 95% Confidence Intervals & Backtesting
  */
 const generateCashFlowForecast = async (userId) => {
   if (mongoose.connection.readyState === 0) {
@@ -20,6 +21,9 @@ const generateCashFlowForecast = async (userId) => {
       ],
       confidenceLevel: "High",
       confidenceReason: "Simulated offline baseline forecast.",
+      mlModel: "Statistical-Exponential-Smoothing",
+      backtestMetrics: { mae: 2500, rmse: 3200 },
+      hasSufficientData: true,
       pendingInvoiceValue: 0,
       recurringMonthlyBurn: 20000,
       recurringMonthlyIncome: 50000,
@@ -71,22 +75,20 @@ const generateCashFlowForecast = async (userId) => {
   const incomeValues = historyArray.map((m) => m.income);
   const expenseValues = historyArray.map((m) => m.expense);
 
-  const incomeStats = calculateStats(incomeValues.slice(-6)); // last 6 months
+  const incomeStats = calculateStats(incomeValues.slice(-6));
   const expenseStats = calculateStats(expenseValues.slice(-6));
 
-  // Determine forecast confidence level
   let confidenceLevel = "High";
   let confidenceReason = "Robust baseline with 6+ months of transaction history.";
 
   if (activeMonthsWithData.length < 3) {
     confidenceLevel = "Low";
-    confidenceReason = "Low confidence: Less than 3 months of historical data available. Forecast utilizes baseline conservative averages.";
+    confidenceReason = "Low confidence: Less than 3 months of historical data available.";
   } else if (activeMonthsWithData.length < 6 || (incomeStats.stdDev / Math.max(incomeStats.mean, 1)) > 0.6) {
     confidenceLevel = "Medium";
     confidenceReason = "Moderate confidence: High income volatility or moderate transaction history (3-5 months).";
   }
 
-  // Active Recurring Cash Flows (monthly annualized)
   let recurringMonthlyIncome = 0;
   let recurringMonthlyExpense = 0;
 
@@ -100,7 +102,6 @@ const generateCashFlowForecast = async (userId) => {
     }
   });
 
-  // Client risk weighted receivables pipeline
   const riskAnalysis = await analyzeInvoiceRisk(userId);
   const clientScoreMap = {};
   if (riskAnalysis && riskAnalysis.clients) {
@@ -109,15 +110,13 @@ const generateCashFlowForecast = async (userId) => {
     });
   }
 
-  // Map pending invoices into 30, 60, 90 day buckets with risk weighting
-  const invoiceBuckets = [0, 0, 0]; // 30d, 60d, 90d
+  const invoiceBuckets = [0, 0, 0];
   let totalPendingReceivables = 0;
 
   invoices.forEach((inv) => {
     const amt = Number(inv.amount || inv.totalAmount || 0);
     totalPendingReceivables += amt;
     const clientScore = clientScoreMap[inv.clientName] || 70;
-    // Probability of collection based on client reliability
     const collectionProbability = Math.max(0.3, Math.min(1.0, clientScore / 100));
     const weightedAmt = amt * collectionProbability;
 
@@ -133,67 +132,43 @@ const generateCashFlowForecast = async (userId) => {
     }
   });
 
-  // Baseline monthly projections (exponential smoothing / moving average)
-  const baseMonthlyIncome = Math.max(incomeStats.mean, recurringMonthlyIncome);
-  const baseMonthlyExpense = Math.max(expenseStats.mean, recurringMonthlyExpense);
+  const mlResult = await runForecasting(historyArray, 3, invoiceBuckets);
 
-  const forecast = [];
   const intervals = [
     { period: "30 Days (Next Month)", monthIndex: 1 },
     { period: "60 Days (Month 2)", monthIndex: 2 },
     { period: "90 Days (Month 3)", monthIndex: 3 },
   ];
 
-  let cumulativeCashFlow = 0;
-
-  intervals.forEach((interval, idx) => {
+  const formattedForecast = (mlResult.forecast || []).map((f, idx) => {
+    const interval = intervals[idx] || intervals[0];
     const d = new Date(now.getFullYear(), now.getMonth() + interval.monthIndex, 1);
     const monthName = d.toLocaleString("en-IN", { month: "short", year: "numeric" });
 
-    // Income = base baseline (80%) + recurring (20%) + bucketed invoice pipeline
-    const predictedIncome = Math.round(
-      (baseMonthlyIncome * 0.75) + (recurringMonthlyIncome * 0.25) + invoiceBuckets[idx]
-    );
-
-    // Expense = historical expense average + recurring expense adjustments
-    const predictedExpense = Math.round(
-      (baseMonthlyExpense * 0.7) + (recurringMonthlyExpense * 0.3)
-    );
-
-    const netCashFlow = predictedIncome - predictedExpense;
-    cumulativeCashFlow += netCashFlow;
-
-    // 95% Confidence Bounds using residual standard errors (Z = 1.96)
-    const errorMarginIncome = Math.round(1.96 * Math.max(incomeStats.stdDev, predictedIncome * 0.15) * Math.sqrt(1 + 0.15 * interval.monthIndex));
-    const errorMarginExpense = Math.round(1.96 * Math.max(expenseStats.stdDev, predictedExpense * 0.1) * Math.sqrt(1 + 0.1 * interval.monthIndex));
-
-    const lowerBoundIncome = Math.max(0, predictedIncome - errorMarginIncome);
-    const upperBoundIncome = predictedIncome + errorMarginIncome;
-
-    const lowerBoundEndingNet = netCashFlow - (errorMarginIncome + errorMarginExpense);
-    const upperBoundEndingNet = netCashFlow + (errorMarginIncome + errorMarginExpense);
-
-    forecast.push({
+    return {
       period: interval.period,
       month: monthName,
-      predictedIncome,
-      predictedExpense,
-      netCashFlow,
-      cumulativeCashFlow,
+      predictedIncome: f.predictedIncome,
+      predictedExpense: f.predictedExpense,
+      netCashFlow: f.netCashFlow,
+      cumulativeCashFlow: f.cumulativeCashFlow,
       confidence: confidenceLevel,
-      lowerBoundIncome,
-      upperBoundIncome,
-      lowerBoundEndingNet,
-      upperBoundEndingNet,
-      invoicePipelineContribution: Math.round(invoiceBuckets[idx]),
-    });
+      lowerBoundIncome: f.lowerBoundIncome,
+      upperBoundIncome: f.upperBoundIncome,
+      lowerBoundEndingNet: f.lowerBoundNet,
+      upperBoundEndingNet: f.upperBoundNet,
+      invoicePipelineContribution: f.invoiceContribution,
+    };
   });
 
   return {
-    history: historyArray.slice(-6), // last 6 months for clear visualization
-    forecast,
+    history: historyArray.slice(-6),
+    forecast: formattedForecast,
     confidenceLevel,
     confidenceReason,
+    mlModel: mlResult.modelName || "Statistical-Exponential-Smoothing",
+    backtestMetrics: mlResult.backtestMetrics || { mae: 0, rmse: 0 },
+    hasSufficientData: activeMonthsWithData.length >= 3,
     pendingInvoiceValue: Math.round(totalPendingReceivables),
     recurringMonthlyBurn: Math.round(recurringMonthlyExpense),
     recurringMonthlyIncome: Math.round(recurringMonthlyIncome),
