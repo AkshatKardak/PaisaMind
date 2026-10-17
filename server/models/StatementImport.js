@@ -3,10 +3,10 @@ const mongoose = require("mongoose");
 const stagedTransactionSchema = new mongoose.Schema(
   {
     rawDate: { type: String },
-    parsedDate: { type: Date, required: true },
+    parsedDate: { type: Date, default: null },
     rawDescription: { type: String, required: true },
     normalizedMerchant: { type: String, default: "" },
-    type: { type: String, enum: ["income", "expense"], required: true },
+    type: { type: String, enum: ["income", "expense", "transfer"], required: true },
     amount: { type: Number, required: true },
     suggestedCategory: { type: String, default: "Other" },
     confidence: { type: Number, default: 0.5 },
@@ -24,7 +24,7 @@ const statementImportSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
     filename: { type: String, required: true },
-    fileType: { type: String, enum: ["csv", "xlsx", "xls", "pdf"], required: true },
+    fileType: { type: String, enum: ["csv", "xlsx", "xls", "pdf", "png", "jpg", "jpeg"], required: true },
     bankName: { type: String, default: "Generic" },
     totalRows: { type: Number, default: 0 },
     importedRows: { type: Number, default: 0 },

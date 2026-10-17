@@ -58,7 +58,10 @@ export default function StatementImport() {
         setTransactions(res.data.transactions || []);
       }
     } catch (err) {
-      alert("Statement upload failed: " + err.message);
+      const msg = err?.response?.data?.error?.message
+               || err?.response?.data?.message
+               || err.message;
+      alert("Statement upload failed: " + msg);
     } finally {
       setUploading(false);
     }
@@ -107,7 +110,10 @@ export default function StatementImport() {
         setFile(null);
       }
     } catch (err) {
-      alert("Commit failed: " + err.message);
+      const msg = err?.response?.data?.error?.message
+               || err?.response?.data?.message
+               || err.message;
+      alert("Commit failed: " + msg);
     } finally {
       setCommitting(false);
     }

@@ -84,4 +84,48 @@ describe("Bank Statement Ingestion & Categorization Engine", () => {
       expect(res.category).toBe("Freelance Income");
     });
   });
+
+  describe("StatementImport Model Schema Validation", () => {
+    const StatementImport = require("../models/StatementImport");
+    const mongoose = require("mongoose");
+
+    it("should validate image fileTypes, null parsedDate, and transfer type without ValidationError", async () => {
+      for (const ft of ["png", "jpg", "jpeg"]) {
+        const doc = new StatementImport({
+          userId: new mongoose.Types.ObjectId(),
+          filename: `passbook_page_1.${ft}`,
+          fileType: ft,
+          stagedTransactions: [
+            {
+              rawDate: "31/02/2025",
+              parsedDate: null,
+              rawDescription: "Account Transfer to Savings",
+              type: "transfer",
+              amount: 5000,
+            },
+            {
+              rawDate: "15/08/2026",
+              parsedDate: new Date("2026-08-15"),
+              rawDescription: "Passbook deposit entry",
+              type: "income",
+              amount: 25000,
+            },
+          ],
+        });
+
+        await expect(doc.validate()).resolves.toBeUndefined();
+      }
+    });
+
+    it("should reject invalid file types with ValidationError", async () => {
+      const doc = new StatementImport({
+        userId: new mongoose.Types.ObjectId(),
+        filename: "statement.exe",
+        fileType: "exe",
+        stagedTransactions: [],
+      });
+
+      await expect(doc.validate()).rejects.toThrow();
+    });
+  });
 });
