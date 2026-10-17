@@ -14,19 +14,20 @@ const mongoose = require("mongoose");
 const calculateCashRunway = async (userId) => {
   if (mongoose.connection.readyState === 0) {
     return {
-      liquidCashBalance: 150000,
-      netAvailableCash: 130000,
-      taxReserveDeduction: 20000,
-      totalReceivables: 60000,
-      highConfidenceReceivables: 50000,
-      monthlyBurnRate: 40000,
-      monthlyEmiObligations: 10000,
-      conservativeRunwayMonths: 3.1,
-      expectedRunwayMonths: 4.2,
-      optimisticRunwayMonths: 5.5,
-      runwayHealth: "MODERATE",
-      runwayDisplay: "4.2 months",
-      summary: "Simulated offline runway baseline: 4.2 months.",
+      status: "INSUFFICIENT_DATA",
+      liquidCashBalance: 0,
+      netAvailableCash: 0,
+      taxReserveDeduction: 0,
+      totalReceivables: 0,
+      highConfidenceReceivables: 0,
+      monthlyBurnRate: 0,
+      monthlyEmiObligations: 0,
+      conservativeRunwayMonths: 0,
+      expectedRunwayMonths: 0,
+      optimisticRunwayMonths: 0,
+      runwayHealth: "UNKNOWN",
+      runwayDisplay: "0 months",
+      summary: "Database connection unavailable or insufficient data.",
     };
   }
 

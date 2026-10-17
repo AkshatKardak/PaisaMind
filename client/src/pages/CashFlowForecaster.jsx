@@ -196,7 +196,7 @@ function CashFlowForecaster() {
                     <span className="text-sm text-[var(--text-secondary)]">Confidence</span>
                     <span
                       className={`pm-badge ${
-                        CONFIDENCE_STYLES[item.confidence] || "bg-slate-500/15 text-slate-300"
+                        CONFIDENCE_STYLES[item.confidence] || "bg-slate-500/15 text-[var(--text-secondary)]"
                       }`}
                     >
                       {item.confidence}

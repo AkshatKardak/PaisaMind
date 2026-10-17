@@ -248,7 +248,7 @@ const getTaxSavingSuggestions = asyncHandler(async (req, res) => {
   const taxComp = compareAllRegimes(totalIncome * 12, totalExpense * 12, deductions);
 
   const defaultRecommendations = [
-    { instrument: "Section 44ADA Presumptive Scheme", section: "44ADA", current: 0, recommended: 0, taxSaving: taxComp.annualTaxSavings || 45000, deadline: "July 31", priority: "High", reason: "Declare 50% profits if gross professional receipts are under ₹75L." },
+    { instrument: "Section 44ADA Presumptive Scheme", section: "44ADA", current: 0, recommended: 0, taxSaving: taxComp.annualTaxSavings || 0, deadline: "July 31", priority: "High", reason: "Declare 50% profits if gross professional receipts are under ₹75L." },
     { instrument: "ELSS Mutual Funds", section: "80C", current: Number(user?.investments80C || 0), recommended: 150000, taxSaving: 46800, deadline: "March 31", priority: "High", reason: "Complete ₹1.5L limit under Old Regime with 3-year lock-in." },
     { instrument: "Health Insurance for Self & Parents", section: "80D", current: Number(user?.investments80D || 0), recommended: 50000, taxSaving: 15600, deadline: "March 31", priority: "Medium", reason: "Deduct up to ₹25k for self/family and ₹50k for senior citizen parents." },
     { instrument: "National Pension Scheme (NPS Tier-1)", section: "80CCD(1B)", current: 0, recommended: 50000, taxSaving: 15600, deadline: "March 31", priority: "Medium", reason: "Exclusive ₹50,000 deduction over and above Section 80C." },

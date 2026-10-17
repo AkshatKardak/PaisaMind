@@ -21,7 +21,6 @@ const goalRoutes       = require("./routes/goalRoutes");
 const invoiceRoutes    = require("./routes/invoiceRoutes");
 const taxRoutes        = require("./routes/taxRoutes");
 const aiRoutes         = require("./routes/aiRoutes");
-const budgetRoutes     = require("./routes/budgetRoutes");
 const recurringRoutes  = require("./routes/recurringRoutes");
 const analyticsRoutes  = require("./routes/analyticsRoutes");
 const scenarioRoutes   = require("./routes/scenarioRoutes");
@@ -107,7 +106,6 @@ app.use("/api/goals",      goalRoutes);
 app.use("/api/invoices",   invoiceRoutes);
 app.use("/api/tax",        taxRoutes);
 app.use("/api/ai",         copilotLimiter, aiRoutes);
-app.use("/api/budgets",    budgetRoutes);
 app.use("/api/recurring",  recurringRoutes);
 
 // Upgraded Financial Intelligence Routes

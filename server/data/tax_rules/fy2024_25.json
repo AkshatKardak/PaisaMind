@@ -85,5 +85,14 @@
       { "quarter": "Q3", "dueMonth": 11, "dueDay": 15, "label": "15th December", "cumulativePercentage": 75 },
       { "quarter": "Q4", "dueMonth": 2, "dueDay": 15, "nextYear": true, "label": "15th March", "cumulativePercentage": 100 }
     ]
+  },
+  "reconciliation": {
+    "amountTolerance": 5,
+    "dateWindowDaysBefore": 15,
+    "dateWindowDaysAfter": 120,
+    "unreportedTdsNoticeDays": 45
+  },
+  "taxReserve": {
+    "defaultReserveRate": 0.15
   }
 }

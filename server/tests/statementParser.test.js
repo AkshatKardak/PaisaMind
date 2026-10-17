@@ -27,6 +27,12 @@ describe("Bank Statement Ingestion & Categorization Engine", () => {
       const d = parseFlexibleDate("2026-11-05");
       expect(d.getFullYear()).toBe(2026);
     });
+
+    it("should return null for invalid date roll-overs such as 13/13/2025 and 31/02/2025", () => {
+      expect(parseFlexibleDate("13/13/2025")).toBeNull();
+      expect(parseFlexibleDate("31/02/2025")).toBeNull();
+      expect(parseFlexibleDate("invalid-date-string")).toBeNull();
+    });
   });
 
   describe("Amount Cleaning (parseCleanAmount)", () => {

@@ -291,19 +291,21 @@ const recordTDS = asyncHandler(async (req, res) => {
   const invoice = await Invoice.findOne({ _id: req.params.id, userId: req.user._id });
   if (!invoice) return res.status(404).json({ success: false, message: "Invoice not found" });
 
+  const { getActiveRules, getFinancialYearFromDate } = require("../services/taxRuleResolver");
+  const rules = await getActiveRules(getFinancialYearFromDate(invoice.issueDate || invoice.createdAt || new Date()));
   const baseAmt = invoice.amount || 0;
   let rate = 0;
   let tdsAmount = 0;
 
   if (tdsSection === "194J_10") {
-    rate = 10;
-    tdsAmount = Math.round(baseAmt * 0.10);
+    rate = Math.round((rules.tds?.section194J_professional || 0.10) * 100);
+    tdsAmount = Math.round(baseAmt * (rules.tds?.section194J_professional || 0.10));
   } else if (tdsSection === "194J_2") {
-    rate = 2;
-    tdsAmount = Math.round(baseAmt * 0.02);
+    rate = Math.round((rules.tds?.section194J_technical || 0.02) * 100);
+    tdsAmount = Math.round(baseAmt * (rules.tds?.section194J_technical || 0.02));
   } else if (tdsSection === "194C_1") {
-    rate = 1;
-    tdsAmount = Math.round(baseAmt * 0.01);
+    rate = Math.round((rules.tds?.section194C_individual || 0.01) * 100);
+    tdsAmount = Math.round(baseAmt * (rules.tds?.section194C_individual || 0.01));
   } else if (tdsSection === "Custom") {
     tdsAmount = Math.max(0, Number(customTdsAmount || 0));
     rate = baseAmt > 0 ? Number(((tdsAmount / baseAmt) * 100).toFixed(1)) : 0;

@@ -19,44 +19,74 @@ const getGroqClient = () => {
 
 const { categorizeTransaction } = require("./categorizationService");
 const { normalizeMerchant } = require("./recurringIntelligenceService");
-const { extractPdfPagesStreaming } = require("./documentProcessingService");
+const { extractPdfPagesStreaming, parsePageLines, ocrWithTesseract } = require("./documentProcessingService");
 const { validateAndNormalizeLedger } = require("./ledgerValidationService");
+const crypto = require("crypto");
 const Expense = require("../models/Expense");
 const Income = require("../models/Income");
 
 /**
- * Standard Indian date string parsers
+ * Standard Indian date string parsers with strict round-trip calendar validation
  */
 const parseFlexibleDate = (raw) => {
-  if (!raw) return new Date();
-  if (raw instanceof Date && !isNaN(raw)) return raw;
-
-  const str = String(raw).trim();
-  // Try direct parse
-  const direct = new Date(str);
-  if (!isNaN(direct.getTime()) && str.includes("-") && str.length === 10 && str.indexOf("-") === 4) {
-    return direct; // YYYY-MM-DD
+  if (!raw) return null;
+  if (raw instanceof Date) {
+    return isNaN(raw.getTime()) ? null : raw;
   }
 
-  // Common Indian formats: DD/MM/YYYY, DD-MM-YYYY, DD/MM/YY
+  const str = String(raw).trim();
+  if (!str) return null;
+
+  // 1. ISO format: YYYY-MM-DD
+  if (str.includes("-") && str.length === 10 && str.indexOf("-") === 4) {
+    const parts = str.split("-");
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    if (month >= 0 && month <= 11 && day >= 1 && day <= 31) {
+      const d = new Date(year, month, day);
+      if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+        return d;
+      }
+    }
+    return null;
+  }
+
+  // 2. Common Indian formats: DD/MM/YYYY, DD-MM-YYYY, DD/MM/YY, DD.MM.YYYY
   const dmyMatch = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
   if (dmyMatch) {
     const day = parseInt(dmyMatch[1], 10);
     const month = parseInt(dmyMatch[2], 10) - 1;
     let year = parseInt(dmyMatch[3], 10);
     if (year < 100) year += 2000;
-    const parsed = new Date(year, month, day);
-    if (!isNaN(parsed.getTime())) return parsed;
+    if (month >= 0 && month <= 11 && day >= 1 && day <= 31) {
+      const parsed = new Date(year, month, day);
+      if (
+        !isNaN(parsed.getTime()) &&
+        parsed.getDate() === day &&
+        parsed.getMonth() === month &&
+        parsed.getFullYear() === year
+      ) {
+        return parsed;
+      }
+    }
+    return null;
   }
 
-  // Format: DD Mon YYYY (e.g. 15 Aug 2026 or 15-Aug-2026)
+  // 3. Format: DD Mon YYYY (e.g. 15 Aug 2026 or 15-Aug-2026)
   const monMatch = str.match(/^(\d{1,2})[\s\-]+([A-Za-z]{3,9})[\s\-]+(\d{2,4})/);
   if (monMatch) {
     const parsed = new Date(str);
     if (!isNaN(parsed.getTime())) return parsed;
   }
 
-  return !isNaN(direct.getTime()) ? direct : new Date();
+  // 4. Direct parse fallback only if valid
+  const direct = new Date(str);
+  if (!isNaN(direct.getTime())) {
+    return direct;
+  }
+
+  return null;
 };
 
 /**
@@ -259,18 +289,29 @@ const parsePdfStatement = async (buffer, documentId) => {
     };
   }
 
-  // If no rows found and all pages were scanned images, try Vision OCR fallback on entire buffer
+  // If no rows found and all pages were scanned images, try Vision OCR or Tesseract OCR fallback
   if (scannedPagesCount > 0) {
-    const visionRows = await parseImageWithVision(buffer, "application/pdf");
+    let visionRows = await parseImageWithVision(buffer, "application/pdf");
+    if (!visionRows || visionRows.length === 0) {
+      const ocrText = await ocrWithTesseract(buffer);
+      if (ocrText && ocrText.trim().length > 0) {
+        visionRows = parsePageLines(ocrText, 1).map((r) => ({
+          ...r,
+          extractionMethod: "tesseract_ocr",
+          extractionConfidence: 0.88,
+        }));
+      }
+    }
+
     if (visionRows && visionRows.length > 0) {
       return {
         headers,
         rows: visionRows.map((r) => ({
           ...r,
           documentId: extraction.documentId,
-          sourcePage: 1,
-          extractionMethod: "vision_ocr",
-          extractionConfidence: 0.85,
+          sourcePage: r.sourcePage || 1,
+          extractionMethod: r.extractionMethod || "ocr_fallback",
+          extractionConfidence: r.extractionConfidence || 0.85,
         })),
         columnMapping: detectColumnMapping(headers),
         totalPages,
@@ -291,18 +332,52 @@ const parsePdfStatement = async (buffer, documentId) => {
 };
 
 /**
- * Parses camera photos / scanned images (PNG, JPG, JPEG) using Vision OCR
+ * Parses camera photos / scanned images (PNG, JPG, JPEG) using Vision OCR or open-source Tesseract
  */
-const parseImageStatement = async (buffer, mimeType = "image/jpeg") => {
-  const visionRows = await parseImageWithVision(buffer, mimeType);
-  if (!visionRows || visionRows.length === 0) {
+const parseImageStatement = async (buffer, mimeType = "image/jpeg", documentId = crypto.randomUUID()) => {
+  let rows = null;
+
+  // 1. Try Groq Vision if configured
+  if (getGroqClient()) {
+    rows = await parseImageWithVision(buffer, mimeType);
+  }
+
+  // 2. Open-source Tesseract OCR fallback
+  if (!rows || rows.length === 0) {
+    const ocrText = await ocrWithTesseract(buffer);
+    if (ocrText && ocrText.trim().length > 0) {
+      const parsed = parsePageLines(ocrText, 1);
+      if (parsed.length > 0) {
+        rows = parsed.map((r) => ({
+          ...r,
+          documentId,
+          sourcePage: 1,
+          extractionMethod: "tesseract_ocr",
+          extractionConfidence: 0.88,
+        }));
+      }
+    }
+  }
+
+  if (!rows || rows.length === 0) {
     throw new Error(
       "Could not extract transaction rows from this passbook/statement photo. For instant zero-error ingestion, please download the digital e-statement (PDF or CSV) directly from your NetBanking portal."
     );
   }
 
   const headers = ["Date", "Description", "Debit", "Credit", "Balance"];
-  return { headers, rows: visionRows, columnMapping: detectColumnMapping(headers) };
+  return {
+    headers,
+    rows: rows.map((r) => ({ ...r, documentId })),
+    columnMapping: detectColumnMapping(headers),
+    documentId,
+    totalPages: 1,
+    processedPages: 1,
+    failedPages: 0,
+    extractedCount: rows.length,
+    rejectedCount: 0,
+    reviewRequiredCount: 0,
+  };
 };
 
 /**
@@ -374,6 +449,7 @@ const processStagedTransactions = async (userId, rows, columnMapping) => {
       sourcePage: row.sourcePage !== undefined ? row.sourcePage : null,
       extractionMethod: row.extractionMethod || "regex_text",
       extractionConfidence: row.extractionConfidence || 0.92,
+      flags: parsedDate ? [] : ["INVALID_DATE"],
     });
   }
 
@@ -382,8 +458,8 @@ const processStagedTransactions = async (userId, rows, columnMapping) => {
 
   return validatedLedger.map((tx) => ({
     ...tx,
-    rawDate: tx.date ? new Date(tx.date).toLocaleDateString("en-IN") : "",
-    parsedDate: tx.date,
+    rawDate: tx.date ? new Date(tx.date).toLocaleDateString("en-IN") : tx.rawDate || "",
+    parsedDate: tx.date || null,
     duplicateReason: tx.isDuplicate ? "Matches existing or concurrent record within 2 days with identical amount." : "",
   }));
 };

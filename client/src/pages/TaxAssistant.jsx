@@ -14,7 +14,7 @@ const SECTION_STYLES = {
   "80C": "bg-violet-500/15 text-violet-300",
   "80D": "bg-emerald-500/15 text-emerald-300",
   "80CCD": "bg-sky-500/15 text-sky-300",
-  Other: "bg-slate-500/15 text-slate-300",
+  Other: "bg-slate-500/15 text-[var(--text-secondary)]",
 };
 
 function ProgressBar({ current, recommended }) {
@@ -54,7 +54,7 @@ function RecommendationCard({ rec, index }) {
               <span className={`pm-badge ${SECTION_STYLES[rec.section] || SECTION_STYLES.Other}`}>
                 Section {rec.section}
               </span>
-              <span className={`pm-badge ${PRIORITY_STYLES[rec.priority] || "bg-slate-500/15 text-slate-300"}`}>
+              <span className={`pm-badge ${PRIORITY_STYLES[rec.priority] || "bg-slate-500/15 text-[var(--text-secondary)]"}`}>
                 {rec.priority} Priority
               </span>
             </div>

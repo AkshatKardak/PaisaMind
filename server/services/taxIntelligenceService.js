@@ -48,6 +48,7 @@ const computeNewRegimeTax = async (grossIncome = 0, isSalaried = false, financia
     ruleVersion: rules.version,
     financialYear: rules.financialYear,
     sourceNotification: rules.sourceNotification,
+    source: rules.sourceNotification || rules.source || "Income Tax Act, 1961",
     grossIncome: roundAmount(gross),
     standardDeduction: stdDeduction,
     taxableIncome: roundAmount(taxableIncome),
@@ -142,6 +143,7 @@ const compute44ADATax = async (grossReceipts = 0, isNewRegime = true, deductions
     presumptiveRate: `${Math.round(rules.presumptive.section44ADA.presumptiveProfitRate * 100)}%`,
     ruleVersion: rules.version,
     sourceNotification: rules.sourceNotification,
+    source: rules.sourceNotification || rules.source || "Income Tax Act, 1961",
     ...taxResult,
     taxSavingsVsNormal: 0,
   };
@@ -228,7 +230,8 @@ const calculateRecommendedTaxReserve = async ({
 
   const marginalTax = Math.max(0, taxAfter - taxBefore);
   const marginalRate = newIncomeAmount > 0 ? (marginalTax / newIncomeAmount) : 0;
-  const safeReserveRate = Math.max(marginalRate, nextTotal > rules.newRegime.rebate87ALimit ? 0.15 : 0.0);
+  const defaultReserve = rules.taxReserve?.defaultReserveRate || 0.15;
+  const safeReserveRate = Math.max(marginalRate, nextTotal > rules.newRegime.rebate87ALimit ? defaultReserve : 0.0);
   const recommendedReserve = roundAmount(newIncomeAmount * safeReserveRate);
 
   return {
@@ -239,6 +242,8 @@ const calculateRecommendedTaxReserve = async ({
     reservePercentage: Math.round(safeReserveRate * 100),
     totalAnnualTaxProjected: roundAmount(taxAfter),
     ruleVersion: rules.version,
+    sourceNotification: rules.sourceNotification,
+    source: rules.sourceNotification,
     explanation: `Based on ₹${roundAmount(nextTotal).toLocaleString("en-IN")} YTD income under ${regime.toUpperCase()} regime (${use44ADA ? "Sec 44ADA" : "Regular"}), reserve ~${Math.round(safeReserveRate * 100)}% (₹${recommendedReserve.toLocaleString("en-IN")}) for taxes.`,
   };
 };
@@ -275,6 +280,8 @@ const calculateGSTStatus = async (annualTurnover = 0, registered = false, financ
     alertMessage,
     isRegistered: Boolean(registered),
     ruleVersion: rules.version,
+    sourceNotification: rules.sourceNotification,
+    source: rules.sourceNotification,
   };
 };
 
@@ -321,6 +328,8 @@ const computeAdvanceTaxSchedule = async (annualEstimatedTax = 0, taxPaidSoFar = 
     remainingTaxDue: Math.max(0, roundAmount(totalTax - cumulativePaid)),
     installments,
     ruleVersion: rules.version,
+    sourceNotification: rules.sourceNotification,
+    source: rules.sourceNotification,
     disclaimer: "Advance tax is calculated per Indian Income Tax Act guidelines. Consult a qualified CA for official tax filings.",
   };
 };
@@ -329,6 +338,8 @@ module.exports = {
   computeNewRegimeTax,
   computeOldRegimeTax,
   compute44ADATax,
+  calculatePresumptive44ADA: compute44ADATax,
+  evaluate44ADAEligibility,
   compareAllRegimes,
   calculateRecommendedTaxReserve,
   calculateGSTStatus,

@@ -1,6 +1,8 @@
 const { spawn } = require("child_process");
 const path = require("path");
 
+const PYTHON_BIN = process.env.PYTHON_BIN || "python3";
+
 /**
  * Executes a Python script with JSON input via stdin and captures JSON output
  */
@@ -10,7 +12,7 @@ const runPythonWorker = (scriptRelativePath, inputPayload, timeoutMs = 4000) => 
     let resolved = false;
 
     try {
-      const py = spawn("python", [scriptPath], {
+      const py = spawn(PYTHON_BIN, [scriptPath], {
         stdio: ["pipe", "pipe", "pipe"],
       });
 
@@ -177,7 +179,7 @@ const runForecasting = async (history = [], horizon = 3, invoiceBuckets = [0, 0,
     const pred = holtLinearTrendNode(incomes.slice(0, i), 1)[0];
     backtestPreds.push(pred);
   }
-  const { mae, rmse } = calculateMetrics(backtestActuals, backtestPreds);
+  const { mae, rmse, mape } = calculateMetrics(backtestActuals, backtestPreds);
 
   // Out-of-sample projections
   const forecastInc = holtLinearTrendNode(incomes, horizon);
@@ -246,7 +248,7 @@ const detectAnomalies = async (transactions = []) => {
   // 1. Attempt execution via Python worker
   try {
     const pyResult = await runPythonWorker(
-      path.join("anomaly", "isolation_forest.py"),
+      path.join("anomaly", "modified_z_score.py"),
       { transactions }
     );
     if (pyResult && pyResult.status === "SUCCESS") {
@@ -264,15 +266,17 @@ const detectAnomalies = async (transactions = []) => {
   transactions.forEach((tx, idx) => {
     const score = scores[idx];
     if (score > 3.5) {
-      anomalies.append || anomalies.push({
+      const clampedScore = Math.min(25.0, Number(score.toFixed(2)));
+      anomalies.push({
         transactionId: tx._id || tx.id || String(idx),
         title: tx.title || tx.description || "Transaction",
         amount: tx.amount,
         category: tx.category || "Other",
         date: tx.date,
-        outlierScore: score,
+        outlierScore: clampedScore,
+        rawOutlierScore: score,
         severity: score > 5.0 ? "CRITICAL" : "HIGH",
-        reason: `Amount of ₹${Number(tx.amount).toLocaleString("en-IN")} has a modified z-score of ${score} (MAD threshold: 3.5)`,
+        reason: `Amount of ₹${Number(tx.amount).toLocaleString("en-IN")} has a modified z-score of ${clampedScore} (MAD threshold: 3.5)`,
       });
     }
   });

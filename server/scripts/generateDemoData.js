@@ -8,7 +8,6 @@ const Income = require("../models/Income");
 const Expense = require("../models/Expense");
 const Invoice = require("../models/Invoice");
 const Goal = require("../models/Goal");
-const Budget = require("../models/Budget");
 const RecurringTransaction = require("../models/RecurringTransaction");
 const Asset = require("../models/Asset");
 const Liability = require("../models/Liability");
@@ -56,7 +55,6 @@ const seedDemoData = async () => {
         Expense.deleteMany({ userId }),
         Invoice.deleteMany({ userId }),
         Goal.deleteMany({ userId }),
-        Budget.deleteMany({ userId }),
         RecurringTransaction.deleteMany({ userId }),
         Asset.deleteMany({ userId }),
         Liability.deleteMany({ userId }),

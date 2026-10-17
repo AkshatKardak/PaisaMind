@@ -18,17 +18,22 @@ const validateAndNormalizeLedger = async (rawTransactions = [], existingLedger =
     const txId = raw.transactionId || crypto.randomUUID();
 
     // 2. Date Validation
-    let parsedDate = raw.parsedDate ? new Date(raw.parsedDate) : new Date(raw.rawDate || Date.now());
-    if (isNaN(parsedDate.getTime())) {
-      parsedDate = new Date();
-      flags.push("INVALID_DATE_FALLBACK_TO_NOW");
-      status = "REVIEW_REQUIRED";
-    } else {
+    let candidateDateStr = raw.parsedDate;
+    if (candidateDateStr === undefined) {
+      candidateDateStr = raw.rawDate || raw.date;
+    }
+    const isExplicitlyInvalid = (raw.flags && raw.flags.includes("INVALID_DATE")) || raw.parsedDate === null;
+    let parsedDate = null;
+    if (candidateDateStr && !isExplicitlyInvalid && !isNaN(new Date(candidateDateStr).getTime())) {
+      parsedDate = new Date(candidateDateStr);
       const year = parsedDate.getFullYear();
       if (year < minValidYear || year > maxValidYear) {
         flags.push("ANOMALOUS_DATE_YEAR_OUT_OF_BOUNDS");
         status = "REVIEW_REQUIRED";
       }
+    } else {
+      flags.push("INVALID_DATE");
+      status = "REVIEW_REQUIRED";
     }
 
     // 3. Amount Validation

@@ -14,22 +14,20 @@ const mongoose = require("mongoose");
 const generateCashFlowForecast = async (userId) => {
   if (mongoose.connection.readyState === 0) {
     return {
+      status: "INSUFFICIENT_DATA",
+      hasSufficientData: false,
+      message: "Database connection unavailable or insufficient data.",
       history: [],
-      forecast: [
-        { period: "30 Days (Next Month)", month: "Next Mo", predictedIncome: 75000, predictedExpense: 40000, netCashFlow: 35000, cumulativeCashFlow: 35000, confidence: "High", lowerBoundIncome: 65000, upperBoundIncome: 85000, lowerBoundEndingNet: 25000, upperBoundEndingNet: 45000, invoicePipelineContribution: 0 },
-        { period: "60 Days (Month 2)", month: "Mo 2", predictedIncome: 75000, predictedExpense: 40000, netCashFlow: 35000, cumulativeCashFlow: 70000, confidence: "High", lowerBoundIncome: 60000, upperBoundIncome: 90000, lowerBoundEndingNet: 20000, upperBoundEndingNet: 50000, invoicePipelineContribution: 0 },
-        { period: "90 Days (Month 3)", month: "Mo 3", predictedIncome: 75000, predictedExpense: 40000, netCashFlow: 35000, cumulativeCashFlow: 105000, confidence: "High", lowerBoundIncome: 55000, upperBoundIncome: 95000, lowerBoundEndingNet: 15000, upperBoundEndingNet: 55000, invoicePipelineContribution: 0 },
-      ],
-      confidenceLevel: "High",
-      confidenceReason: "Simulated offline baseline forecast.",
+      forecast: [],
+      confidenceLevel: "None",
+      confidenceReason: "Insufficient historical data (offline or no active database connection).",
       mlModel: "Statistical-Exponential-Smoothing",
-      backtestMetrics: { mae: 2500, rmse: 3200, mape: 4.8 },
-      hasSufficientData: true,
+      backtestMetrics: { mae: 0, rmse: 0, mape: 0 },
       pendingInvoiceValue: 0,
-      recurringMonthlyBurn: 20000,
-      recurringMonthlyIncome: 50000,
-      averageMonthlyIncome: 75000,
-      averageMonthlyExpense: 40000,
+      recurringMonthlyBurn: 0,
+      recurringMonthlyIncome: 0,
+      averageMonthlyIncome: 0,
+      averageMonthlyExpense: 0,
     };
   }
 
@@ -79,16 +77,10 @@ const generateCashFlowForecast = async (userId) => {
   const incomeStats = calculateStats(incomeValues.slice(-6));
   const expenseStats = calculateStats(expenseValues.slice(-6));
 
-  let confidenceLevel = "High";
-  let confidenceReason = "Robust baseline with 6+ months of transaction history.";
-
-  if (activeMonthsWithData.length < 3) {
-    confidenceLevel = "Low";
-    confidenceReason = "Low confidence: Less than 3 months of historical data available.";
-  } else if (activeMonthsWithData.length < 6 || (incomeStats.stdDev / Math.max(incomeStats.mean, 1)) > 0.6) {
-    confidenceLevel = "Medium";
-    confidenceReason = "Moderate confidence: High income volatility or moderate transaction history (3-5 months).";
-  }
+  let pendingInvoiceSum = 0;
+  invoices.forEach((inv) => {
+    pendingInvoiceSum += Number(inv.amount || inv.totalAmount || 0);
+  });
 
   let recurringMonthlyIncome = 0;
   let recurringMonthlyExpense = 0;
@@ -102,6 +94,34 @@ const generateCashFlowForecast = async (userId) => {
       recurringMonthlyExpense += amt * factor;
     }
   });
+
+  // Strict requirement: At least 3 months of historical data required for statistical/ML forecasting
+  if (activeMonthsWithData.length < 3) {
+    return {
+      status: "INSUFFICIENT_DATA",
+      hasSufficientData: false,
+      message: `At least 3 months of historical financial data required. Found ${activeMonthsWithData.length} month(s) with transaction history.`,
+      history: historyArray.slice(-6),
+      forecast: [],
+      confidenceLevel: "None",
+      confidenceReason: `Insufficient historical data: Only ${activeMonthsWithData.length} month(s) with transaction history found. Minimum 3 months required.`,
+      mlModel: "Statistical-Exponential-Smoothing",
+      backtestMetrics: { mae: 0, rmse: 0, mape: 0 },
+      pendingInvoiceValue: Math.round(pendingInvoiceSum),
+      recurringMonthlyBurn: Math.round(recurringMonthlyExpense),
+      recurringMonthlyIncome: Math.round(recurringMonthlyIncome),
+      averageMonthlyIncome: Math.round(incomeStats.mean || 0),
+      averageMonthlyExpense: Math.round(expenseStats.mean || 0),
+    };
+  }
+
+  let confidenceLevel = "High";
+  let confidenceReason = "Robust baseline with 6+ months of transaction history.";
+
+  if (activeMonthsWithData.length < 6 || (incomeStats.stdDev / Math.max(incomeStats.mean, 1)) > 0.6) {
+    confidenceLevel = "Medium";
+    confidenceReason = "Moderate confidence: High income volatility or moderate transaction history (3-5 months).";
+  }
 
   const riskAnalysis = await analyzeInvoiceRisk(userId);
   const clientScoreMap = {};
@@ -133,7 +153,46 @@ const generateCashFlowForecast = async (userId) => {
     }
   });
 
-  const mlResult = await runForecasting(historyArray, 3, invoiceBuckets);
+  let mlResult;
+  try {
+    mlResult = await runForecasting(historyArray, 3, invoiceBuckets);
+  } catch (err) {
+    return {
+      status: "ML_UNAVAILABLE",
+      hasSufficientData: false,
+      message: "Machine learning forecasting service is currently unavailable.",
+      history: historyArray.slice(-6),
+      forecast: [],
+      confidenceLevel: "None",
+      confidenceReason: "Forecasting service encountered an error.",
+      mlModel: "Unavailable",
+      backtestMetrics: { mae: 0, rmse: 0, mape: 0 },
+      pendingInvoiceValue: Math.round(totalPendingReceivables),
+      recurringMonthlyBurn: Math.round(recurringMonthlyExpense),
+      recurringMonthlyIncome: Math.round(recurringMonthlyIncome),
+      averageMonthlyIncome: Math.round(incomeStats.mean || 0),
+      averageMonthlyExpense: Math.round(expenseStats.mean || 0),
+    };
+  }
+
+  if (!mlResult || mlResult.status !== "SUCCESS") {
+    return {
+      status: mlResult?.status || "ML_UNAVAILABLE",
+      hasSufficientData: false,
+      message: mlResult?.message || "Forecasting could not be completed with the available data.",
+      history: historyArray.slice(-6),
+      forecast: [],
+      confidenceLevel: "None",
+      confidenceReason: mlResult?.message || "Insufficient data or ML unavailable.",
+      mlModel: "Unavailable",
+      backtestMetrics: { mae: 0, rmse: 0, mape: 0 },
+      pendingInvoiceValue: Math.round(totalPendingReceivables),
+      recurringMonthlyBurn: Math.round(recurringMonthlyExpense),
+      recurringMonthlyIncome: Math.round(recurringMonthlyIncome),
+      averageMonthlyIncome: Math.round(incomeStats.mean || 0),
+      averageMonthlyExpense: Math.round(expenseStats.mean || 0),
+    };
+  }
 
   const intervals = [
     { period: "30 Days (Next Month)", monthIndex: 1 },

@@ -82,7 +82,7 @@ const tdsReconciliationSchema = new mongoose.Schema(
     },
     matchType: {
       type: String,
-      enum: ["EXACT", "FUZZY_ML", "MANUAL", "UNMATCHED"],
+      enum: ["EXACT", "FUZZY_MATCH", "DETERMINISTIC_FUZZY", "FUZZY_ML", "MANUAL", "UNMATCHED"],
       default: "EXACT",
     },
     discrepancyReasons: [

@@ -53,19 +53,26 @@ const getFinancialYearFromDate = (date = new Date()) => {
 /**
  * Resolves tax rules for a specific financial year
  */
-const getActiveRules = async (financialYear = "2025-26") => {
+const getActiveRules = async (financialYear = "2025-26", allowDraft = false) => {
   const fy = String(financialYear || "2025-26").trim();
 
   if (ruleCache.has(fy)) {
-    return ruleCache.get(fy);
+    const cached = ruleCache.get(fy);
+    if (!allowDraft && cached.status !== "ACTIVE") {
+      throw new Error(
+        `[TaxRuleResolver] Cannot use ${cached.status} tax rules for production calculations for FY ${fy}. Only ACTIVE statutory rules are permitted.`
+      );
+    }
+    return cached;
   }
 
   // 1. Try fetching from MongoDB if connected
   if (TaxRuleVersion && mongoose.connection.readyState === 1) {
     try {
+      const statusFilter = allowDraft ? { $in: ["ACTIVE", "DRAFT"] } : "ACTIVE";
       const dbRule = await TaxRuleVersion.findOne({
         financialYear: fy,
-        status: { $in: ["ACTIVE", "DRAFT"] },
+        status: statusFilter,
       }).lean();
 
       if (dbRule) {
@@ -81,6 +88,12 @@ const getActiveRules = async (financialYear = "2025-26") => {
 
   // 2. Fall back to bundled JSON
   const jsonRule = loadJsonFallback(fy);
+  if (!allowDraft && jsonRule.status !== "ACTIVE") {
+    throw new Error(
+      `[TaxRuleResolver] Cannot use ${jsonRule.status} tax rules for production calculations for FY ${fy}. Only ACTIVE statutory rules are permitted.`
+    );
+  }
+
   const sanitized = sanitizeRuleObject(jsonRule);
   ruleCache.set(fy, sanitized);
   return sanitized;

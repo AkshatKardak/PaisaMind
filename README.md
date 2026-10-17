@@ -15,7 +15,7 @@
 
 ### The AI-Powered Financial Intelligence Platform for Indian Freelancers
 
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)](https://react.dev)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev)
 [![Node.js](https://img.shields.io/badge/Node.js-18-339933?style=flat-square&logo=nodedotjs)](https://nodejs.org)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb)](https://mongodb.com)
 [![Firebase](https://img.shields.io/badge/Firebase-Auth-FFCA28?style=flat-square&logo=firebase)](https://firebase.google.com)
@@ -121,7 +121,7 @@ PaisaMind operates on a strict 5-tier architecture:
                         ▼
 [ Tier 5: AI Copilot Orchestration & Execution Layer ]
   ├── Groq LLaMA-3.3 High-Throughput Inference Engine
-  ├── 20 Verified Backend Tool-Calling Contracts with Provenance & Disclaimers
+  ├── 21 Verified Backend Tool-Calling Contracts with Provenance & Disclaimers
   ├── Zero-Fee Dynamic UPI Payment QR Invoices (upi://pay)
   ├── 3-Stage Contextual WhatsApp & Email Recovery Escalation Drafts
   └── Print-Ready CA Compliance Reports & P&L Statement Exports
@@ -160,7 +160,7 @@ PaisaMind operates on a strict 5-tier architecture:
 ## Tech Stack
 
 ### Frontend Architecture
-* **React 18 + Vite:** Fast compilation, HMR, and route-based dynamic code splitting (`React.lazy` + `Suspense`).
+* **React 19 + Vite:** Fast compilation, HMR, and route-based dynamic code splitting (`React.lazy` + `Suspense`).
 * **Tailwind CSS:** Utility-first responsive design supporting dark/light visual modes.
 * **TanStack React Query:** Client-side cache synchronization with a 3-minute stale window for instant page navigation.
 * **Recharts:** Responsive financial visualizations, bar distributions, and multi-track scenario models.
@@ -181,7 +181,7 @@ PaisaMind operates on a strict 5-tier architecture:
 
 ```
 PaisaMind/
-├── client/                               # React 18 + Vite Frontend
+├── client/                               # React 19 + Vite Frontend
 │   ├── public/                           # Static assets, logo.png, mascot.png
 │   ├── src/
 │   │   ├── components/
@@ -240,10 +240,10 @@ PaisaMind/
     │   ├── statementParserService.js     # CSV, Excel, PDF parsing & Groq Vision OCR
     │   ├── recoveryService.js            # 3-stage WhatsApp invoice recovery drafting
     │   └── categorizationService.js      # Auto-categorization rule engine
-    ├── tools/                            # financialToolsRegistry.js (20 deterministic execution tools)
+    ├── tools/                            # financialToolsRegistry.js (21 deterministic execution tools)
     ├── validations/                      # financialSchemas.js (Input validation rules)
     ├── jobs/                             # cronJobs.js (In-process keep-alive & recurring sync)
-    ├── tests/                            # Vitest unit test suites (37 passing tests)
+    ├── tests/                            # Vitest unit test suites (14 test files, 86 passing tests)
     └── package.json
 ```
 
@@ -331,7 +331,7 @@ To execute the complete server test suite:
 cd server
 npm test
 ```
-*Current test suite: 7 test files, 37 passing unit tests.*
+*Current test suite: 14 test files, 86 passing tests.*
 
 To verify the production client build:
 ```bash

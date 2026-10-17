@@ -66,17 +66,28 @@ const calculateEntitySimilarity = (name1, name2) => {
 const run3WayTDSReconciliation = async (userId, options = {}) => {
   const fy = options.financialYear || "2025-26";
   const rules = await getActiveRules(fy);
+
+  // Configurable reconciliation rules from versioned statutory datasets
+  const reconConfig = {
+    amountTolerance: rules.reconciliation?.amountTolerance ?? 5,
+    dateWindowDaysBefore: rules.reconciliation?.dateWindowDaysBefore ?? 15,
+    dateWindowDaysAfter: rules.reconciliation?.dateWindowDaysAfter ?? 120,
+    unreportedTdsNoticeDays: rules.reconciliation?.unreportedTdsNoticeDays ?? 45,
+    ...(options.reconciliationConfig || {}),
+  };
+
   const defaultTdsRate = rules.tds?.section194J_professional || 0.10;
 
   // 1. Fetch Invoices, Incomes, and TDSRecords for this user
+  // CanonicalTransaction uses 'date' and type enum: ["income", "expense", "transfer"]
   const [invoices, incomes, bankTxns, tdsRecords] = await Promise.all([
     Invoice.find({ userId }),
     Income.find({ userId }),
-    CanonicalTransaction ? CanonicalTransaction.find({ userId, type: "INCOME" }).catch(() => []) : [],
+    CanonicalTransaction ? CanonicalTransaction.find({ userId, type: { $in: ["income", "INCOME"] } }).catch(() => []) : [],
     TDSRecord.find({ userId, financialYear: fy }),
   ]);
 
-  // Merge bank incomes & canonical transactions
+  // Merge bank incomes & canonical transactions with unified field normalization
   const combinedBankReceipts = [
     ...incomes.map((inc) => ({
       _id: inc._id,
@@ -89,8 +100,8 @@ const run3WayTDSReconciliation = async (userId, options = {}) => {
     ...bankTxns.map((tx) => ({
       _id: tx._id,
       amount: Number(tx.amount || 0),
-      date: tx.transactionDate,
-      source: tx.description || tx.normalizedMerchant || "",
+      date: tx.date || tx.transactionDate, // Fixed field mismatch: CanonicalTransaction uses .date
+      source: tx.rawDescription || tx.normalizedMerchant || tx.description || "",
       notes: tx.reference || "",
       type: "canonical",
     })),
@@ -125,8 +136,8 @@ const run3WayTDSReconciliation = async (userId, options = {}) => {
 
       const amtDiff = Math.abs(b.amount - expectedNetReceivable);
       const grossAmtDiff = Math.abs(b.amount - invAmount);
-      const isNetMatch = amtDiff <= 5; // tolerance
-      const isGrossMatch = grossAmtDiff <= 5; // client paid without deducting TDS
+      const isNetMatch = amtDiff <= reconConfig.amountTolerance; // configurable tolerance
+      const isGrossMatch = grossAmtDiff <= reconConfig.amountTolerance; // client paid without deducting TDS
 
       const textToSearch = `${b.source} ${b.notes}`.toLowerCase();
       const entitySim = calculateEntitySimilarity(inv.clientName, b.source);
@@ -134,7 +145,7 @@ const run3WayTDSReconciliation = async (userId, options = {}) => {
 
       const bDate = new Date(b.date);
       const daysDiff = (bDate - invDate) / (1000 * 60 * 60 * 24);
-      const isDatePlausible = daysDiff >= -15 && daysDiff <= 120;
+      const isDatePlausible = daysDiff >= -reconConfig.dateWindowDaysBefore && daysDiff <= reconConfig.dateWindowDaysAfter;
 
       let score = 0;
       if (isNetMatch || isGrossMatch) score += 0.5;
@@ -146,7 +157,7 @@ const run3WayTDSReconciliation = async (userId, options = {}) => {
       if (score > bestBankConfidence && score >= 0.45) {
         bestBankConfidence = score;
         bestBank = b;
-        bankMatchType = invNumMatch && (isNetMatch || isGrossMatch) ? "EXACT" : "FUZZY_ML";
+        bankMatchType = invNumMatch && (isNetMatch || isGrossMatch) ? "EXACT" : "FUZZY_MATCH";
       }
     }
 
@@ -164,13 +175,13 @@ const run3WayTDSReconciliation = async (userId, options = {}) => {
 
       const creditDiff = Math.abs(t.creditAmount - invAmount);
       const tdsDiff = Math.abs(t.tdsDeducted - expectedTds);
-      const isCreditMatch = creditDiff <= 10;
-      const isTdsMatch = tdsDiff <= 5;
+      const isCreditMatch = creditDiff <= (reconConfig.amountTolerance * 2);
+      const isTdsMatch = tdsDiff <= reconConfig.amountTolerance;
 
       const entitySim = calculateEntitySimilarity(inv.clientName, t.deductorName);
       const tDate = new Date(t.transactionDate);
       const daysDiff = (tDate - invDate) / (1000 * 60 * 60 * 24);
-      const isDatePlausible = daysDiff >= -30 && daysDiff <= 150;
+      const isDatePlausible = daysDiff >= -(reconConfig.dateWindowDaysBefore * 2) && daysDiff <= (reconConfig.dateWindowDaysAfter + 30);
 
       let score = 0;
       if (isCreditMatch) score += 0.4;
@@ -182,7 +193,7 @@ const run3WayTDSReconciliation = async (userId, options = {}) => {
       if (score > bestTdsConfidence && score >= 0.45) {
         bestTdsConfidence = score;
         bestTds = t;
-        tdsMatchType = isCreditMatch && isTdsMatch && entitySim >= 0.7 ? "EXACT" : "FUZZY_ML";
+        tdsMatchType = isCreditMatch && isTdsMatch && entitySim >= 0.7 ? "EXACT" : "FUZZY_MATCH";
       }
     }
 

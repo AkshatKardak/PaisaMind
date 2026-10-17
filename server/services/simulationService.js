@@ -1,18 +1,19 @@
 const { calculateCashRunway } = require("./runwayService");
 const { generateCashFlowForecast } = require("./forecastingService");
 const { analyzeIncomeVolatility } = require("./incomeVolatilityService");
+const { SCENARIO_CONFIG } = require("../config/scenarioConfig");
 
 /**
  * Monte Carlo simulator for 6-month projected cash flow
  */
 const runMonteCarloSimulation = ({
-  iterations = 100,
-  months = 6,
-  initialCash = 100000,
-  baseMonthlyIncome = 75000,
-  baseMonthlyExpense = 45000,
-  incomeStdDev = 15000,
-  expenseStdDev = 8000,
+  iterations = SCENARIO_CONFIG.iterations,
+  months = SCENARIO_CONFIG.projectionMonths,
+  initialCash = 0,
+  baseMonthlyIncome = 0,
+  baseMonthlyExpense = 0,
+  incomeStdDev = 0,
+  expenseStdDev = 0,
   oneTimeExpense = 0,
   addedMonthlyExpense = 0,
 }) => {
@@ -20,6 +21,7 @@ const runMonteCarloSimulation = ({
 
   // Simple Box-Muller transform for normal distribution sampling
   const sampleNormal = (mean, stdDev) => {
+    if (stdDev <= 0) return mean;
     const u1 = Math.max(0.0001, Math.random());
     const u2 = Math.random();
     const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
@@ -30,7 +32,10 @@ const runMonteCarloSimulation = ({
     let cash = initialCash - oneTimeExpense;
     for (let m = 1; m <= months; m++) {
       const inc = Math.max(0, sampleNormal(baseMonthlyIncome, incomeStdDev));
-      const exp = Math.max(1000, sampleNormal(baseMonthlyExpense + addedMonthlyExpense, expenseStdDev));
+      const exp = Math.max(
+        SCENARIO_CONFIG.minimumMonthlyBurn,
+        sampleNormal(baseMonthlyExpense + addedMonthlyExpense, expenseStdDev)
+      );
       cash += (inc - exp);
     }
     endingBalances.push(Math.round(cash));
@@ -46,7 +51,10 @@ const runMonteCarloSimulation = ({
   const negativeCount = endingBalances.filter((b) => b < 0).length;
   const probNegativeCash = Math.round((negativeCount / iterations) * 100);
 
-  const monthlyBurn = Math.max(1000, baseMonthlyExpense + addedMonthlyExpense);
+  const monthlyBurn = Math.max(
+    SCENARIO_CONFIG.minimumMonthlyBurn,
+    baseMonthlyExpense + addedMonthlyExpense
+  );
   const insufficientRunwayCount = endingBalances.filter((b) => (b / monthlyBurn) < 3.0).length;
   const probInsufficientRunway = Math.round((insufficientRunwayCount / iterations) * 100);
 
@@ -65,7 +73,7 @@ const runMonteCarloSimulation = ({
 /**
  * What-If Financial Scenario Simulation Engine with Volatility & Monte Carlo
  */
-const simulateScenario = async (userId, params) => {
+const simulateScenario = async (userId, params = {}) => {
   const {
     scenarioType,
     amount = 0,
@@ -79,19 +87,44 @@ const simulateScenario = async (userId, params) => {
   const [currentRunway, forecastData, volatilityData] = await Promise.all([
     calculateCashRunway(userId),
     generateCashFlowForecast(userId),
-    analyzeIncomeVolatility(userId, 6).catch(() => ({ coefficientOfVariation: 20 })),
+    analyzeIncomeVolatility(userId, 6).catch(() => ({ coefficientOfVariation: SCENARIO_CONFIG.defaultCoefficientOfVariation })),
   ]);
 
-  const currentMonthlyIncome = forecastData.averageMonthlyIncome || 75000;
-  const currentMonthlyExpense = currentRunway.monthlyBurnRate || 45000;
-  const currentCashBalance = currentRunway.liquidCashBalance || 100000;
+  const currentMonthlyIncome = params.currentMonthlyIncome !== undefined
+    ? Number(params.currentMonthlyIncome)
+    : (forecastData.averageMonthlyIncome || 0);
 
-  // Volatility-derived multipliers
-  const cvPct = (volatilityData.coefficientOfVariation || 20) / 100;
-  const stressDropFactor = Math.min(0.40, Math.max(0.15, cvPct * 0.8));
-  const optimisticGainFactor = Math.min(0.30, Math.max(0.10, cvPct * 0.5));
+  const currentMonthlyExpense = params.currentMonthlyExpense !== undefined
+    ? Number(params.currentMonthlyExpense)
+    : (currentRunway.monthlyBurnRate || 0);
 
-  const monthsToSimulate = 6;
+  const currentCashBalance = params.currentCashBalance !== undefined
+    ? Number(params.currentCashBalance)
+    : (currentRunway.liquidCashBalance || 0);
+
+  // If no transaction baseline and no explicit financial parameters provided
+  if (currentMonthlyIncome === 0 && currentMonthlyExpense === 0 && currentCashBalance === 0 && !amount && !percentage) {
+    return {
+      status: "INSUFFICIENT_DATA",
+      message: "Insufficient historical transaction baseline. Please record income/expenses or provide baseline figures to simulate scenarios.",
+      scenarioType,
+      baseline: { currentCashBalance: 0, currentMonthlyIncome: 0, currentMonthlyExpense: 0, currentRunwayMonths: 0 },
+      results: null,
+    };
+  }
+
+  // Volatility-derived multipliers from validated config
+  const cvPct = (volatilityData.coefficientOfVariation || SCENARIO_CONFIG.defaultCoefficientOfVariation) / 100;
+  const stressDropFactor = Math.min(
+    SCENARIO_CONFIG.maxStressDrop,
+    Math.max(SCENARIO_CONFIG.minStressDrop, cvPct * SCENARIO_CONFIG.stressDropMultiplier)
+  );
+  const optimisticGainFactor = Math.min(
+    SCENARIO_CONFIG.maxOptimisticGain,
+    Math.max(SCENARIO_CONFIG.minOptimisticGain, cvPct * SCENARIO_CONFIG.optimisticGainMultiplier)
+  );
+
+  const monthsToSimulate = SCENARIO_CONFIG.projectionMonths;
   const tracks = {
     base: { monthlyBalances: [], totalIncome: 0, totalExpense: 0, endingBalance: 0, runwayMonths: 0 },
     optimistic: { monthlyBalances: [], totalIncome: 0, totalExpense: 0, endingBalance: 0, runwayMonths: 0 },
@@ -107,12 +140,12 @@ const simulateScenario = async (userId, params) => {
   if (scenarioType === "large_purchase") {
     oneTimeExpense = Number(amount || 0);
   } else if (scenarioType === "income_decrease") {
-    const dropPct = Number(percentage || 20) / 100;
+    const dropPct = Number(percentage || SCENARIO_CONFIG.defaultIncomeChangePercentage) / 100;
     incomeMultiplierBase = Math.max(0, 1.0 - dropPct);
     incomeMultiplierOptimistic = Math.max(0, 1.0 - (dropPct * 0.6));
     incomeMultiplierStress = Math.max(0, 1.0 - (dropPct * 1.4));
   } else if (scenarioType === "income_increase") {
-    const gainPct = Number(percentage || 20) / 100;
+    const gainPct = Number(percentage || SCENARIO_CONFIG.defaultIncomeChangePercentage) / 100;
     incomeMultiplierBase = 1.0 + gainPct;
     incomeMultiplierOptimistic = 1.0 + (gainPct * 1.3);
     incomeMultiplierStress = 1.0 + (gainPct * 0.5);
@@ -168,8 +201,8 @@ const simulateScenario = async (userId, params) => {
 
   // Monte Carlo Simulation
   const monteCarlo = runMonteCarloSimulation({
-    iterations: 100,
-    months: 6,
+    iterations: SCENARIO_CONFIG.iterations,
+    months: SCENARIO_CONFIG.projectionMonths,
     initialCash: currentCashBalance,
     baseMonthlyIncome: currentMonthlyIncome * incomeMultiplierBase,
     baseMonthlyExpense: currentMonthlyExpense,
