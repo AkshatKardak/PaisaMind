@@ -2,36 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  BarChart2,
-  BarChart3,
-  Bot,
-  Brain,
-  Calculator,
-  CheckCircle2,
-  ChevronRight,
-  CreditCard,
-  FileSpreadsheet,
-  FileText,
-  HelpCircle,
-  IndianRupee,
-  Layers,
   Menu,
-  MessageCircle,
-  Percent,
-  QrCode,
-  Receipt,
-  RefreshCw,
-  Shield,
-  ShieldCheck,
-  Sliders,
-  Sparkles,
-  Target,
-  TrendingDown,
-  TrendingUp,
-  Wallet,
-  Wand2,
   X,
-  Zap,
 } from "lucide-react";
 import ThemeToggle from "../components/ui/ThemeToggle";
 import { formatINR } from "../utils/formatCurrency";
@@ -40,7 +12,6 @@ export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [calcIncome, setCalcIncome] = useState(2400000);
 
-  // Month calculation
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
@@ -62,25 +33,23 @@ export default function Landing() {
   const estimatedSavings = Math.max(0, normalTax - adaTax);
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans selection:bg-cyan-500 selection:text-black">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans">
       {/* ── Navbar ── */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[var(--nav-bg)] border-b border-[var(--border)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          {/* Logo */}
+      <header className="sticky top-0 z-50 bg-[var(--bg-primary)] border-b border-[var(--border)]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <img src="/logo.png" alt="Logo" className="h-9 w-auto object-contain" />
+            <img src="/logo.png" alt="PaisaMind" className="h-8 w-auto object-contain" />
           </Link>
 
-          {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-[var(--text-muted)]">
-            <a href="#problems" className="hover:text-cyan-400 transition-colors">Problem</a>
-            <a href="#features" className="hover:text-cyan-400 transition-colors">Features</a>
-            <a href="#tax-engine" className="hover:text-cyan-400 transition-colors">Tax</a>
-            <a href="#comparison" className="hover:text-cyan-400 transition-colors">Comparison</a>
-            <a href="#faq" className="hover:text-cyan-400 transition-colors">FAQ</a>
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-[var(--text-secondary)]">
+            <a href="#problems" className="hover:text-[var(--text-primary)] transition-colors">The Problem</a>
+            <a href="#features" className="hover:text-[var(--text-primary)] transition-colors">Capabilities</a>
+            <a href="#tax-engine" className="hover:text-[var(--text-primary)] transition-colors">Section 44ADA</a>
+            <a href="#comparison" className="hover:text-[var(--text-primary)] transition-colors">Comparison</a>
+            <a href="#faq" className="hover:text-[var(--text-primary)] transition-colors">FAQ</a>
           </nav>
 
-          {/* Right Action Buttons */}
           <div className="hidden md:flex items-center gap-4">
             <ThemeToggle />
             <Link
@@ -91,9 +60,9 @@ export default function Landing() {
             </Link>
             <Link
               to="/register"
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 text-xs font-bold shadow-lg shadow-cyan-500/20 transition-all hover:scale-105 active:scale-95"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
             >
-              <span>Start For Free</span>
+              <span>Start Free</span>
               <ArrowRight size={13} />
             </Link>
           </div>
@@ -103,7 +72,8 @@ export default function Landing() {
             <ThemeToggle />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -112,266 +82,158 @@ export default function Landing() {
 
         {/* Mobile Dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-b border-[var(--border)] bg-[var(--bg-card)] p-4 space-y-3 text-sm font-semibold">
-            <a href="#problems" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-[var(--text-secondary)]">Problem</a>
-            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-[var(--text-secondary)]">Features</a>
-            <a href="#tax-engine" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-[var(--text-secondary)]">Tax</a>
+          <div className="md:hidden border-b border-[var(--border)] bg-[var(--bg-card)] p-4 space-y-3 text-sm">
+            <a href="#problems" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-[var(--text-secondary)]">The Problem</a>
+            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-[var(--text-secondary)]">Capabilities</a>
+            <a href="#tax-engine" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-[var(--text-secondary)]">Section 44ADA</a>
             <a href="#comparison" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-[var(--text-secondary)]">Comparison</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block py-1 text-[var(--text-secondary)]">FAQ</a>
             <div className="pt-2 border-t border-[var(--border)] flex gap-2">
-              <Link to="/login" className="flex-1 py-2 text-center text-xs border border-[var(--border-strong)] rounded-xl text-[var(--text-secondary)]">Sign In</Link>
-              <Link to="/register" className="flex-1 py-2 text-center text-xs bg-cyan-400 text-slate-950 rounded-xl font-bold">Start For Free</Link>
+              <Link to="/login" className="flex-1 py-2 text-center text-xs border border-[var(--border)] rounded-md text-[var(--text-secondary)]">Sign In</Link>
+              <Link to="/register" className="flex-1 py-2 text-center text-xs bg-emerald-600 text-white rounded-md font-semibold">Start Free</Link>
             </div>
           </div>
         )}
       </header>
 
       {/* ── Hero Section ── */}
-      <section className="relative pt-12 pb-24 overflow-hidden border-b border-[var(--border)] bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:24px_24px]">
-        {/* Glow gradients */}
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[300px] bg-cyan-500/10 blur-[140px] rounded-full pointer-events-none" />
-        <div className="absolute top-1/3 right-1/4 w-[400px] h-[300px] bg-indigo-500/10 blur-[130px] rounded-full pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <section className="py-16 lg:py-24 border-b border-[var(--border)]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
-            {/* ── Left Column ── */}
+            {/* Left Column */}
             <div className="lg:col-span-6 space-y-6 text-left">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--bg-elevated)] border border-cyan-500/30 text-[11px] font-semibold tracking-wide text-cyan-400 shadow-sm">
-                <Sparkles size={13} className="text-cyan-400" />
-                <span>AI-POWERED FINANCE OS INDIA</span>
+              <div className="inline-block px-3 py-1 rounded border border-[var(--border)] bg-[var(--bg-card)] text-xs text-[var(--text-secondary)]">
+                Built for Indian freelancers
               </div>
 
-              {/* Main Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black font-display tracking-tight text-[var(--text-primary)] leading-[1.1]">
-                The financial <br />
-                intelligence <br />
-                platform built for <br />
-                Indian freelancers.
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-[var(--text-primary)] leading-[1.15]">
+                Financial tracking and tax planning for Indian freelancers.
               </h1>
 
-              {/* Subtitle */}
               <p className="text-sm sm:text-base text-[var(--text-secondary)] max-w-lg leading-relaxed font-normal">
-                PaisaMind is an AI-powered finance platform for income tracking, Indian tax planning software, invoice automation, GST tracker alerts, cash flow forecasting, and smart financial intelligence in one calm dashboard.
+                Track income, reconcile TDS against Form 26AS, and compare Section 44ADA with the new regime.
               </p>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-4 pt-2">
+              <div className="flex flex-wrap items-center gap-3 pt-2">
                 <Link
                   to="/register"
-                  className="px-7 py-3.5 rounded-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-extrabold text-sm shadow-xl shadow-cyan-500/25 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                  className="px-5 py-2.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs inline-flex items-center gap-2 transition-colors"
                 >
-                  <span>Start For Free</span>
-                  <ArrowRight size={15} />
+                  <span>Start Free</span>
+                  <ArrowRight size={14} />
                 </Link>
                 <a
                   href="#features"
-                  className="px-6 py-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-strong)] hover:border-cyan-500/40 text-[var(--text-primary)] font-semibold text-sm flex items-center gap-2 transition-all"
+                  className="px-5 py-2.5 rounded-md bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-semibold text-xs inline-flex items-center gap-2 transition-colors"
                 >
-                  <span>See Features</span>
-                  <BarChart2 size={15} className="text-[var(--text-muted)]" />
+                  <span>View capabilities</span>
                 </a>
               </div>
 
-              {/* Social Proof & Trust Avatars */}
-              <div className="pt-4 flex items-center gap-4">
-                <div className="flex -space-x-2 overflow-hidden">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-cyan-600 text-white font-bold text-xs ring-2 ring-[var(--bg-primary)]">A</span>
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white font-bold text-xs ring-2 ring-[var(--bg-primary)]">R</span>
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 text-white font-bold text-xs ring-2 ring-[var(--bg-primary)]">S</span>
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-600 text-white font-bold text-xs ring-2 ring-[var(--bg-primary)]">K</span>
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-pink-600 text-white font-bold text-xs ring-2 ring-[var(--bg-primary)]">P</span>
-                </div>
-                <div className="text-xs text-[var(--text-muted)]">
-                  <span className="text-[var(--text-primary)] font-semibold">Trusted by 2,000+ freelancers, creators,</span> and small businesses.
-                </div>
-                <div className="pl-2 border-l border-[var(--border)] text-xs">
-                  <span className="text-[var(--text-muted)]">Rated</span> <strong className="text-[var(--text-primary)] font-bold">4.9/5</strong>
-                </div>
+              <div className="pt-4 text-xs text-[var(--text-muted)] border-t border-[var(--border)] max-w-md">
+                Client-side parsing by default. Files stay on your device. Zero net banking credentials requested.
               </div>
             </div>
 
-            {/* ── Right Column: PaisaMind Cockpit Mockup ── */}
-            <div className="lg:col-span-6 relative">
-              {/* Custom CSS Keyframes for Cockpit Micro-Animations */}
-              <style>{`
-                @keyframes cockpitFloat {
-                  0%, 100% { transform: translateY(0px); }
-                  50% { transform: translateY(-7px); }
-                }
-                @keyframes cockpitFloatReverse {
-                  0%, 100% { transform: translateY(0px); }
-                  50% { transform: translateY(7px); }
-                }
-                @keyframes barPulse {
-                  0%, 100% { opacity: 0.85; filter: brightness(1); }
-                  50% { opacity: 1; filter: brightness(1.2); }
-                }
-                @keyframes shimmerGradient {
-                  0% { background-position: 100% 0; }
-                  100% { background-position: -100% 0; }
-                }
-                @keyframes spinSlow {
-                  from { transform: rotate(0deg); }
-                  to { transform: rotate(360deg); }
-                }
-                .animate-cockpit-float {
-                  animation: cockpitFloat 4.5s ease-in-out infinite;
-                }
-                .animate-cockpit-float-rev {
-                  animation: cockpitFloatReverse 5s ease-in-out infinite;
-                }
-                .animate-shimmer-bar {
-                  background: linear-gradient(90deg, #f59e0b 0%, #fb923c 50%, #f59e0b 100%);
-                  background-size: 200% 100%;
-                  animation: shimmerGradient 3s linear infinite;
-                }
-              `}</style>
-
-              {/* Floating Badge: Top Left Insight (Animated) */}
-              <div className="absolute -top-4 -left-4 z-20 px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-cyan-500/40 text-cyan-400 text-xs shadow-xl backdrop-blur-md flex flex-col items-start animate-cockpit-float transition-all hover:scale-105">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                  <span className="text-[9px] uppercase tracking-wider font-bold text-cyan-400">INSIGHT</span>
-                </div>
-                <span className="font-semibold text-[11px] text-[var(--text-primary)]">Income increased 14% this month</span>
-              </div>
-
-              {/* Floating Badge: Bottom Right Reminder (Animated) */}
-              <div className="absolute -bottom-3 -right-3 z-20 px-3.5 py-2 rounded-xl bg-[var(--bg-card)] border border-amber-600/40 text-amber-400 text-xs shadow-xl backdrop-blur-md flex flex-col items-start animate-cockpit-float-rev transition-all hover:scale-105">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                  <span className="text-[9px] uppercase tracking-wider font-bold text-amber-400">REMINDER</span>
-                </div>
-                <span className="font-semibold text-[11px] text-[var(--text-primary)]">Quarterly tax due in 8 days</span>
-              </div>
-
-              {/* Main Cockpit Window Card */}
-              <div className="rounded-3xl p-6 bg-[var(--bg-card)] border border-[var(--border)] shadow-2xl space-y-4 text-left relative overflow-hidden transition-all hover:border-[var(--border-strong)]">
-                {/* Subtle Ambient Back-Glow */}
-                <div className="absolute top-0 right-0 w-48 h-48 bg-cyan-500/5 blur-3xl pointer-events-none" />
-
-                {/* Cockpit Window Header */}
-                <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+            {/* Right Column: Dashboard Card */}
+            <div className="lg:col-span-6">
+              <div className="rounded-lg p-5 bg-[var(--bg-card)] border border-[var(--border)] space-y-4 text-left">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
                   <div>
-                    <div className="text-[10px] font-mono tracking-widest text-[var(--text-muted)] uppercase">
-                      PAISAMIND COCKPIT
+                    <div className="text-[10px] font-mono tracking-wider text-[var(--text-muted)] uppercase">
+                      Overview
                     </div>
-                    <div className="text-lg font-bold font-display text-[var(--text-primary)] flex items-center gap-2">
-                      <span>{currentMonthName} finances</span>
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <div className="text-base font-semibold text-[var(--text-primary)]">
+                      {currentMonthName} ledger
                     </div>
                   </div>
-                  {/* Traffic Light Window Dots */}
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-                  </div>
+                  <span className="text-[11px] font-mono text-[var(--text-muted)]">
+                    Sample data
+                  </span>
                 </div>
 
-                {/* Top Metrics Row */}
+                {/* Metrics Row */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] space-y-1 transition-all hover:border-cyan-500/30">
-                    <div className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">PROFIT</div>
-                    <div className="text-xl font-bold font-mono text-[var(--text-primary)]">Rs. 5.14L</div>
-                    <div className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
-                      <TrendingUp size={11} />
-                      <span>+9% vs last month</span>
-                    </div>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-[var(--bg-elevated)] border border-indigo-500/20 space-y-1 transition-all hover:border-indigo-500/40">
-                    <div className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">HEALTH</div>
-                    <div className="text-xl font-bold font-mono text-indigo-400">82<span className="text-xs text-[var(--text-muted)]">/100</span></div>
-                    <div className="text-[10px] text-indigo-400 font-semibold">Good &bull; Low Risk</div>
-                  </div>
-                </div>
-
-                {/* Middle Row: Income Analytics & Expense Split */}
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Income Trend Bars */}
-                  <div className="p-3.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] space-y-2">
+                  <div className="p-3 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-[var(--text-secondary)]">Income analytics</span>
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-400">Healthy</span>
+                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">Net Income</span>
+                      <span className="text-[9px] font-mono text-[var(--text-muted)]">Sample data</span>
                     </div>
-                    <div className="text-[9px] text-[var(--text-muted)]">Six month trend</div>
-                    {/* Visual Rounded Animated Bars */}
-                    <div className="flex items-end justify-between h-14 pt-2 gap-1.5">
-                      <div className="w-full bg-cyan-500/40 rounded-t h-[45%] transition-all duration-300 hover:h-[55%] hover:bg-cyan-400 cursor-pointer" />
-                      <div className="w-full bg-cyan-500/60 rounded-t h-[60%] transition-all duration-300 hover:h-[70%] hover:bg-cyan-400 cursor-pointer" />
-                      <div className="w-full bg-cyan-500/50 rounded-t h-[52%] transition-all duration-300 hover:h-[62%] hover:bg-cyan-400 cursor-pointer" />
-                      <div className="w-full bg-cyan-500/75 rounded-t h-[78%] transition-all duration-300 hover:h-[88%] hover:bg-cyan-400 cursor-pointer" />
-                      <div className="w-full bg-cyan-500/85 rounded-t h-[86%] transition-all duration-300 hover:h-[95%] hover:bg-cyan-400 cursor-pointer" />
-                      <div className="w-full bg-cyan-400 rounded-t h-[100%] shadow-lg shadow-cyan-500/30 transition-all duration-300 hover:brightness-125 cursor-pointer" />
+                    <div className="text-lg font-semibold font-mono tabular-nums text-[var(--text-primary)]">
+                      ₹5,14,000
+                    </div>
+                    <div className="text-[10px] text-emerald-500 font-medium">
+                      +9% vs last month
                     </div>
                   </div>
 
-                  {/* Expense Split Ring */}
-                  <div className="p-3.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] flex flex-col items-center justify-center text-center space-y-1 relative">
-                    <span className="text-[11px] font-semibold text-[var(--text-secondary)] self-start">Expense split</span>
-                    <div className="relative w-20 h-20 rounded-full border-4 border-cyan-400 border-t-purple-500 border-r-pink-500 flex flex-col items-center justify-center my-1 transition-transform hover:scale-105 duration-300">
-                      <span className="text-[8px] uppercase tracking-wider text-[var(--text-muted)] font-bold">SPEND</span>
-                      <span className="text-xs font-bold text-[var(--text-primary)] font-mono">Rs. 1.9L</span>
+                  <div className="p-3 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">Cash Runway</span>
+                      <span className="text-[9px] font-mono text-[var(--text-muted)]">Sample data</span>
+                    </div>
+                    <div className="text-lg font-semibold font-mono tabular-nums text-[var(--text-primary)]">
+                      4.2 months
+                    </div>
+                    <div className="text-[10px] text-[var(--text-muted)]">
+                      Based on current burn
                     </div>
                   </div>
                 </div>
 
                 {/* GST Threshold Progress */}
-                <div className="p-3.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] space-y-1.5">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-[var(--text-secondary)] font-semibold">GST threshold</span>
-                    <span className="font-bold text-amber-400 font-mono">82%</span>
+                <div className="p-3 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] space-y-1.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-[var(--text-secondary)] font-medium">GST exemption threshold</span>
+                    <span className="text-[10px] font-mono text-[var(--text-muted)]">Sample data</span>
                   </div>
-                  <div className="w-full bg-[var(--border)] h-2 rounded-full overflow-hidden">
-                    <div className="animate-shimmer-bar h-full rounded-full" style={{ width: "82%" }} />
+                  <div className="w-full bg-[var(--border)] h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-emerald-600 h-full rounded-full" style={{ width: "82%" }} />
                   </div>
-                  <div className="text-[10px] text-[var(--text-muted)]">
-                    Rs. 16.4L used of Rs. 20L annual exemption threshold.
-                  </div>
-                </div>
-
-                {/* AI Insight Cards */}
-                <div className="p-3 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] space-y-2 text-xs">
-                  <div className="flex items-center gap-1.5 text-indigo-400 font-bold text-[11px]">
-                    <Sparkles size={12} />
-                    <span>AI insight cards</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-[var(--bg-card)] text-[var(--text-secondary)] text-[11px] leading-relaxed">
-                    Cash runway improved by 11 days after lower travel and tool spend.
-                  </div>
-                  <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 text-[11px] leading-relaxed">
-                    Invoice PM-342 is overdue and affects {currentMonthName} cash flow.
+                  <div className="flex justify-between text-[11px] font-mono tabular-nums text-[var(--text-muted)]">
+                    <span>₹16,40,000 logged</span>
+                    <span>₹20,00,000 threshold (82%)</span>
                   </div>
                 </div>
 
-                {/* Transaction Activity List */}
-                <div className="space-y-1.5 pt-1 text-xs">
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Transaction activity</div>
-                  <div className="flex justify-between items-center py-1 border-b border-[var(--border)] text-[11px]">
-                    <div>
-                      <div className="font-semibold text-[var(--text-primary)]">Design retainer</div>
-                      <div className="text-[9px] text-[var(--text-muted)]">Client paid</div>
-                    </div>
-                    <span className="text-emerald-400 font-mono font-bold">+ Rs. 75,000</span>
+                {/* Notes */}
+                <div className="p-3 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] space-y-2 text-xs">
+                  <div className="text-[11px] font-semibold text-[var(--text-primary)] uppercase tracking-wider">
+                    Notes
                   </div>
-                  <div className="flex justify-between items-center py-1 border-b border-[var(--border)] text-[11px]">
-                    <div>
-                      <div className="font-semibold text-[var(--text-primary)]">Software tools</div>
-                      <div className="text-[9px] text-[var(--text-muted)]">Recurring</div>
-                    </div>
-                    <span className="text-[var(--text-secondary)] font-mono">Rs. 6,200</span>
+                  <div className="p-2 rounded bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)] text-xs leading-relaxed">
+                    Estimated tax under Section 44ADA is ₹42,000 lower than standard rates for current gross receipts.
                   </div>
-                  <div className="flex justify-between items-center py-1 text-[11px]">
-                    <div>
-                      <div className="font-semibold text-rose-400">Invoice PM-342</div>
-                      <div className="text-[9px] text-rose-400/80">Overdue</div>
-                    </div>
-                    <span className="text-rose-400 font-mono font-bold">Rs. 25,000</span>
+                  <div className="p-2 rounded bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)] text-xs leading-relaxed">
+                    Form 26AS shows ₹18,500 unclaimed TDS credit under Section 194J from Q2 invoice settlement.
                   </div>
                 </div>
 
+                {/* Recent Activity */}
+                <div className="space-y-1 pt-1 text-xs">
+                  <div className="flex items-center justify-between pb-1 border-b border-[var(--border)]">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                      Recent transactions
+                    </span>
+                    <span className="text-[9px] font-mono text-[var(--text-muted)]">Sample data</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1.5 border-b border-[var(--border)] text-xs">
+                    <div>
+                      <div className="font-medium text-[var(--text-primary)]">Client settlement</div>
+                      <div className="text-[10px] text-[var(--text-muted)]">Bank transfer</div>
+                    </div>
+                    <span className="text-emerald-500 font-mono font-semibold tabular-nums">+₹75,000</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1.5 text-xs">
+                    <div>
+                      <div className="font-medium text-[var(--text-primary)]">Cloud hosting</div>
+                      <div className="text-[10px] text-[var(--text-muted)]">Recurring debit</div>
+                    </div>
+                    <span className="text-[var(--text-secondary)] font-mono tabular-nums">-₹6,200</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -379,276 +241,161 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Problem Section ── */}
-      <section id="problems" className="py-20 bg-[var(--bg-primary)] border-b border-[var(--border)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">The Problem</span>
-            <h2 className="text-3xl sm:text-4xl font-black font-display tracking-tight text-[var(--text-primary)]">
-              Why Freelance Finances Feel So Stressful
+      {/* ── Problem Section (Numbered Ledger) ── */}
+      <section id="problems" className="py-16 lg:py-24 border-b border-[var(--border)]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-left mb-12">
+            <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">
+              The problem
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-semibold text-[var(--text-primary)] max-w-[60ch] leading-tight">
+              Where freelance money breaks
             </h2>
-            <p className="text-sm text-[var(--text-muted)]">
-              Traditional spreadsheets and heavy CA accounting tools weren't made for independent Indian operators.
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--border)] space-y-3">
-              <TrendingUp className="text-cyan-400" size={24} />
-              <h3 className="font-bold text-sm text-[var(--text-primary)]">Income arrives everywhere</h3>
-              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                UPI, clients, international transfers, and retainers land unpredictably without a neat monthly rhythm.
-              </p>
+          <div className="divide-y divide-[var(--border)] border-y border-[var(--border)]">
+            {/* Row 01 */}
+            <div className="py-6 grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+              <div className="md:col-span-1 font-mono text-xs text-[var(--text-muted)] pt-0.5">
+                01
+              </div>
+              <div className="md:col-span-4 text-base font-semibold text-[var(--text-primary)]">
+                Income lands in five places
+              </div>
+              <div className="md:col-span-7 text-sm text-[var(--text-secondary)] max-w-[68ch] leading-relaxed">
+                A salary arrives as one payslip. Freelance income arrives as UPI credits, NEFT
+                transfers, gateway settlements and the occasional cheque. Nothing reconciles itself.
+              </div>
             </div>
-            <div className="p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--border)] space-y-3">
-              <Calculator className="text-amber-400" size={24} />
-              <h3 className="font-bold text-sm text-[var(--text-primary)]">Taxes stay unclear</h3>
-              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                Section 44ADA vs New Regime, Advance Tax schedules, and GST ₹20L thresholds create last-minute panic.
-              </p>
+
+            {/* Row 02 */}
+            <div className="py-6 grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+              <div className="md:col-span-1 font-mono text-xs text-[var(--text-muted)] pt-0.5">
+                02
+              </div>
+              <div className="md:col-span-4 text-base font-semibold text-[var(--text-primary)]">
+                TDS leaves before you see it
+              </div>
+              <div className="md:col-span-7 text-sm text-[var(--text-secondary)] max-w-[68ch] leading-relaxed">
+                A client pays ₹1,00,000 and ₹10,000 is deducted under 194J. That credit sits with the
+                government until you claim it, and most freelancers never claim all of it.
+              </div>
             </div>
-            <div className="p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--border)] space-y-3">
-              <TrendingDown className="text-rose-400" size={24} />
-              <h3 className="font-bold text-sm text-[var(--text-primary)]">Subscriptions quietly leak</h3>
-              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                Cloud servers, design tools, and SaaS apps keep auto-debiting long after client projects wrap up.
-              </p>
+
+            {/* Row 03 */}
+            <div className="py-6 grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+              <div className="md:col-span-1 font-mono text-xs text-[var(--text-muted)] pt-0.5">
+                03
+              </div>
+              <div className="md:col-span-4 text-base font-semibold text-[var(--text-primary)]">
+                44ADA is a decision, not a default
+              </div>
+              <div className="md:col-span-7 text-sm text-[var(--text-secondary)] max-w-[68ch] leading-relaxed">
+                Declaring 50% of receipts as profit is permitted up to ₹75 lakh. Whether it beats the
+                new regime depends on your numbers, and almost nobody runs both.
+              </div>
             </div>
-            <div className="p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--border)] space-y-3">
-              <FileText className="text-indigo-400" size={24} />
-              <h3 className="font-bold text-sm text-[var(--text-primary)]">Invoices need chasing</h3>
-              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                Overdue payments distort cash runway and force uncomfortable follow-up conversations.
-              </p>
+
+            {/* Row 04 */}
+            <div className="py-6 grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+              <div className="md:col-span-1 font-mono text-xs text-[var(--text-muted)] pt-0.5">
+                04
+              </div>
+              <div className="md:col-span-4 text-base font-semibold text-[var(--text-primary)]">
+                The GST line arrives unannounced
+              </div>
+              <div className="md:col-span-7 text-sm text-[var(--text-secondary)] max-w-[68ch] leading-relaxed">
+                Registration becomes mandatory past ₹20 lakh turnover. Crossing it unnoticed means
+                retrospective demands and penalties.
+              </div>
             </div>
+          </div>
+
+          <div className="mt-6 text-xs text-[var(--text-muted)] text-left">
+            PaisaMind handles 01 through 04. Everything else it does is in service of those four.
           </div>
         </div>
       </section>
 
-      {/* ── Enhanced 4-Tier System Architecture Blueprint ── */}
-      <section id="features" className="py-24 border-b border-[var(--border)] bg-[var(--bg-primary)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">System Architecture</span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black font-display tracking-tight text-[var(--text-primary)]">
-              Four-Tier Financial Intelligence Architecture
+      {/* ── Capabilities Section ── */}
+      <section id="features" className="py-16 lg:py-24 border-b border-[var(--border)]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 text-left">
+          <div className="space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+              Capabilities
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-semibold text-[var(--text-primary)]">
+              Built around freelance compliance
             </h2>
-            <p className="text-sm text-[var(--text-muted)] leading-relaxed">
-              PaisaMind separates data ingestion, mathematical computation, AI tool orchestration, and financial execution into four deterministic layers. No hallucinated figures, no guesswork.
-            </p>
           </div>
 
-          {/* Architecture Flow Stack */}
-          <div className="space-y-8">
-
-            {/* Layer 1: Ingestion & Ledger */}
-            <div className="p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border)] space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-mono font-bold text-sm">
-                    01
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-[var(--text-primary)]">Layer 1: Multi-Source Data Ingestion & Ledger Pipeline</h3>
-                    <p className="text-xs text-[var(--text-muted)]">Captures every rupee across bank statements, passbook scans, and client invoices</p>
-                  </div>
-                </div>
-                <span className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[11px] font-mono font-semibold w-fit">
-                  ETL & OCR Engine
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] space-y-2">
-                  <div className="flex items-center gap-2 text-cyan-400 text-xs font-bold">
-                    <FileSpreadsheet size={16} />
-                    <span>Bank Statement Parser</span>
-                  </div>
-                  <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                    Auto-ingests CSV, Excel, and text-based PDFs from HDFC, ICICI, SBI, and Axis with heuristic column detection.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] space-y-2">
-                  <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold">
-                    <Brain size={16} />
-                    <span>Vision OCR Pipeline</span>
-                  </div>
-                  <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                    Processes photographed physical passbooks and scanned receipts via Groq Vision when zero selectable text is found.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
-                    <QrCode size={16} />
-                    <span>Zero-Fee UPI Invoicing</span>
-                  </div>
-                  <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                    Generates native UPI intent QR codes on invoices for instant zero-deduction transfers directly into your bank account.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] space-y-2">
-                  <div className="flex items-center gap-2 text-amber-400 text-xs font-bold">
-                    <Receipt size={16} />
-                    <span>Form 26AS TDS Ledger</span>
-                  </div>
-                  <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                    Reconciles Section 194J and 194C client tax deductions to ensure no withholding credit goes unclaimed.
-                  </p>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] space-y-3">
+              <div className="text-xs font-mono text-[var(--text-muted)]">01 / INGESTION</div>
+              <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                Paste box & browser PDF parsing
+              </h3>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                Paste bank transaction SMS messages directly into the parser. Bank statement PDFs are parsed entirely inside your browser using pdf.js; raw statement files are not uploaded to servers.
+              </p>
             </div>
 
-            {/* Layer 2: Deterministic Calculation Engines */}
-            <div className="p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border)] space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-mono font-bold text-sm">
-                    02
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-[var(--text-primary)]">Layer 2: Deterministic Financial Intelligence Engines</h3>
-                    <p className="text-xs text-[var(--text-muted)]">Pure server-side algorithms governed by Indian tax law and financial mathematics</p>
-                  </div>
-                </div>
-                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-mono font-semibold w-fit">
-                  Zero Hallucination
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
-                    <Calculator size={16} />
-                    <span>Section 44ADA Optimizer</span>
-                  </div>
-                  <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                    Evaluates the 50% presumptive profit rule against the New Tax Regime, computing exact advance tax schedules.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] space-y-2">
-                  <div className="flex items-center gap-2 text-cyan-400 text-xs font-bold">
-                    <BarChart3 size={16} />
-                    <span>95% Runway Forecaster</span>
-                  </div>
-                  <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                    Calculates historical burn rate, baseline recurring costs, and project payment timing to project business runway.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] space-y-2">
-                  <div className="flex items-center gap-2 text-purple-400 text-xs font-bold">
-                    <Target size={16} />
-                    <span>Scope Creep Sentinel</span>
-                  </div>
-                  <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                    Monitors project unit economics, alerting whenever client revisions cause effective hourly earnings to crater.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] space-y-2">
-                  <div className="flex items-center gap-2 text-rose-400 text-xs font-bold">
-                    <ShieldCheck size={16} />
-                    <span>Z-Score Anomaly Filter</span>
-                  </div>
-                  <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                    Flags double-charged vendor transactions, unexpected price hikes on tools, and statistically unusual spending spikes.
-                  </p>
-                </div>
-              </div>
+            <div className="p-6 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] space-y-3">
+              <div className="text-xs font-mono text-[var(--text-muted)]">02 / TAX RECONCILIATION</div>
+              <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                Form 26AS / AIS 3-bucket match
+              </h3>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                Upload your annual 26AS or AIS PDF to extract Section 194J, 194C, and 194H entries. Reconciles into matched credits, unclaimed TDS you forgot, and invoices missing credit.
+              </p>
             </div>
 
-            {/* Layer 3 & Layer 4 Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-              {/* Layer 3: AI Copilot Orchestration */}
-              <div className="p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border)] space-y-6">
-                <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-mono font-bold text-sm">
-                      03
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-[var(--text-primary)]">Layer 3: AI Copilot Orchestration</h3>
-                      <p className="text-[11px] text-[var(--text-muted)]">Groq LLaMA-3.3 with 21 Verified Tool Engines</p>
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-[10px] font-mono font-bold">
-                    Tool Calling
-                  </span>
-                </div>
-
-                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                  Instead of generating free-form numbers, the LLM acts as an orchestrator. When you ask "Can I afford a laptop?", it executes verified backend calculation tools to check your bank balances, projected runway, and tax liabilities before formulating advice.
-                </p>
-
-                <div className="p-3.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] font-mono text-[11px] text-indigo-400 space-y-1">
-                  <div>&gt; verifyAffordability(item: "MacBook", cost: 75000)</div>
-                  <div className="text-emerald-400">&gt; calculateRunway(postPurchaseBuffer: 3.4 months)</div>
-                  <div className="text-cyan-400">&gt; verdict: "Affordable with 3+ months runway preserved"</div>
-                </div>
-              </div>
-
-              {/* Layer 4: Action & Execution */}
-              <div className="p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border)] space-y-6">
-                <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-mono font-bold text-sm">
-                      04
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-[var(--text-primary)]">Layer 4: Execution & Recovery Automation</h3>
-                      <p className="text-[11px] text-[var(--text-muted)]">Turns financial data into immediate actions</p>
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-mono font-bold">
-                    Automations
-                  </span>
-                </div>
-
-                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                  PaisaMind converts financial insights directly into tangible steps: 3-stage WhatsApp reminder drafts for overdue invoices, print-ready CA audit statements, and automated background health monitoring keep-alives.
-                </p>
-
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  <div className="p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] text-xs space-y-1">
-                    <div className="font-bold text-[var(--text-primary)]">WhatsApp Recovery</div>
-                    <p className="text-[10px] text-[var(--text-muted)]">Gentle, Firm, and Final legal follow-up drafts with 1-click delivery.</p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)] text-xs space-y-1">
-                    <div className="font-bold text-[var(--text-primary)]">Clean PDF Exports</div>
-                    <p className="text-[10px] text-[var(--text-muted)]">Monochrome, print-friendly monthly statements ready for your CA.</p>
-                  </div>
-                </div>
-              </div>
-
+            <div className="p-6 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] space-y-3">
+              <div className="text-xs font-mono text-[var(--text-muted)]">03 / INVOICING</div>
+              <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                Direct UPI intent & QR codes
+              </h3>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                Generate client-side UPI QR codes and upi:// payment links directly tied to your VPA. Zero gateway transaction fees and instant settlement to your primary account.
+              </p>
             </div>
 
+            <div className="p-6 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] space-y-3">
+              <div className="text-xs font-mono text-[var(--text-muted)]">04 / TAX PLANNING</div>
+              <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                Section 44ADA vs New Regime
+              </h3>
+              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                Calculate tax under the 50% presumptive taxation rules of Section 44ADA alongside the New Tax Regime, showing every line item and deduction threshold explicitly.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── Interactive 44ADA Calculator Section ── */}
-      <section id="tax-engine" className="py-20 bg-[var(--bg-primary)] border-b border-[var(--border)]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <div className="text-center space-y-3 max-w-xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-400">Indian Taxation</span>
-            <h2 className="text-3xl font-black font-display text-[var(--text-primary)]">
-              Interactive Section 44ADA Savings Preview
+      <section id="tax-engine" className="py-16 lg:py-24 border-b border-[var(--border)]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 text-left">
+          <div className="space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+              Tax Comparison
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-semibold text-[var(--text-primary)]">
+              Section 44ADA presumptive tax calculator
             </h2>
-            <p className="text-xs text-[var(--text-muted)]">
-              Indian freelancers under ₹75L gross receipts can legally declare 50% profits without maintaining extensive books.
+            <p className="text-sm text-[var(--text-secondary)]">
+              Specified professionals with gross freelance receipts up to ₹75 Lakh can declare 50% as taxable profit.
             </p>
           </div>
 
-          <div className="p-6 sm:p-8 rounded-3xl bg-[var(--bg-card)] border border-[var(--border)] space-y-6">
+          <div className="p-6 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] space-y-6">
             <div className="space-y-2">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-[var(--text-secondary)]">Annual Gross Freelance Receipts:</span>
-                <span className="text-cyan-400 font-bold font-mono text-sm">{formatINR(calcIncome)}</span>
+              <div className="flex justify-between items-center text-xs font-semibold">
+                <span className="text-[var(--text-secondary)]">Annual Gross Freelance Receipts</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono text-[var(--text-muted)]">Sample data</span>
+                  <span className="font-mono text-sm tabular-nums text-[var(--text-primary)]">{formatINR(calcIncome)}</span>
+                </div>
               </div>
               <input
                 type="range"
@@ -657,22 +404,38 @@ export default function Landing() {
                 step={100000}
                 value={calcIncome}
                 onChange={(e) => setCalcIncome(Number(e.target.value))}
-                className="w-full accent-cyan-400 cursor-pointer"
+                className="w-full accent-emerald-600 cursor-pointer"
+                aria-label="Annual Gross Freelance Receipts Slider"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-              <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] space-y-1">
-                <div className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">Deemed Profit (50%)</div>
-                <div className="text-base font-bold font-mono text-[var(--text-primary)]">{formatINR(deemedProfit)}</div>
+              <div className="p-4 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] space-y-1">
+                <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] uppercase font-semibold">
+                  <span>Deemed Profit (50%)</span>
+                  <span className="font-mono text-[9px]">Sample data</span>
+                </div>
+                <div className="text-base font-semibold font-mono tabular-nums text-[var(--text-primary)]">
+                  {formatINR(deemedProfit)}
+                </div>
               </div>
-              <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] space-y-1">
-                <div className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">Tax under Sec 44ADA</div>
-                <div className="text-base font-bold font-mono text-cyan-400">{formatINR(adaTax)}</div>
+              <div className="p-4 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] space-y-1">
+                <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] uppercase font-semibold">
+                  <span>Tax under Sec 44ADA</span>
+                  <span className="font-mono text-[9px]">Sample data</span>
+                </div>
+                <div className="text-base font-semibold font-mono tabular-nums text-[var(--text-primary)]">
+                  {formatINR(adaTax)}
+                </div>
               </div>
-              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-1">
-                <div className="text-[10px] text-emerald-400 uppercase font-bold">Estimated Legal Savings</div>
-                <div className="text-xl font-black font-mono text-emerald-400">{formatINR(estimatedSavings)}</div>
+              <div className="p-4 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] space-y-1">
+                <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] uppercase font-semibold">
+                  <span>Estimated Difference</span>
+                  <span className="font-mono text-[9px]">Sample data</span>
+                </div>
+                <div className="text-base font-semibold font-mono tabular-nums text-emerald-500">
+                  {formatINR(estimatedSavings)}
+                </div>
               </div>
             </div>
           </div>
@@ -680,47 +443,51 @@ export default function Landing() {
       </section>
 
       {/* ── Comparison Table ── */}
-      <section id="comparison" className="py-20 border-b border-[var(--border)] bg-[var(--bg-primary)]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="text-center space-y-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">The Edge</span>
-            <h2 className="text-3xl font-black font-display text-[var(--text-primary)]">Why PaisaMind Outperforms Alternatives</h2>
+      <section id="comparison" className="py-16 lg:py-24 border-b border-[var(--border)]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 text-left">
+          <div className="space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+              Comparison
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-semibold text-[var(--text-primary)]">
+              Comparison with general tools
+            </h2>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs bg-[var(--bg-card)] rounded-3xl border border-[var(--border)] overflow-hidden">
+            <table className="w-full text-left text-xs bg-[var(--bg-card)] rounded-lg border border-[var(--border)] overflow-hidden">
               <thead>
-                <tr className="border-b border-[var(--border)] text-[var(--text-primary)]">
-                  <th className="p-4 sm:p-5">Capability</th>
-                  <th className="p-4 sm:p-5 text-cyan-400 font-extrabold text-sm">PaisaMind</th>
-                  <th className="p-4 sm:p-5 text-[var(--text-muted)]">Excel / Google Sheets</th>
-                  <th className="p-4 sm:p-5 text-[var(--text-muted)]">Traditional Software</th>
+                <tr className="border-b border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg-elevated)]">
+                  <th className="p-4 font-semibold">Task</th>
+                  <th className="p-4 font-semibold text-emerald-500">PaisaMind</th>
+                  <th className="p-4 font-semibold text-[var(--text-muted)]">Spreadsheets</th>
+                  <th className="p-4 font-semibold text-[var(--text-muted)]">Traditional Accounting</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border)] text-[var(--text-secondary)]">
                 <tr>
-                  <td className="p-4 sm:p-5 font-semibold">Indian Section 44ADA Presumptive Tax</td>
-                  <td className="p-4 sm:p-5 text-emerald-400 font-bold">Automated & Optimized</td>
-                  <td className="p-4 sm:p-5 text-[var(--text-muted)]">Manual formulas</td>
-                  <td className="p-4 sm:p-5 text-amber-400">Requires manual CA setup</td>
+                  <td className="p-4 font-medium text-[var(--text-primary)]">Section 44ADA presumptive calculation</td>
+                  <td className="p-4 text-emerald-500 font-medium">Automatic comparison against new regime</td>
+                  <td className="p-4 text-[var(--text-muted)]">Manual formula creation</td>
+                  <td className="p-4 text-[var(--text-muted)]">Requires manual accountant entry</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:p-5 font-semibold">Grounded AI Copilot with Tool Calling</td>
-                  <td className="p-4 sm:p-5 text-emerald-400 font-bold">21 Deterministic Engines</td>
-                  <td className="p-4 sm:p-5 text-[var(--text-muted)]">None</td>
-                  <td className="p-4 sm:p-5 text-[var(--text-muted)]">None / Hallucinating chat</td>
+                  <td className="p-4 font-medium text-[var(--text-primary)]">Form 26AS / AIS TDS reconciliation</td>
+                  <td className="p-4 text-emerald-500 font-medium">3-bucket automated match</td>
+                  <td className="p-4 text-[var(--text-muted)]">Manual VLOOKUP</td>
+                  <td className="p-4 text-[var(--text-muted)]">Separate tax software needed</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:p-5 font-semibold">Zero-Fee UPI QR Code Invoices</td>
-                  <td className="p-4 sm:p-5 text-emerald-400 font-bold">Instant GPay / PhonePe (0%)</td>
-                  <td className="p-4 sm:p-5 text-[var(--text-muted)]">None</td>
-                  <td className="p-4 sm:p-5 text-amber-400">Gateway fee cuts (2-3%)</td>
+                  <td className="p-4 font-medium text-[var(--text-primary)]">Direct UPI payment invoices</td>
+                  <td className="p-4 text-emerald-500 font-medium">Client-side upi:// QR (0% fee)</td>
+                  <td className="p-4 text-[var(--text-muted)]">Manual UPI ID copy</td>
+                  <td className="p-4 text-[var(--text-muted)]">Payment gateway fee (2-3%)</td>
                 </tr>
                 <tr>
-                  <td className="p-4 sm:p-5 font-semibold">Real Effective Hourly Rate & Scope Creep</td>
-                  <td className="p-4 sm:p-5 text-emerald-400 font-bold">Automated Sentinel</td>
-                  <td className="p-4 sm:p-5 text-[var(--text-muted)]">Manual tracking</td>
-                  <td className="p-4 sm:p-5 text-[var(--text-muted)]">Not supported</td>
+                  <td className="p-4 font-medium text-[var(--text-primary)]">Bank transaction ingestion</td>
+                  <td className="p-4 text-emerald-500 font-medium">In-browser parsing & SMS paste box</td>
+                  <td className="p-4 text-[var(--text-muted)]">Manual CSV typing</td>
+                  <td className="p-4 text-[var(--text-muted)]">Bank portal scraping or feeds</td>
                 </tr>
               </tbody>
             </table>
@@ -729,30 +496,42 @@ export default function Landing() {
       </section>
 
       {/* ── FAQ Section ── */}
-      <section id="faq" className="py-20 bg-[var(--bg-primary)] border-b border-[var(--border)]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="text-center space-y-3">
-            <h2 className="text-3xl font-black font-display text-[var(--text-primary)]">Frequently Asked Questions</h2>
-            <p className="text-xs text-[var(--text-muted)]">Clear answers on taxation, tool calling, and security.</p>
+      <section id="faq" className="py-16 lg:py-24 border-b border-[var(--border)]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 text-left">
+          <div className="space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+              FAQ
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-semibold text-[var(--text-primary)]">
+              Frequently asked questions
+            </h2>
           </div>
 
           <div className="space-y-4 text-xs">
-            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] space-y-1.5">
-              <h4 className="font-bold text-sm text-[var(--text-primary)]">Can any freelancer use Section 44ADA?</h4>
-              <p className="text-[var(--text-muted)] leading-relaxed">
-                Eligible professions include software development, UI/UX design, IT consulting, writing, legal, medical, accounting, and technical consulting with gross receipts under ₹75 Lakhs per financial year.
+            <div className="p-5 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] space-y-1.5">
+              <h3 className="font-semibold text-sm text-[var(--text-primary)]">
+                Who qualifies for Section 44ADA presumptive taxation?
+              </h3>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
+                Specified professionals under Section 44AA(1) — including software engineers, technical consultants, UI/UX designers, legal, medical, and accounting professionals — whose gross receipts do not exceed ₹75 Lakh in a financial year (where cash receipts do not exceed 5%).
               </p>
             </div>
-            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] space-y-1.5">
-              <h4 className="font-bold text-sm text-[var(--text-primary)]">Does the AI Copilot ever make up financial numbers?</h4>
-              <p className="text-[var(--text-muted)] leading-relaxed">
-                Never. The LLM acts solely as an orchestrator that calls backend verification tools. All balances, runway predictions, tax brackets, and debt ratios are calculated by deterministic JavaScript engines.
+
+            <div className="p-5 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] space-y-1.5">
+              <h3 className="font-semibold text-sm text-[var(--text-primary)]">
+                Are bank statements uploaded to a server?
+              </h3>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
+                No. Standard bank statements and PDFs are parsed locally in your browser using client-side JavaScript. Only the extracted transaction rows sync to your account, and only after your explicit confirmation.
               </p>
             </div>
-            <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] space-y-1.5">
-              <h4 className="font-bold text-sm text-[var(--text-primary)]">Are UPI QR Code payments really zero-fee?</h4>
-              <p className="text-[var(--text-muted)] leading-relaxed">
-                Yes. PaisaMind creates standard `upi://pay` intent QR codes. Clients scan and transfer funds directly into your verified bank account without payment gateway deductions.
+
+            <div className="p-5 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] space-y-1.5">
+              <h3 className="font-semibold text-sm text-[var(--text-primary)]">
+                Does PaisaMind require my bank login or net banking password?
+              </h3>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
+                Never. PaisaMind never asks for net banking credentials and does not scrape banking portals. Data is ingested solely via the paste box, browser PDF parser, or manual entry.
               </p>
             </div>
           </div>
@@ -760,90 +539,64 @@ export default function Landing() {
       </section>
 
       {/* ── Call To Action ── */}
-      <section className="py-20 text-center space-y-6 bg-[var(--bg-primary)]">
-        <h2 className="text-3xl sm:text-4xl font-black font-display text-[var(--text-primary)]">
-          Ready for Calm Financial Clarity?
-        </h2>
-        <p className="text-sm text-[var(--text-muted)] max-w-md mx-auto">
-          Start tracking income, optimizing taxes, and forecasting cash runway in minutes.
-        </p>
-        <Link
-          to="/register"
-          className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-sm shadow-xl shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
-        >
-          <span>Launch Your Workspace</span>
-          <ArrowRight size={16} />
-        </Link>
+      <section className="py-16 lg:py-24 border-b border-[var(--border)] text-left">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-[var(--text-primary)]">
+            Ready to track income and reconcile tax?
+          </h2>
+          <p className="text-sm text-[var(--text-secondary)] max-w-lg">
+            Track income, match Form 26AS credits, and calculate presumptive tax.
+          </p>
+          <div className="pt-2">
+            <Link
+              to="/register"
+              className="px-5 py-2.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs inline-flex items-center gap-2 transition-colors"
+            >
+              <span>Start Free</span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
       </section>
 
-      {/* ── Comprehensive Enterprise Footer ── */}
-      <footer className="pt-16 pb-12 border-t border-[var(--border)] bg-[var(--bg-card)] text-xs text-[var(--text-muted)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-            
-            {/* Column 1: Brand & Identity */}
-            <div className="lg:col-span-2 space-y-4">
-              <Link to="/" className="inline-block">
-                <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain" />
+      {/* ── Footer ── */}
+      <footer className="py-12 bg-[var(--bg-card)] text-xs text-[var(--text-muted)] text-left">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="space-y-3">
+              <Link to="/">
+                <img src="/logo.png" alt="PaisaMind" className="h-7 w-auto object-contain" />
               </Link>
-              <p className="text-xs text-[var(--text-muted)] leading-relaxed max-w-sm">
-                The financial intelligence operating system engineered for Indian freelancers, consultants, and independent agencies. Combining deterministic tax computation with grounded AI decision support.
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                Financial tracking and tax planning for Indian freelancers.
               </p>
-              <div className="flex flex-wrap gap-2 pt-1 text-[10px] font-mono">
-                <span className="px-2.5 py-1 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] text-cyan-400">
-                  Section 44ADA Ready
-                </span>
-                <span className="px-2.5 py-1 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] text-emerald-400">
-                  0% Gateway Fees
-                </span>
-                <span className="px-2.5 py-1 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] text-indigo-400">
-                  Grounded AI Tools
-                </span>
-              </div>
             </div>
 
-            {/* Column 2: Platform Modules */}
-            <div className="space-y-3">
-              <div className="font-bold text-[var(--text-primary)] text-xs uppercase tracking-wider">Platform Modules</div>
-              <ul className="space-y-2 text-xs">
-                <li><a href="#features" className="hover:text-cyan-400 transition-colors">Four-Tier Architecture</a></li>
-                <li><a href="#tax-engine" className="hover:text-cyan-400 transition-colors">Section 44ADA Optimizer</a></li>
-                <li><a href="#comparison" className="hover:text-cyan-400 transition-colors">PaisaMind vs Traditional</a></li>
-                <li><a href="#problems" className="hover:text-cyan-400 transition-colors">Freelance Financial Pains</a></li>
-                <li><a href="#faq" className="hover:text-cyan-400 transition-colors">Tax & Tool FAQ</a></li>
+            <div className="space-y-2">
+              <div className="font-semibold text-[var(--text-primary)] text-xs uppercase tracking-wider">Compliance</div>
+              <ul className="space-y-1 text-xs text-[var(--text-secondary)]">
+                <li>Section 44ADA Presumptive Tax</li>
+                <li>Section 194J / 194C TDS Reconciliation</li>
+                <li>GST ₹20 Lakh Threshold Tracker</li>
+                <li>Direct UPI Invoicing</li>
               </ul>
             </div>
 
-            {/* Column 3: Indian Tax Framework */}
-            <div className="space-y-3">
-              <div className="font-bold text-[var(--text-primary)] text-xs uppercase tracking-wider">Tax & Compliance</div>
-              <ul className="space-y-2 text-xs">
-                <li><span className="text-[var(--text-secondary)]">Section 44ADA:</span> 50% Deemed Profit</li>
-                <li><span className="text-[var(--text-secondary)]">Section 194J:</span> Professional TDS (10%/2%)</li>
-                <li><span className="text-[var(--text-secondary)]">Section 194C:</span> Contractor TDS (1%)</li>
-                <li><span className="text-[var(--text-secondary)]">GST Exemption:</span> Rs. 20 Lakh Threshold</li>
-                <li><span className="text-[var(--text-secondary)]">Advance Tax:</span> 15th Jun / Sep / Dec / Mar</li>
-              </ul>
-            </div>
-
-            {/* Column 4: Regulatory Disclaimer */}
-            <div className="space-y-3">
-              <div className="font-bold text-[var(--text-primary)] text-xs uppercase tracking-wider">Statutory Notice</div>
+            <div className="space-y-2">
+              <div className="font-semibold text-[var(--text-primary)] text-xs uppercase tracking-wider">Statutory Notice</div>
               <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                PaisaMind is an analytical productivity software platform built according to the provisions of the Indian Income-tax Act, 1961. Content and mathematical tools are provided for financial planning and decision support. For statutory tax return submissions, consult your certified Chartered Accountant.
+                PaisaMind is an analytical tool for freelance financial record-keeping and tax estimation under the Indian Income-tax Act. It does not provide legal or certified audit advice.
               </p>
             </div>
-
           </div>
 
-          {/* Bottom Bar */}
-          <div className="pt-8 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[var(--text-muted)]">
+          <div className="pt-6 border-t border-[var(--border)] flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px]">
             <div>
-              &copy; {new Date().getFullYear()} PaisaMind Platform. Built for Indian Freelancers & Small Businesses.
+              &copy; {new Date().getFullYear()} PaisaMind.
             </div>
-            <div className="flex items-center gap-6">
-              <Link to="/login" className="hover:text-[var(--text-secondary)] transition-colors">Sign In</Link>
-              <Link to="/register" className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors">Start Free Workspace</Link>
+            <div className="flex gap-4">
+              <Link to="/login" className="hover:text-[var(--text-primary)] transition-colors">Sign In</Link>
+              <Link to="/register" className="hover:text-[var(--text-primary)] transition-colors">Register</Link>
             </div>
           </div>
         </div>

@@ -36,6 +36,7 @@ import {
 import ConfirmDeleteModal from "../components/ui/ConfirmDeleteModal";
 import InvoiceStatusBadge from "../components/ui/InvoiceStatusBadge";
 import KPICard from "../components/ui/KPICard";
+import UpiPaymentSheet from "../components/invoices/UpiPaymentSheet";
 import { showToast } from "../components/ui/Toast";
 import { formatINR } from "../utils/formatCurrency";
 import * as invoiceService from "../services/invoiceService";
@@ -536,55 +537,35 @@ export default function Invoices() {
         </div>
       )}
 
-      {/* ── Feature 1: Dynamic UPI QR Code Modal ── */}
+      {/* ── Client-side UPI Intent & QR "How to Pay" Sheet (Phase 1 & 4) ── */}
       {upiTarget && (
-        <div className="pm-modal-overlay flex items-center justify-center p-4">
-          <div className="pm-modal-card max-w-sm text-center space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-                <QrCode className="text-indigo-500" size={18} /> Zero-Fee UPI Payment
-              </h3>
-              <button className="text-[var(--text-secondary)]" onClick={() => setUpiTarget(null)}>✕</button>
-            </div>
-
-            <div className="p-4 bg-white rounded-2xl mx-auto w-48 h-48 flex flex-col items-center justify-center shadow-inner border border-slate-200">
-              {/* Dynamic QR API generator */}
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
-                  `upi://pay?pa=${upiTarget.upiId || "freelancer@okhdfcbank"}&pn=PaisaMind&am=${upiTarget.totalAmount || upiTarget.amount}&cu=INR&tn=Invoice_${upiTarget.invoiceNumber}`
-                )}`}
-                alt="UPI QR Code"
-                className="w-40 h-40"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <div className="text-lg font-black text-[var(--text-primary)]">
-                {formatINR(upiTarget.totalAmount || upiTarget.amount)}
-              </div>
-              <div className="text-xs font-mono text-[var(--text-secondary)]">
-                UPI ID: {upiTarget.upiId || "akshat@okhdfcbank"}
-              </div>
-              <p className="text-[11px] text-emerald-600 font-medium">
-                Scan with Google Pay, PhonePe, Paytm, or BHIM. Zero gateway fees.
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                className="pm-button pm-button-primary flex-1 text-xs"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(
-                    `upi://pay?pa=${upiTarget.upiId || "akshat@okhdfcbank"}&pn=PaisaMind&am=${upiTarget.totalAmount || upiTarget.amount}&cu=INR&tn=Invoice_${upiTarget.invoiceNumber}`
-                  );
-                  showToast({ type: "success", title: "UPI Intent Link Copied" });
-                }}
-              >
-                <Copy size={13} /> Copy UPI Link
-              </button>
-            </div>
-          </div>
-        </div>
+        <UpiPaymentSheet
+          isOpen={Boolean(upiTarget)}
+          onClose={async () => {
+            const targetId = upiTarget._id;
+            setUpiTarget(null);
+            // Verify payment state upon returning from UPI app
+            if (targetId) {
+              try {
+                await invoiceService.verifyPayment(targetId);
+                queryClient.invalidateQueries({ queryKey: ["invoices-page"] });
+              } catch (e) {
+                // Ignore verification errors if offline or not integrated
+              }
+            }
+          }}
+          invoice={upiTarget}
+          vpa={upiTarget.upiId || "user@upi"}
+          payeeName="PaisaMind"
+          onPaymentInitiated={async (invId) => {
+            try {
+              await invoiceService.updateStatus({ id: invId, status: "payment_initiated" });
+              queryClient.invalidateQueries({ queryKey: ["invoices-page"] });
+            } catch (e) {
+              // Ignore failure
+            }
+          }}
+        />
       )}
 
       {/* ── Feature 1: Contextual 3-Stage Payment Recovery Modal ── */}

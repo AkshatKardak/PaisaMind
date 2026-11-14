@@ -1,0 +1,29 @@
+name: Sweep Pending Invoices
+
+on:
+  schedule:
+    # Runs every 3 hours
+    - cron: '0 */3 * * *'
+  workflow_dispatch:
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Invoice Sweep
+        run: |
+          echo "Triggering payment sweep on backend..."
+          response=$(curl -s -w "\n%{http_code}" -X POST "https://paisamind-backend-92ig.onrender.com/api/internal/sweep-pending" \
+            -H "Content-Type: application/json" \
+            -H "x-sweep-token: ${{ secrets.SWEEP_TOKEN }}")
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "Response: $body"
+          echo "HTTP Code: $http_code"
+
+          if [ "$http_code" -ne 200 ]; then
+            echo "Sweep failed with status $http_code"
+            exit 1
+          fi

@@ -33,8 +33,8 @@ const firebaseSync = asyncHandler(async (req, res) => {
       await resend.emails.send({
         from:    process.env.EMAIL_FROM,
         to:      user.email,
-        subject: "Welcome to PaisaMind 🎉",
-        html:    `<p>Hi ${user.name}, welcome to PaisaMind — your AI-powered finance OS!</p>`,
+        subject: "Welcome to PaisaMind",
+        html:    `<p>Hi ${user.name}, welcome to PaisaMind — financial tracking and tax planning for freelancers.</p>`,
       });
     } catch (_) {}
   }

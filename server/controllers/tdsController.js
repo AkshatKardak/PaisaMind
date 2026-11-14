@@ -3,6 +3,15 @@ const TDSRecord = require("../models/TDSRecord");
 const TDSReconciliation = require("../models/TDSReconciliation");
 const { run3WayTDSReconciliation } = require("../services/tdsReconciliationService");
 const { logAuditEvent } = require("../services/auditService");
+const {
+  validatePdfMagicBytes,
+  isPdfPasswordProtected,
+  parse26asPdfText,
+  reconcile3Buckets,
+  deleteUserTdsUploads,
+} = require("../services/tdsParserService");
+const pdfParse = require("pdf-parse");
+const crypto = require("crypto");
 
 /**
  * Run 3-Way TDS Reconciliation and return comprehensive audit report
@@ -133,9 +142,131 @@ const manualReconcile = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Upload Form 26AS / AIS PDF (Server-side opt-in or fallback)
+ * PDF only, max 10MB, magic bytes validation, routes password-protected to consent screen.
+ */
+const upload26as = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: "No PDF file uploaded." });
+  }
+
+  // Validate MIME type
+  if (req.file.mimetype !== "application/pdf") {
+    return res.status(400).json({ success: false, message: "Only PDF files are supported." });
+  }
+
+  // Validate magic bytes (%PDF)
+  if (!validatePdfMagicBytes(req.file.buffer)) {
+    return res.status(400).json({ success: false, message: "Invalid PDF file signature." });
+  }
+
+  // Check if password protected
+  const isEncrypted = isPdfPasswordProtected(req.file.buffer);
+  const password = req.body.password;
+  const userConsented = req.body.consent === "true" || req.body.consent === true;
+
+  if (isEncrypted && !userConsented) {
+    return res.status(200).json({
+      success: true,
+      passwordProtected: true,
+      needsConsent: true,
+      message: "This Form 26AS PDF is password-protected. Server-side processing requires your explicit consent and password.",
+    });
+  }
+
+  let pdfData;
+  try {
+    const parseOptions = password ? { password } : {};
+    pdfData = await pdfParse(req.file.buffer, parseOptions);
+  } catch (err) {
+    if (err.name === "PasswordException" || /password/i.test(err.message)) {
+      return res.status(200).json({
+        success: true,
+        passwordProtected: true,
+        needsConsent: true,
+        message: "Incorrect password or password required for this Form 26AS PDF.",
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: `Failed to extract text from PDF: ${err.message}`,
+    });
+  }
+
+  const batchId = crypto.randomUUID();
+  const { records, sftEntries, financialYear } = parse26asPdfText(pdfData.text);
+
+  const createdDocs = [];
+  for (const item of records) {
+    const doc = await TDSRecord.create({
+      userId,
+      deductorName: item.deductorName,
+      deductorTAN: item.deductorTAN,
+      deductorPAN: item.deductorPAN,
+      section: item.section,
+      financialYear: item.financialYear || "2025-26",
+      assessmentYear: "2026-27",
+      transactionDate: new Date(),
+      creditAmount: item.creditAmount,
+      tdsDeducted: item.tdsDeducted,
+      tdsDeposited: item.tdsDeposited,
+      source: "26AS_IMPORT",
+      metadata: { batchId, originalFilename: req.file.originalname },
+    });
+    createdDocs.push(doc);
+  }
+
+  // Run 3-bucket reconciliation
+  const buckets = await reconcile3Buckets(userId, financialYear);
+
+  return res.status(200).json({
+    success: true,
+    batchId,
+    retentionNotice: "Uploaded file is not stored permanently. Parsed records can be deleted anytime in one tap.",
+    importedCount: createdDocs.length,
+    sftCount: sftEntries.length,
+    sftEntries,
+    ...buckets,
+  });
+});
+
+/**
+ * Get 3-Bucket Reconciliation view
+ */
+const get3BucketReconciliation = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const { financialYear = "2025-26" } = req.query;
+
+  const buckets = await reconcile3Buckets(userId, financialYear);
+  return res.status(200).json({
+    success: true,
+    data: buckets,
+  });
+});
+
+/**
+ * One-Tap Delete of all TDS records & derived rows
+ */
+const deleteTdsRecords = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const { batchId } = req.query;
+
+  const result = await deleteUserTdsUploads(userId, batchId);
+  return res.status(200).json({
+    success: true,
+    ...result,
+  });
+});
+
 module.exports = {
   getReconciliationReport,
   importTdsRecords,
   getTdsRecords,
   manualReconcile,
+  upload26as,
+  get3BucketReconciliation,
+  deleteTdsRecords,
 };

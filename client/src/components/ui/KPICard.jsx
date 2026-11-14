@@ -1,4 +1,6 @@
-function KPICard({ title, value, change, icon: Icon, color = "bg-sky-500/15 text-sky-400" }) {
+import CoverageMeter from "./CoverageMeter";
+
+function KPICard({ title, value, change, coverage, children, icon: Icon, color = "bg-sky-500/15 text-sky-400" }) {
   const positive = Number(change) >= 0;
 
   return (
@@ -20,6 +22,12 @@ function KPICard({ title, value, change, icon: Icon, color = "bg-sky-500/15 text
       </div>
       <p className="mb-2 text-sm text-[var(--text-secondary)]">{title}</p>
       <p className="text-3xl font-bold text-[var(--text-primary)]">{value}</p>
+      {coverage && (
+        <div className="mt-2">
+          <CoverageMeter coverage={coverage} />
+        </div>
+      )}
+      {children}
     </div>
   );
 }

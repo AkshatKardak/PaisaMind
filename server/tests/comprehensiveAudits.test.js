@@ -123,7 +123,7 @@ describe("Comprehensive Audits & Edge Cases Across 8 Focus Areas", () => {
     });
   });
 
-  describe("5. Monte Carlo & Scenario Simulation - Zero Arbitrary Defaults", () => {
+  describe("5. Stochastic & Scenario Simulation - Zero Arbitrary Defaults", () => {
     it("should use validated SCENARIO_CONFIG for simulations", () => {
       expect(SCENARIO_CONFIG.iterations).toBe(100);
       expect(SCENARIO_CONFIG.projectionMonths).toBe(6);
@@ -155,7 +155,7 @@ describe("Comprehensive Audits & Edge Cases Across 8 Focus Areas", () => {
       expect(result.monteCarloProbabilities.p50).toBeDefined();
     });
 
-    it("should run Monte Carlo simulation with 0 defaults cleanly", () => {
+    it("should run stochastic simulation with 0 defaults cleanly", () => {
       const mc = runMonteCarloSimulation({
         iterations: 50,
         months: 3,

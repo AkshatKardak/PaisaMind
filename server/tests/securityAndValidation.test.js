@@ -84,7 +84,7 @@ describe("Security, File Validation & Mathematical Engine Tests", () => {
     });
   });
 
-  describe("Monte Carlo Simulation Percentiles", () => {
+  describe("Stochastic Simulation Percentiles", () => {
     it("should calculate P10, P25, P50, P75, P90 and risk probabilities", () => {
       const result = runMonteCarloSimulation({
         iterations: 100,

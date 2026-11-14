@@ -4,7 +4,7 @@ const { analyzeIncomeVolatility } = require("./incomeVolatilityService");
 const { SCENARIO_CONFIG } = require("../config/scenarioConfig");
 
 /**
- * Monte Carlo simulator for 6-month projected cash flow
+ * Stochastic simulator for 6-month projected cash flow
  */
 const runMonteCarloSimulation = ({
   iterations = SCENARIO_CONFIG.iterations,
@@ -71,7 +71,7 @@ const runMonteCarloSimulation = ({
 };
 
 /**
- * What-If Financial Scenario Simulation Engine with Volatility & Monte Carlo
+ * What-If Financial Scenario Simulation Engine with Volatility & Stochastic Modeling
  */
 const simulateScenario = async (userId, params = {}) => {
   const {
@@ -199,7 +199,7 @@ const simulateScenario = async (userId, params = {}) => {
   tracks.optimistic.runwayMonths = Number((Math.max(0, balOpt) / Math.max(1000, newMonthlyBurn * 0.95)).toFixed(1));
   tracks.stress.runwayMonths = Number((Math.max(0, balStress) / Math.max(1000, newMonthlyBurn * 1.05)).toFixed(1));
 
-  // Monte Carlo Simulation
+  // Stochastic Simulation
   const monteCarlo = runMonteCarloSimulation({
     iterations: SCENARIO_CONFIG.iterations,
     months: SCENARIO_CONFIG.projectionMonths,

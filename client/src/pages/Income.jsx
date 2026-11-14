@@ -1,4 +1,4 @@
-import { Plus, Wallet2, X, FileSpreadsheet } from "lucide-react";
+import { Plus, Wallet2, X, FileSpreadsheet, Clipboard } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -6,6 +6,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "rec
 import EmptyState from "../components/ui/EmptyState";
 import KPICard from "../components/ui/KPICard";
 import ConfirmDeleteModal from "../components/ui/ConfirmDeleteModal";
+import PasteBox from "../components/entries/PasteBox";
 import { showToast } from "../components/ui/Toast";
 import { useTheme } from "../context/ThemeContext";
 import { formatINR } from "../utils/formatCurrency";
@@ -41,6 +42,7 @@ function Income() {
   const queryClient = useQueryClient();
   const { isDark } = useTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [showPasteBox, setShowPasteBox] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [form, setForm] = useState(getInitialForm);
@@ -128,6 +130,13 @@ function Income() {
           <p className="text-sm text-[var(--text-secondary)]">Track every payment source and watch your revenue trend.</p>
         </div>
         <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setShowPasteBox(!showPasteBox)}
+            className="pm-button flex items-center gap-1.5 border border-[var(--border)] text-xs font-semibold hover:bg-[var(--bg-hover)]"
+          >
+            <Clipboard size={15} className="text-sky-500" />
+            <span>{showPasteBox ? "Hide Paste" : "Paste SMS"}</span>
+          </button>
           <Link
             to="/statement-import"
             className="pm-button flex items-center gap-1.5 border border-[var(--border)] text-xs font-semibold hover:bg-[var(--bg-hover)]"
@@ -142,9 +151,33 @@ function Income() {
         </div>
       </div>
 
+      {showPasteBox && (
+        <div className="pm-card">
+          <PasteBox
+            onEntrySaved={() => {
+              queryClient.invalidateQueries({ queryKey: ["income-page"] });
+              queryClient.invalidateQueries({ queryKey: ["income-summary-page"] });
+              setShowPasteBox(false);
+            }}
+          />
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
-        <KPICard title="Total Income" value={formatINR(totals.total)} icon={Wallet2} color="bg-sky-500/15 text-sky-400" />
-        <KPICard title="Average Entry" value={formatINR(totals.average)} icon={Wallet2} color="bg-violet-500/15 text-violet-400" />
+        <KPICard
+          title="Total Income"
+          value={formatINR(totals.total)}
+          coverage={{ known: totals.entries, estimated: 0, missing: 0 }}
+          icon={Wallet2}
+          color="bg-sky-500/15 text-sky-400"
+        />
+        <KPICard
+          title="Average Entry"
+          value={formatINR(totals.average)}
+          coverage={{ known: totals.entries, estimated: 0, missing: 0 }}
+          icon={Wallet2}
+          color="bg-violet-500/15 text-violet-400"
+        />
         <KPICard title="Entries" value={String(totals.entries)} icon={Wallet2} color="bg-emerald-500/15 text-emerald-400" />
       </div>
 

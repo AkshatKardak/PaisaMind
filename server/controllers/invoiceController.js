@@ -4,6 +4,7 @@ const User    = require("../models/User");
 const { Resend } = require("resend");
 const { createInvoicePaymentLink, verifyWebhookSignature } = require("../utils/razorpayService");
 const PDFDocument = require("pdfkit");
+const { verifyInvoicePayment, reconcilePayment } = require("../services/paymentReconciliationService");
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -328,6 +329,14 @@ const recordTDS = asyncHandler(async (req, res) => {
   });
 });
 
+const verifyPayment = asyncHandler(async (req, res) => {
+  const result = await verifyInvoicePayment(req.params.id, req.user?._id);
+  if (!result.success) {
+    return res.status(404).json(result);
+  }
+  return res.status(200).json(result);
+});
+
 module.exports = {
   getInvoices,
   getSummary,
@@ -341,4 +350,6 @@ module.exports = {
   downloadPDF,
   getRecoveryDraft,
   recordTDS,
+  verifyPayment,
+  reconcilePayment,
 };

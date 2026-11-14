@@ -37,6 +37,7 @@ import SkeletonLoader from "../components/ui/SkeletonLoader";
 import { showToast } from "../components/ui/Toast";
 import { useTheme } from "../context/ThemeContext";
 import { formatINR } from "../utils/formatCurrency";
+import CoverageMeter from "../components/ui/CoverageMeter";
 import * as aiService from "../services/aiService";
 import * as incomeService from "../services/incomeService";
 import * as expenseService from "../services/expenseService";
@@ -46,7 +47,7 @@ import { analyticsService } from "../services/analyticsService";
 const CHART_COLORS = ["#0891b2", "#6366f1", "#059669", "#ea580c", "#7c3aed", "#db2777"];
 
 /* ── KPI Card ── */
-function KPI({ title, value, subtext, icon: Icon, accent, to }) {
+function KPI({ title, value, subtext, coverage, isRupee, icon: Icon, accent, to }) {
   const content = (
     <div
       className="group relative flex flex-col gap-3 overflow-hidden rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5"
@@ -77,6 +78,11 @@ function KPI({ title, value, subtext, icon: Icon, accent, to }) {
         <p className="mt-1 text-2xl font-extrabold tracking-tight tabular-nums" style={{ color: accent }}>
           {value}
         </p>
+        {isRupee && coverage && (
+          <div className="mt-1">
+            <CoverageMeter coverage={coverage} />
+          </div>
+        )}
         {subtext && (
           <p className="mt-0.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
             {subtext}
@@ -381,33 +387,32 @@ export default function Dashboard() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--primary)", letterSpacing: "0.14em" }}>
-                AI Financial OS
+                Financial Overview
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-500/10 text-indigo-600 border border-indigo-500/20">
-                Grounded Intelligence
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                Tracked & Reconciled
               </span>
             </div>
             <h1 className="mt-2 text-2xl font-extrabold tracking-tight" style={{ color: "var(--text-primary)" }}>
               Hey, <span style={{ color: "var(--primary)" }}>{firstName}</span>
             </h1>
             <p className="mt-1 max-w-lg text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
-              Your financial decision engine is live with deterministic tax calculations, 95% cash forecasts, and AI tool calling.
+              Track income, reconcile TDS against Form 26AS, and plan advance tax with full visibility.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
             <Link
-              to="/copilot"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/20"
+              to="/income"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-all shadow-md shadow-emerald-600/20"
             >
-              <Sparkles size={14} />
-              <span>Ask Copilot</span>
+              <span>Log Income</span>
             </Link>
             <Link
               to="/simulator"
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-default)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] font-semibold text-xs transition-all"
             >
-              <Sliders size={14} className="text-indigo-500" />
+              <Sliders size={14} className="text-emerald-500" />
               <span>Simulate Scenario</span>
             </Link>
             <button
@@ -421,13 +426,50 @@ export default function Dashboard() {
         </div>
       </Card>
 
-      {/* ── KPI Row (5 Key Metrics) ── */}
+      {/* ── KPI Row (5 Key Metrics with CoverageMeter) ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <KPI title="Total Income" value={formatINR(totalIncome)} icon={TrendingUp} accent="#0891b2" to="/income" />
-        <KPI title="Total Expenses" value={formatINR(totalExpenses)} icon={TrendingDown} accent="#dc2626" to="/expenses" />
-        <KPI title="Net Profit" value={formatINR(netProfit)} icon={IndianRupee} accent={netProfit >= 0 ? "#059669" : "#dc2626"} />
-        <KPI title="Health Score" value={`${healthScore} / 100`} subtext={`Grade: ${healthGrade}`} icon={Activity} accent={scoreColor} to="/health" />
-        <KPI title="Cash Runway" value={`${expectedRunway} mo`} subtext="Expected Buffer" icon={Wallet} accent="#8b5cf6" to="/simulator" />
+        <KPI
+          title="Total Income"
+          value={formatINR(totalIncome)}
+          isRupee
+          coverage={{ known: incomeItems.length, estimated: 0, missing: 0 }}
+          icon={TrendingUp}
+          accent="#0891b2"
+          to="/income"
+        />
+        <KPI
+          title="Total Expenses"
+          value={formatINR(totalExpenses)}
+          isRupee
+          coverage={{ known: expenseItems.length, estimated: 0, missing: 0 }}
+          icon={TrendingDown}
+          accent="#dc2626"
+          to="/expenses"
+        />
+        <KPI
+          title="Net Profit"
+          value={formatINR(netProfit)}
+          isRupee
+          coverage={{ known: incomeItems.length + expenseItems.length, estimated: 0, missing: 0 }}
+          icon={IndianRupee}
+          accent={netProfit >= 0 ? "#059669" : "#dc2626"}
+        />
+        <KPI
+          title="Health Score"
+          value={`${healthScore} / 100`}
+          subtext={`Grade: ${healthGrade}`}
+          icon={Activity}
+          accent={scoreColor}
+          to="/health"
+        />
+        <KPI
+          title="Cash Runway"
+          value={`${expectedRunway} mo`}
+          subtext={`based on ${expenseItems.length} transactions`}
+          icon={Wallet}
+          accent="#8b5cf6"
+          to="/simulator"
+        />
       </div>
 
       {/* ── GST Widget — only renders when data is available ── */}

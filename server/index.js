@@ -95,11 +95,12 @@ const copilotLimiter = rateLimit({
 app.use("/api/", generalLimiter);
 
 app.get("/", (req, res) => {
-  res.json({ message: "PaisaMind API running - Financial Intelligence OS" });
+  res.json({ message: "PaisaMind API running" });
 });
 
 // Existing Core Routes
 app.use("/api/auth",       authRoutes);
+app.use("/api/entries",    require("./routes/entryRoutes"));
 app.use("/api/income",     incomeRoutes);
 app.use("/api/expenses",   expenseRoutes);
 app.use("/api/goals",      goalRoutes);
@@ -116,6 +117,7 @@ app.use("/api/statements", statementRoutes);
 app.use("/api/profitability", require("./routes/profitabilityRoutes"));
 app.use("/api/tds",           require("./routes/tdsRoutes"));
 app.use("/api/copilot",    copilotLimiter, copilotRoutes);
+app.use("/api/internal",   require("./routes/internalRoutes"));
 
 app.use(notFound);
 app.use(errorHandler);

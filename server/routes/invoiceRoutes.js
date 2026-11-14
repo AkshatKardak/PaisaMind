@@ -13,11 +13,13 @@ const {
   downloadPDF,
   getRecoveryDraft,
   recordTDS,
+  verifyPayment,
 } = require("../controllers/invoiceController");
 const { protect } = require("../middleware/authMiddleware");
 
 // IMPORTANT: /summary must be before /:id so Express doesn't treat "summary" as an id param
 router.get("/summary", protect, getSummary);
+router.get("/:id/verify-payment", protect, verifyPayment);
 router.get("/", protect, getInvoices);
 router.post("/", protect, createInvoice);
 router.put("/:id", protect, updateInvoice);

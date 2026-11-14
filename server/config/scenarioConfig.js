@@ -1,5 +1,5 @@
 /**
- * Versioned Configuration for Financial Scenario Simulations & Monte Carlo Engine
+ * Versioned Configuration for Financial Scenario Simulations & Stochastic Engine
  */
 const SCENARIO_CONFIG = {
   iterations: 100,

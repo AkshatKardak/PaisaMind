@@ -42,6 +42,11 @@ export const recordTDS = async ({ id, ...payload }) => {
   return response;
 };
 
+export const verifyPayment = async (id) => {
+  const response = (await api.get(`/invoices/${id}/verify-payment`)).data;
+  return response;
+};
+
 export const downloadPDF = (id) =>
   api.get(`/invoices/${id}/pdf`, { responseType: "blob" }).then((r) => {
     const url  = window.URL.createObjectURL(new Blob([r.data], { type: "application/pdf" }));

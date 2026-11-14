@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { formatINR } from "../utils/formatCurrency";
 import api from "../services/api";
+import TdsReconciliationSection from "../components/tax/TdsReconciliationSection";
 
 const getTaxOverview = async () => (await api.get("/tax/overview")).data;
 const getAdvanceTax = async () => (await api.get("/tax/advance-tax")).data;
@@ -276,6 +277,9 @@ export default function TaxPlanner() {
           )}
         </div>
       </div>
+
+      {/* Form 26AS / AIS 3-Bucket TDS Reconciliation Section (Phase 2) */}
+      <TdsReconciliationSection />
 
       {/* Advance Tax Installments */}
       <div className="rounded-3xl p-6 border border-[var(--border)] bg-[var(--bg-elevated)] space-y-4 shadow-sm">

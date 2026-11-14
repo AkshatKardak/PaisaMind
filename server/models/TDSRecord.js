@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { encryptData, maskPAN } = require("../utils/cryptoUtils");
 
 const tdsRecordSchema = new mongoose.Schema(
   {
@@ -89,8 +90,41 @@ const tdsRecordSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    rawEncryptedPAN: {
+      type: String,
+      select: false,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: {
+      transform: function (doc, ret) {
+        if (ret.deductorPAN) {
+          ret.deductorPAN = maskPAN(ret.deductorPAN);
+        }
+        delete ret.rawEncryptedPAN;
+        return ret;
+      },
+    },
+    toObject: {
+      transform: function (doc, ret) {
+        if (ret.deductorPAN) {
+          ret.deductorPAN = maskPAN(ret.deductorPAN);
+        }
+        delete ret.rawEncryptedPAN;
+        return ret;
+      },
+    },
+  }
 );
+
+tdsRecordSchema.pre("save", function () {
+  if (this.deductorPAN) {
+    // Encrypt at rest with AES-256-GCM
+    this.rawEncryptedPAN = encryptData(this.deductorPAN);
+    // Mask in field
+    this.deductorPAN = maskPAN(this.deductorPAN);
+  }
+});
 
 module.exports = mongoose.model("TDSRecord", tdsRecordSchema);
