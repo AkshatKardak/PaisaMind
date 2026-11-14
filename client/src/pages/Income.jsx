@@ -1,6 +1,6 @@
 import { Plus, Wallet2, X, FileSpreadsheet, Clipboard } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useMemo, useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import EmptyState from "../components/ui/EmptyState";
@@ -41,8 +41,10 @@ const toLocalDateString = (rawDate) => {
 function Income() {
   const queryClient = useQueryClient();
   const { isDark } = useTheme();
+  const [searchParams] = useSearchParams();
+  const sharedText = searchParams.get("text") || "";
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [showPasteBox, setShowPasteBox] = useState(false);
+  const [showPasteBox, setShowPasteBox] = useState(Boolean(sharedText));
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [form, setForm] = useState(getInitialForm);
@@ -154,6 +156,7 @@ function Income() {
       {showPasteBox && (
         <div className="pm-card">
           <PasteBox
+            initialText={sharedText}
             onEntrySaved={() => {
               queryClient.invalidateQueries({ queryKey: ["income-page"] });
               queryClient.invalidateQueries({ queryKey: ["income-summary-page"] });

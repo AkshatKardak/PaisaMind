@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Clipboard, CheckCircle, AlertTriangle, ArrowDownLeft, ArrowUpRight, Loader2, X } from "lucide-react";
 import api from "../../services/api";
 
@@ -8,13 +8,20 @@ import api from "../../services/api";
  * Paste bank SMS, email, or UPI alert text -> Regex-first parse -> Editable confirm card -> Explicit tap to save.
  * Nothing auto-saves.
  */
-export default function PasteBox({ onEntrySaved, className = "" }) {
-  const [text, setText] = useState("");
+export default function PasteBox({ initialText = "", onEntrySaved, className = "" }) {
+  const [text, setText] = useState(initialText || "");
   const [parsing, setParsing] = useState(false);
   const [parsed, setParsed] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  useEffect(() => {
+    if (initialText && initialText.trim()) {
+      setText(initialText);
+      runParse(initialText.trim());
+    }
+  }, [initialText]);
 
   // Editable fields in Confirm Card
   const [editAmount, setEditAmount] = useState("");
@@ -24,8 +31,8 @@ export default function PasteBox({ onEntrySaved, className = "" }) {
   const [editReference, setEditReference] = useState("");
   const [editCategory, setEditCategory] = useState("Freelance");
 
-  const handleParse = async () => {
-    if (!text.trim()) {
+  const runParse = async (rawText) => {
+    if (!rawText || !rawText.trim()) {
       setError("Please paste a transaction alert or bank SMS text.");
       return;
     }
@@ -36,7 +43,7 @@ export default function PasteBox({ onEntrySaved, className = "" }) {
 
     try {
       const res = await api.post("/entries/parse", {
-        text: text.trim(),
+        text: rawText.trim(),
         source: "manual"
       });
 
@@ -56,6 +63,8 @@ export default function PasteBox({ onEntrySaved, className = "" }) {
       setParsing(false);
     }
   };
+
+  const handleParse = () => runParse(text);
 
   const handleSave = async () => {
     if (!editAmount || isNaN(Number(editAmount)) || Number(editAmount) <= 0) {
