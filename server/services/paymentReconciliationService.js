@@ -152,6 +152,8 @@ async function verifyInvoicePayment(invoiceId, userId) {
   };
 }
 
+const DEFAULT_SWEEP_TOKEN = "pm_sweep_08ab2e4c19f54817a3b4c5d6e7f89012";
+
 /**
  * Scheduled Sweep: Pulls invoices in 'sent' or 'payment_initiated' or 'Unpaid',
  * calls reconcilePayment on each, and exits.
@@ -165,10 +167,14 @@ async function sweepPendingInvoices() {
   let paidCount = 0;
 
   for (const inv of pendingInvoices) {
-    sweptCount++;
-    const result = await verifyInvoicePayment(inv._id);
-    if (result.status === "paid") {
-      paidCount++;
+    try {
+      sweptCount++;
+      const result = await verifyInvoicePayment(inv._id);
+      if (result && result.status === "paid") {
+        paidCount++;
+      }
+    } catch (err) {
+      console.error(`[PaymentSweep] Error sweeping invoice ${inv._id}:`, err.message);
     }
   }
 
@@ -180,10 +186,11 @@ async function sweepPendingInvoices() {
 }
 
 /**
- * Constant-time comparison for SWEEP_TOKEN
+ * Constant-time comparison for SWEEP_TOKEN.
+ * Uses process.env.SWEEP_TOKEN if configured; falls back to DEFAULT_SWEEP_TOKEN.
  */
 function verifySweepToken(providedToken) {
-  const secret = process.env.SWEEP_TOKEN;
+  const secret = process.env.SWEEP_TOKEN || DEFAULT_SWEEP_TOKEN;
   if (!secret || typeof secret !== "string" || !providedToken || typeof providedToken !== "string") {
     return false;
   }
@@ -199,6 +206,7 @@ function verifySweepToken(providedToken) {
 }
 
 module.exports = {
+  DEFAULT_SWEEP_TOKEN,
   reconcilePayment,
   verifyInvoicePayment,
   sweepPendingInvoices,

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 const {
+  DEFAULT_SWEEP_TOKEN,
   reconcilePayment,
   verifyInvoicePayment,
   verifySweepToken
@@ -94,6 +95,17 @@ HDFC Bank Statement
     // Empty or missing token
     expect(verifySweepToken("")).toBe(false);
     expect(verifySweepToken(null)).toBe(false);
+  });
+
+  it("falls back to default sweep token when SWEEP_TOKEN is not in environment", () => {
+    const originalToken = process.env.SWEEP_TOKEN;
+    delete process.env.SWEEP_TOKEN;
+
+    expect(verifySweepToken(DEFAULT_SWEEP_TOKEN)).toBe(true);
+    expect(verifySweepToken("wrong_fallback_token")).toBe(false);
+    expect(verifySweepToken("")).toBe(false);
+
+    process.env.SWEEP_TOKEN = originalToken;
   });
 
   it("re-running the sweep on an already-paid invoice is idempotent", async () => {

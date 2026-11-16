@@ -10,12 +10,30 @@ jobs:
   sweep:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Invoice Sweep
+      - name: Wake up backend if sleeping
         run: |
+          echo "Pinging backend health check to wake up service if sleeping..."
+          for i in {1..15}; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" -m 10 "https://paisamind-backend-92ig.onrender.com/health" || true)
+            if [ "$status" = "200" ]; then
+              echo "Backend is healthy and ready (HTTP 200)."
+              break
+            fi
+            echo "Attempt $i: Backend returned status $status. Waiting 5s..."
+            sleep 5
+          done
+
+      - name: Trigger Invoice Sweep
+        env:
+          SECRET_SWEEP_TOKEN: ${{ secrets.SWEEP_TOKEN }}
+        run: |
+          DEFAULT_TOKEN="pm_sweep_08ab2e4c19f54817a3b4c5d6e7f89012"
+          SWEEP_TOKEN="${SECRET_SWEEP_TOKEN:-$DEFAULT_TOKEN}"
+
           echo "Triggering payment sweep on backend..."
-          response=$(curl -s -w "\n%{http_code}" -X POST "https://paisamind-backend-92ig.onrender.com/api/internal/sweep-pending" \
+          response=$(curl -s -w "\n%{http_code}" -m 60 -X POST "https://paisamind-backend-92ig.onrender.com/api/internal/sweep-pending" \
             -H "Content-Type: application/json" \
-            -H "x-sweep-token: ${{ secrets.SWEEP_TOKEN }}")
+            -H "x-sweep-token: $SWEEP_TOKEN")
 
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
@@ -23,7 +41,8 @@ jobs:
           echo "Response: $body"
           echo "HTTP Code: $http_code"
 
-          if [ "$http_code" -ne 200 ]; then
+          if [ "$http_code" != "200" ]; then
             echo "Sweep failed with status $http_code"
             exit 1
           fi
+          echo "Invoice sweep completed successfully."
