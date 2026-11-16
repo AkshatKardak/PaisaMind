@@ -7,7 +7,9 @@ export const ThemeProvider = ({ children }) => {
     try {
       const saved = localStorage.getItem("paisamind-theme");
       if (saved) return saved === "dark";
-    } catch (_) {}
+    } catch (_) {
+      /* ignore */
+    }
     return true;
   });
 
@@ -19,7 +21,9 @@ export const ThemeProvider = ({ children }) => {
     root.classList.toggle("light", !isDark);
     try {
       localStorage.setItem("paisamind-theme", theme);
-    } catch (_) {}
+    } catch (_) {
+      /* ignore */
+    }
   }, [isDark]);
 
   const toggleTheme = () => setIsDark((prev) => !prev);

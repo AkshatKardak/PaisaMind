@@ -16,13 +16,6 @@ export default function PasteBox({ initialText = "", onEntrySaved, className = "
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  useEffect(() => {
-    if (initialText && initialText.trim()) {
-      setText(initialText);
-      runParse(initialText.trim());
-    }
-  }, [initialText]);
-
   // Editable fields in Confirm Card
   const [editAmount, setEditAmount] = useState("");
   const [editDirection, setEditDirection] = useState("credit");
@@ -63,6 +56,13 @@ export default function PasteBox({ initialText = "", onEntrySaved, className = "
       setParsing(false);
     }
   };
+
+  useEffect(() => {
+    if (initialText && initialText.trim()) {
+      setText(initialText);
+      runParse(initialText.trim());
+    }
+  }, [initialText]);
 
   const handleParse = () => runParse(text);
 
