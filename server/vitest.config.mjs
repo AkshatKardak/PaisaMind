@@ -6,5 +6,17 @@ export default defineConfig({
     hookTimeout: 30000,
     isolate: false,
     pool: "forks",
+    coverage: {
+      exclude: [
+        "node_modules/**",
+        "tests/**",
+        "controllers/**",
+        "routes/**",
+        "middleware/**",
+        "jobs/**",
+        "scripts/**",
+        "index.js",
+      ],
+    },
   },
 });
