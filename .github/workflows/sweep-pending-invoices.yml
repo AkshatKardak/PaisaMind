@@ -25,10 +25,12 @@ jobs:
 
       - name: Trigger Invoice Sweep
         env:
-          SECRET_SWEEP_TOKEN: ${{ secrets.SWEEP_TOKEN }}
+          SWEEP_TOKEN: ${{ secrets.SWEEP_TOKEN }}
         run: |
-          DEFAULT_TOKEN="pm_sweep_08ab2e4c19f54817a3b4c5d6e7f89012"
-          SWEEP_TOKEN="${SECRET_SWEEP_TOKEN:-$DEFAULT_TOKEN}"
+          if [ -z "$SWEEP_TOKEN" ]; then
+            echo "::error::SWEEP_TOKEN secret is unset. Configure SWEEP_TOKEN in repository secrets to run the sweep."
+            exit 1
+          fi
 
           echo "Triggering payment sweep on backend..."
           response=$(curl -s -w "\n%{http_code}" -m 60 -X POST "https://paisamind-backend-92ig.onrender.com/api/internal/sweep-pending" \
@@ -38,7 +40,6 @@ jobs:
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
 
-          echo "Response: $body"
           echo "HTTP Code: $http_code"
 
           if [ "$http_code" != "200" ]; then
