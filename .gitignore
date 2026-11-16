@@ -4,4 +4,8 @@ server/node_modules/
 server/.env
 client/.env
 dist/
+coverage/
+server/coverage/
+client/coverage/
+*.log
 .DS_Store
