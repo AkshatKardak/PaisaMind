@@ -1,7 +1,9 @@
 require("dotenv").config(); // ← MUST be absolute first line
 const dns = require("dns");
 dns.setDefaultResultOrder("ipv4first");
-dns.setServers(["8.8.8.8", "8.8.4.4"]);
+if (process.env.MONGO_URI && process.env.MONGO_URI.startsWith("mongodb+srv://")) {
+  try { dns.setServers(["8.8.8.8", "8.8.4.4"]); } catch (_) {}
+}
 
 console.log("[server] Starting backend...");
 
@@ -29,7 +31,9 @@ const statementRoutes  = require("./routes/statementRoutes");
 const copilotRoutes    = require("./routes/copilotRoutes");
 const startCronJobs    = require("./jobs/cronJobs");
 
-connectDB();
+if (process.env.NODE_ENV !== "test") {
+  connectDB();
+}
 
 const app = express();
 
@@ -122,10 +126,14 @@ app.use("/api/internal",   require("./routes/internalRoutes"));
 app.use(notFound);
 app.use(errorHandler);
 
-startCronJobs();
-console.log("[server] Cron job loaded");
+if (process.env.NODE_ENV !== "test") {
+  startCronJobs();
+  console.log("[server] Cron job loaded");
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`[server] Server running on port ${PORT}`);
-});
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`[server] Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
