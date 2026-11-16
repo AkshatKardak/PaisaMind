@@ -140,20 +140,20 @@ export default function Landing() {
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--bg-elevated)] border border-cyan-500/30 text-[11px] font-semibold tracking-wide text-cyan-400 shadow-sm">
                 <Sparkles size={13} className="text-cyan-400" />
-                <span>AI-POWERED FINANCE OS INDIA</span>
+                <span>FINANCIAL TRACKING & TAX PLANNING FOR FREELANCERS</span>
               </div>
 
               {/* Main Headline */}
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black font-display tracking-tight text-[var(--text-primary)] leading-[1.1]">
-                The financial <br />
-                intelligence <br />
-                platform built for <br />
+                Financial tracking <br />
+                and tax planning <br />
+                built for <br />
                 Indian freelancers.
               </h1>
 
               {/* Subtitle */}
               <p className="text-sm sm:text-base text-[var(--text-secondary)] max-w-lg leading-relaxed font-normal">
-                PaisaMind is an AI-powered finance platform for income tracking, Indian tax planning software, invoice automation, GST tracker alerts, cash flow forecasting, and smart financial intelligence in one calm dashboard.
+                PaisaMind is a financial tracking and Indian tax planning platform for income tracking, Section 44ADA tax calculations, invoice automation, GST tracker alerts, cash flow forecasting, and on-device statement parsing.
               </p>
 
               {/* Action Buttons */}
@@ -174,20 +174,15 @@ export default function Landing() {
                 </a>
               </div>
 
-              {/* Social Proof & Trust Avatars */}
-              <div className="pt-4 flex items-center gap-4">
-                <div className="flex -space-x-2 overflow-hidden">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-cyan-600 text-white font-bold text-xs ring-2 ring-[var(--bg-primary)]">A</span>
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white font-bold text-xs ring-2 ring-[var(--bg-primary)]">R</span>
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 text-white font-bold text-xs ring-2 ring-[var(--bg-primary)]">S</span>
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-600 text-white font-bold text-xs ring-2 ring-[var(--bg-primary)]">K</span>
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-pink-600 text-white font-bold text-xs ring-2 ring-[var(--bg-primary)]">P</span>
+              {/* Capability Highlights */}
+              <div className="pt-4 flex flex-wrap items-center gap-3 text-xs text-[var(--text-muted)]">
+                <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-strong)]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400"></span>
+                  <span className="text-[var(--text-primary)] font-medium">Designed for Indian freelancers & consultants</span>
                 </div>
-                <div className="text-xs text-[var(--text-muted)]">
-                  <span className="text-[var(--text-primary)] font-semibold">Trusted by 2,000+ freelancers, creators,</span> and small businesses.
-                </div>
-                <div className="pl-2 border-l border-[var(--border)] text-xs">
-                  <span className="text-[var(--text-muted)]">Rated</span> <strong className="text-[var(--text-primary)] font-bold">4.9/5</strong>
+                <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-strong)]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                  <span className="text-[var(--text-primary)] font-medium">Deterministic Section 44ADA & TDS reconciliation</span>
                 </div>
               </div>
             </div>
