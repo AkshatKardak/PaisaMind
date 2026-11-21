@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 const request = require("supertest");
 const mongoose = require("mongoose");
-const app = require("../index");
+let app = null;
 const admin = require("../config/firebaseAdmin");
 const User = require("../models/User");
 const StatementImport = require("../models/StatementImport");
@@ -17,15 +17,21 @@ describe("Integration Flow: Register -> Statement Import -> Dashboard Summary", 
 
   beforeAll(async () => {
     const mongoUri = process.env.TEST_MONGO_URI || process.env.MONGO_URI;
-    if (mongoUri) {
+    if (!mongoUri) {
+      console.warn("[Integration Test] Skipped: No MONGO_URI configured.");
+      return;
+    }
+    try {
+      await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 2000 });
+      isDbConnected = true;
+      process.env.NODE_ENV = "test";
+      app = require("../index");
+    } catch (err) {
+      console.warn(`[Integration Test] Skipped: MongoDB connection failed (${err.message}).`);
       try {
-        await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 2000 });
-        isDbConnected = true;
-      } catch (err) {
-        console.warn(`[Integration Test] MongoDB connection failed (${err.message}). Tests will skip gracefully.`);
-      }
-    } else {
-      console.warn("[Integration Test] No MONGO_URI configured. Tests will skip gracefully.");
+        await mongoose.disconnect();
+      } catch (_) {}
+      return;
     }
 
     if (admin && admin.auth) {
@@ -44,14 +50,16 @@ describe("Integration Flow: Register -> Statement Import -> Dashboard Summary", 
   });
 
   afterAll(async () => {
-    if (isDbConnected && testUserId) {
+    if (isDbConnected) {
       try {
-        await Promise.all([
-          User.deleteOne({ _id: testUserId }),
-          StatementImport.deleteMany({ userId: testUserId }),
-          Income.deleteMany({ userId: testUserId }),
-          Expense.deleteMany({ userId: testUserId }),
-        ]);
+        if (testUserId) {
+          await Promise.all([
+            User.deleteOne({ _id: testUserId }),
+            StatementImport.deleteMany({ userId: testUserId }),
+            Income.deleteMany({ userId: testUserId }),
+            Expense.deleteMany({ userId: testUserId }),
+          ]);
+        }
         await mongoose.disconnect();
       } catch (_) {}
     }

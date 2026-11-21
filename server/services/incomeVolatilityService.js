@@ -1,11 +1,28 @@
+const mongoose = require("mongoose");
 const Income = require("../models/Income");
 const Invoice = require("../models/Invoice");
 const { calculateStats } = require("./anomalyService");
+const { SCENARIO_CONFIG } = require("../config/scenarioConfig");
 
 /**
  * Calculates freelance income volatility, client concentration, and stability score
  */
 const analyzeIncomeVolatility = async (userId, months = 6) => {
+  if (mongoose.connection.readyState === 0) {
+    return {
+      status: "INSUFFICIENT_DATA",
+      averageMonthlyIncome: 0,
+      standardDeviation: 0,
+      coefficientOfVariation: SCENARIO_CONFIG?.defaultCoefficientOfVariation || 15,
+      stabilityScore: 0,
+      confidenceScore: "low",
+      monthlyTotals: {},
+      clientConcentration: [],
+      topClientPct: 0,
+      isHighRiskConcentration: false,
+    };
+  }
+
   const now = new Date();
   const startDate = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
 

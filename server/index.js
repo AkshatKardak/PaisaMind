@@ -31,7 +31,7 @@ const statementRoutes  = require("./routes/statementRoutes");
 const copilotRoutes    = require("./routes/copilotRoutes");
 const startCronJobs    = require("./jobs/cronJobs");
 
-if (process.env.NODE_ENV !== "test") {
+if (process.env.NODE_ENV?.trim() !== "test") {
   connectDB();
 }
 
@@ -126,7 +126,7 @@ app.use("/api/internal",   require("./routes/internalRoutes"));
 app.use(notFound);
 app.use(errorHandler);
 
-if (process.env.NODE_ENV !== "test") {
+if (process.env.NODE_ENV?.trim() !== "test") {
   startCronJobs();
   console.log("[server] Cron job loaded");
 

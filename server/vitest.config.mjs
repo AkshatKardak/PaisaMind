@@ -4,7 +4,6 @@ export default defineConfig({
   test: {
     testTimeout: 30000,
     hookTimeout: 30000,
-    isolate: false,
     pool: "forks",
     coverage: {
       exclude: [
