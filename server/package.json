@@ -9,6 +9,9 @@
     "test": "vitest run",
     "generate:demo-data": "node scripts/generateDemoData.js"
   },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
