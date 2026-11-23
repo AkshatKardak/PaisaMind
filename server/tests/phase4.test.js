@@ -1,10 +1,17 @@
 import { describe, it, expect, vi } from "vitest";
+
+vi.mock("pdfjs-dist", () => ({
+  GlobalWorkerOptions: { workerSrc: "" },
+  getDocument: vi.fn(() => ({ promise: Promise.resolve({ numPages: 0 }) })),
+  version: "mocked",
+}));
+
+import { parseStatementText } from "../../client/src/utils/clientStatementParser";
 const {
   reconcilePayment,
   verifyInvoicePayment,
   verifySweepToken
 } = require("../services/paymentReconciliationService");
-const { parseStatementText } = require("../../client/src/utils/clientStatementParser");
 const Invoice = require("../models/Invoice");
 
 describe("Phase 4 Acceptance Tests — Statements & Payment Verification", () => {
