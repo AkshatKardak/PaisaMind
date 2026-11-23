@@ -1,6 +1,6 @@
 const { Resend } = require("resend");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const from = "PaisaMind <onboarding@resend.dev>";
 
 const shouldSendEmails = process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "re_your_resend_key";

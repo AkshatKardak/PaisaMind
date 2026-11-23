@@ -3,7 +3,7 @@ const admin  = require("../config/firebaseAdmin");
 const User   = require("../models/User");
 const { Resend } = require("resend");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 /* Called by client after every Firebase sign-in to sync user to MongoDB */
 const firebaseSync = asyncHandler(async (req, res) => {
@@ -29,14 +29,16 @@ const firebaseSync = asyncHandler(async (req, res) => {
     });
 
     // Welcome email
-    try {
-      await resend.emails.send({
-        from:    process.env.EMAIL_FROM,
-        to:      user.email,
-        subject: "Welcome to PaisaMind",
-        html:    `<p>Hi ${user.name}, welcome to PaisaMind — financial tracking and tax planning for freelancers.</p>`,
-      });
-    } catch (_) {}
+    if (resend) {
+      try {
+        await resend.emails.send({
+          from:    process.env.EMAIL_FROM,
+          to:      user.email,
+          subject: "Welcome to PaisaMind",
+          html:    `<p>Hi ${user.name}, welcome to PaisaMind — financial tracking and tax planning for freelancers.</p>`,
+        });
+      } catch (_) {}
+    }
   }
 
   res.status(200).json({ success: true, data: user });

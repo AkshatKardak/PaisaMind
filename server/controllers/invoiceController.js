@@ -6,7 +6,7 @@ const { createInvoicePaymentLink, verifyWebhookSignature } = require("../utils/r
 const PDFDocument = require("pdfkit");
 const { verifyInvoicePayment, reconcilePayment } = require("../services/paymentReconciliationService");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const ALLOWED_UPDATE_FIELDS = [
   "clientName", "clientEmail", "clientPhone",
@@ -128,7 +128,7 @@ const sendReminder = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: "Invoice not found" });
   }
 
-  if (invoice.clientEmail) {
+  if (invoice.clientEmail && resend) {
     await resend.emails.send({
       from: process.env.EMAIL_FROM || "noreply@paisamind.com",
       to:   invoice.clientEmail,

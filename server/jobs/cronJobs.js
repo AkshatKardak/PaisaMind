@@ -10,7 +10,7 @@ const { detectSpendingAnomalies, detectDuplicates } = require("../services/anoma
 const { Resend } = require("resend");
 const logger = require("../services/logger");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 let isScheduled = false;
 
@@ -90,7 +90,7 @@ const startCronJobs = () => {
     try {
       const overdueInvoices = await Invoice.find({ status: "Overdue" }).populate("userId");
       for (const invoice of overdueInvoices) {
-        if (!invoice.clientEmail) continue;
+        if (!invoice.clientEmail || !resend) continue;
         try {
           await resend.emails.send({
             from: process.env.EMAIL_FROM,
@@ -113,7 +113,7 @@ const startCronJobs = () => {
       const goals = await Goal.find({ status: "Active" }).populate("userId");
       for (const goal of goals) {
         try {
-          if (goal.savedAmount >= goal.targetAmount) {
+          if (goal.savedAmount >= goal.targetAmount && resend) {
             await resend.emails.send({
               from: process.env.EMAIL_FROM,
               to: goal.userId.email,

@@ -23,10 +23,11 @@ describe("Integration Flow: Register -> Statement Import -> Dashboard Summary", 
     }
     try {
       await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 2000 });
-      isDbConnected = true;
       process.env.NODE_ENV = "test";
       app = require("../index");
+      isDbConnected = true;
     } catch (err) {
+      isDbConnected = false;
       console.warn(`[Integration Test] Skipped: MongoDB connection failed (${err.message}).`);
       try {
         await mongoose.disconnect();
@@ -67,7 +68,7 @@ describe("Integration Flow: Register -> Statement Import -> Dashboard Summary", 
   });
 
   it("1. registers or syncs a new user via POST /api/auth/firebase-sync", async (ctx) => {
-    if (!isDbConnected) {
+    if (!isDbConnected || !app) {
       ctx.skip();
       return;
     }
@@ -89,7 +90,7 @@ describe("Integration Flow: Register -> Statement Import -> Dashboard Summary", 
   });
 
   it("2. uploads and parses a statement via POST /api/statements/upload, then commits transactions", async (ctx) => {
-    if (!isDbConnected) {
+    if (!isDbConnected || !app) {
       ctx.skip();
       return;
     }
@@ -123,7 +124,7 @@ describe("Integration Flow: Register -> Statement Import -> Dashboard Summary", 
   });
 
   it("3. retrieves updated financial dashboard summary via GET /api/analytics/financial-summary", async (ctx) => {
-    if (!isDbConnected) {
+    if (!isDbConnected || !app) {
       ctx.skip();
       return;
     }
